@@ -1,15 +1,140 @@
 import { camel_to_dash } from "./Utils.js";
 import { HtmlString } from "./HtmlString.js";
+import { diff } from './diff.js';
 
 class VNode
 {
-    constructor(template, component, itemContext)
+    constructor(owner, template, item)
     {
-        this.domNodes = [];
+        this.owner = owner;
         this.template = template;
-        this.component = component;
-        if (itemContext !== undefined)
-            this.itemContext = itemContext;
+        if (item !== undefined)
+            this.item = item;
+    }
+
+    bind(name, value)
+    {
+        this.owner.bind(name, value);
+    }
+
+    unbind(name, value)
+    {
+        this.owner.unbind(name, value);
+    }
+
+    // Get all the dom nodes from this node
+    // that need to be added to the parent node
+    *getDomNodes()
+    {
+        // If this is a visible, non-template node
+        // then we have one single root dom node
+        if (this.domNode)
+        {
+            yield this.domNode;
+            return;
+        }
+
+        // If this is an excluded node then
+        // the this.domNode will be null, but
+        // so will the child nodes collection
+
+        // If this is a template then the dom nodes
+        // come from the child nodes
+        if (this.childNodes)
+        {
+            for (let c of this.childNodes)
+            {
+                for (let n in tc.getDomNodes())
+                {
+                    yield n;
+                }
+            }
+        }
+    }
+
+    // Get the first dom node of this vnode
+    getFirstDomNode()
+    {
+        if (this.domNode)
+            return this.domNode;
+        if (this.childNodes)
+        {
+            for (let c of this.childNodes)
+            {
+                let n = c.getFirstDomNode();
+                if (n)
+                    return n;
+            }
+        }
+        return null;
+    }
+
+    // Get the last dom node of this vnode
+    getLastDomNode()
+    {
+        if (this.domNode)
+            return this.domNode;
+        if (this.childNodes)
+        {
+            for (let i=this.childNodes.length-1; i>=0; i--)
+            {
+                let n = c.getLastDomNode();
+                if (n)
+                    return n;
+            }
+        }
+        return null;
+    }
+
+    // Get the position at which a child node should
+    // be inserted into the dom
+    getDomPosition(childNode)
+    {
+        console.assert(this.childNodes);
+
+        // Find the child node
+        let childNodeIndex = this.childNodes.indexOf(childNode);
+        console.assert(childNodeIndex >= 0);
+
+        // Look for next node to insert before
+        for (let i=childNodeIndex + 1; i<this.childNodes.length; i++)
+        {
+            let dn = this.childNodes[i].getFirstDomNode();
+            if (dn)
+            {
+                return {
+                    parent: dn.parentNode,
+                    before: dn,
+                }
+            }
+        }
+
+        // Look for previous node to insert after
+        for (let i=childNodeIndex - 1; i>=0; i--)
+        {
+            let dn = this.childNodes[i].getLastDomNode();
+            if (dn)
+            {
+                return {
+                    parent: dn.parentNode,
+                    before: null,
+                }
+            }
+        }
+
+        // First child?
+        if (this.domNode)
+        {
+            return {
+                parent: this.domNode,
+                before: null,
+            }
+        }
+
+        // We're a template with no current content
+        // so the insert position of the child is the 
+        // insert position of this node in our parent
+        return this.owner.getDomPosition(this);
     }
 
     registerUpdateHandler(fn)
@@ -67,40 +192,6 @@ class VNode
         this.unmountHandlers?.forEach(x => x());
     }
 
-    appendDomNode(domNode)
-    {
-        // Get the position in parent container to insert
-        let dp = this.getDomPosition(this);
-
-        if (dp.insertIndex < 0)
-        {
-            // Fast path during initial mount
-            dp.node.appendChild(domNode);
-        }
-        else
-        {
-            // Slow path for update
-
-            // Work out node to insert before
-            let insertIndex = dp.index + this.domNodes.length;
-            let insertBefore = insertIndex < dp.node.childNodes.length
-                                    ? dp.node.childNodes[insertIndex]
-                                    : null; 
-
-            // Insert it
-            dp.node.insertBefore(domNode, insertBefore);
-        }
-
-        // Also add to our dom nodes collection
-        this.domNodes.push(domNode);
-    }
-
-    removeAllDomNodes()
-    {
-        this.domNodes.forEach(x => x.parentNode.removeChild(x));
-        this.domNodes = [];
-    }
-
     mount()
     {
         let template = this.template;
@@ -108,27 +199,26 @@ class VNode
         // Text node?
         if (typeof(template) === 'string')
         {
-            this.appendDomNode(document.createTextNode(template));
+            this.domNode = document.createTextNode(template);
             return;
         }
 
         // HTML node?
         if (template instanceof HtmlString)
         {
-            let frag = document.createElement('template');
-            frag.innerHTML = template.html;
-            this.appendDomNode(frag.content);
+            this.domNode = document.createElement('span');
+            this.domNode.innerHTML = template.html;
             return;
         }
 
         // Dynamic text node
         if (typeof(template) === 'function')
         {
-            let text = template.apply(null, this.itemContext);
+            let text = this.invokeCallback(template);
             if (typeof(text) === 'string')
             {
                 let dnode = document.createTextNode(text);
-                this.registerUpdateHandler(() => { dnode.nodeValue = template.apply(null, this.itemContext); });
+                this.registerUpdateHandler(() => { dnode.nodeValue = this.invokeCallback(template); });
                 this.appendDomNode(dnode);
                 return;
             }
@@ -137,7 +227,7 @@ class VNode
                 let dnode = document.createElement('span');
                 dnode.innerHTML = text.html;
                 this.registerUpdateHandler(() => { 
-                    dnode.innerHTML = template.apply(null, this.itemContext).html; 
+                    dnode.innerHTML = this.invokeCallback(template).html; 
                 });
                 this.appendDomNode(dnode);
                 return;
@@ -153,6 +243,9 @@ class VNode
             throw new Error("A template element can't have both 'text' and 'childNodes'");
 
 
+        return this.mountConditional(this);
+
+/*
         // 'foreach' item?
         if (template.foreach === undefined)
             return this.mountConditional(this);
@@ -160,29 +253,91 @@ class VNode
         // Dynamic foreach?
         if (typeof(template.foreach) === 'function')
         {
-            this.mountItems(template.foreach.apply(null, this.itemContext));
+            this.mountItems(this.invokeCallback(template.foreach));
             this.registerUpdateHandler(() => this.patchItems());
         }
         else
         {
             this.mountItems(template.foreach);
         }
+*/
     }
 
+/*
     patchItems()
     {
-        let newItems = template.foreach.apply(null, this.itemContext);
+        // Default key is the item itself
+        let item_key = this.template.item_key ?? ((item) => item);
+
+        // Get the new items
+        let newItems = this.invokeCallback(this.template.foreach);
+
+        // Get item keys and contexts
+        let newItemInfos = [];
+        for (let i=0; i<newItems.length; i++)
+        {
+            let info = {
+                itemContext: [
+                    newItems[i],
+                    i,
+                ],
+            }
+            info.key = this.invokeCallback(item_key);
+            newItemInfos.push(info);
+        }
+
+        let dp = this.getDomPosition();
+
+        // Run the diff algorithm
+        diff(this.itemNodes, newItemInfos, apply_diff.bind(this), (a, b) => a.key == b.key);
+
+        function apply_diff(op, index, count)
+        {
+            if (op == 'insert')
+            {
+                for (let i=0; i<count; i++)
+                {
+                    // Get info about the new item
+                    let newItemInfo = newItemInfos[index];
+
+                    // Create new vnode
+                    let vnode = new VNode(this.template, this.component, newItemInfo.itemContext);
+
+                    // Store the item key
+                    vnode.key = newItemInfo.key;
+
+                    // Insert into the item nodes collection
+                    this.itemNodes.splice(index, 0, vnode);
+
+                    // Setup position
+                    vnode.getDomPosition = function()
+                    {
+                        return {
+                            node: dp.node,
+                            index: 0,
+                        }
+                    }
+
+                    // Mount it
+                    vnode.mountConditional();
+                }
+            }
+            else
+            {
+                for (let i=0; i<count; i++)
+                {
+                }
+            }
+        }
     }
 
     mountItems(items)
     {
         // Default key is the item itself
-        if (this.item_key === undefined)
-            this.item_key = (item) => item;
+        let item_key = this.template.item_key ?? ((item) => item);
 
         let index = 0;
         this.itemNodes = [];
-        let dp = this.getDomPosition();
         for (let item of items)
         {
             // Create item context
@@ -195,7 +350,7 @@ class VNode
             let itemNode = new VNode(this.template, this.component, itemContext);
 
             // Store item key
-            itemNode.key = this.template.item_key.apply(null, itemContext);
+            itemNode.key = this.invokeCallback(item_key);
 
             // Store it
             this.itemNodes.push(itemNode);
@@ -216,6 +371,7 @@ class VNode
             index++;
         }
     }
+    */
 
     mountConditional()
     {
@@ -236,7 +392,7 @@ class VNode
         }
 
         // Work out if currently included?
-        this.excluded = !template.condition.apply(null, this.itemContext);
+        this.excluded = !this.invokeCallback(template.condition);
 
         // Mount it if current include
         if (!this.excluded)
@@ -244,20 +400,41 @@ class VNode
 
         // Register update handler
         this.registerUpdateHandler(() => {
-            let new_excluded = !template.condition.apply(null, this.itemContext);
+            let new_excluded = !this.invokeCallback(template.condition);
             if (new_excluded != this.excluded)
             {
                 this.excluded = new_excluded;
 
                 if (new_excluded)
                 {  
-                    // Remove
-                    this.removeAllDomNodes();
+                    // Remove from DOM
+                    for (let dn in this.getDomNodes())
+                    {
+                        dn.parentNode.removeChild(dn);
+                    }
+
+                    // Revoke update handler from parent node
+                    this.owner.revokeUpdateHandler(this.update);
+
+                    // Reset child nodes
+                    this.childNodes = [];
+                    this.domNode = null;
                 }
                 else
                 {
-                    // Create
+                    // Create child Nodes
                     this.mountItem();
+
+                    // Register update handler with parent
+                    if (this.needsUpdate)
+                        this.owner.registerUpdateHandler(this.update);
+
+                    // Add child nodes
+                    let dp = this.owner.getDomPosition();
+                    for (let dn in this.getDomNodes())
+                    {
+                        dp.parent.insertBefore(dn, dp.before);
+                    }
                 }
             }
         });
@@ -271,39 +448,41 @@ class VNode
             return this.mountNonElement();
     }
 
+    invokeCallback(callback)
+    {
+        return callback.apply(null, this.item?.item, this.item);
+    }
+
     mountElement()
     {
         let template = this.template;
 
         // Create the dom node
-        let domNode = document.createElement(template.type);
-        this.appendDomNode(domNode);
+        let domNode = this.domNode = document.createElement(template.type);
 
         // Bound node?
         if (template.bind !== undefined)
         {
-            if (this.itemContext)
+            if (this.item)
                 throw new Error("Can't bind item elements");
             
             // Store reference in component
-            this.component[template.bind] = domNode;
+            this.owner.bind(template.bind, domNode);
 
             // Clear it on unmount
             this.registerUnmountHandler(() => {
-                if (this.component[template.bind] == domNode)
-                    delete this.component[template.bind];
+                this.owner.unbind(template.bind, domNode);
             });
         }
 
         // Helper for mapping dynamic values
-        let itemContext = this.itemContext;
         let self = this;
         function map_dynamic(value, handler)
         {
             if (typeof(value) === 'function')
             {
-                handler(value.apply(null, itemContext));
-                self.registerUpdateHandler(() => handler(value.apply(null, itemContext)));
+                handler(self.invokeCallback(value));
+                self.registerUpdateHandler(() => handler(self.invokeCallback(value)));
             }
             else
             {
@@ -367,7 +546,7 @@ class VNode
         }
 
         // Child nodes
-        this.mountChildNodes(domNode, 0);
+        this.mountChildNodes();
     }
 
     mountNonElement()
@@ -376,57 +555,36 @@ class VNode
             throw new Error("Can't bind a non-element ('type' not set)");
 
         // Mount child elements into our parent node
-        let dp = this.getDomPosition();
-        return this.mountChildNodes(dp.domNode, dp.index);
+        return this.mountChildNodes();
     }
 
-    mountChildNodes(domNode, baseIndex)
+    mountChildNodes()
     {
         // No child nodes?
         if (!this.template.childNodes || this.template.childNodes.length == 0)
             return;
-
-        // Fast dom position during mount
-        let getDomPositionMount = function(node)
-        {
-            return {
-                node: domNode,
-                index: -1,
-            }
-        };
-
-        // Slower dom position during update
-        let getDomPositionUpdate = function(node)
-        {
-            let index = baseIndex;
-            for (let n of this.childNodes)
-            {
-                if (n == node)
-                    break;
-                index += n.domNodes.length;
-            }
-            return {
-                index,
-                node: domNode,
-            }
-        }.bind(this);
-
         
         // mount nodes
-        this.childNodes = [];
         this.template.childNodes.forEach(x => {
             // Create vnode
-            let vnode = new VNode(x, this.component, this.itemContext);
+            let vnode = new VNode(this, x, this.item);
             this.childNodes.push(vnode);
 
             // Mount it
-            vnode.getDomPosition = getDomPositionMount;
             vnode.mount();
-            vnode.getDomPosition = getDomPositionUpdate;
 
             // Track for updates
             if (vnode.needsUpdate)
                 this.registerUpdateHandler(() => vnode.update());
+
+            // Add child dom nodes to this node (unless we're a template node)
+            if (this.domNode)
+            {
+                for (let dn in vnode.getDomNodes())
+                {
+                    this.domNode.appendChild(dn);
+                }
+            }
         });
     }
 }
@@ -436,23 +594,32 @@ export class Component
 {
     constructor()
     {
+        super();
     }
 
     mount(domNode)
     {
-        this.vnode = new VNode(this.template, this);
-        this.vnode.getDomPosition = function(node)
-        {
-            return {
-                index: 0,
-                node: domNode,
-            }
-    }
+        this.vnode = new VNode(this, this.template);
         this.vnode.mount();
+        for (let dn in this.vnode.getDomNodes())
+        {
+            domNode.appendChild(dn);
+        }
     }
 
     update()
     {
         this.vnode.update();
+    }
+
+    bind(name, value)
+    {
+        this[name] = value;
+    }
+
+    unbind(name, value)
+    {
+        if (thia[name] == value)
+            delete this[name];
     }
 }

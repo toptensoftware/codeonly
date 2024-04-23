@@ -1,5 +1,6 @@
 import { Component, html } from "./codeonly/codeonly.js";
 
+
 class TestComponent extends Component
 {
     constructor()
@@ -69,9 +70,18 @@ class ListComponent extends Component
             type: "div",
             childNodes: [
                 {
-                    type: "div",
                     foreach: () => this.items,
-                    text: (item, index) => `#${index + 1}: ${item}`,
+                    type: "div",
+                    childNodes: [
+                        {
+                            type: "button",
+                            text: "Delete",
+                        },
+                        {
+                            type: "span",
+                            text: (item, index) => `#${index + 1}: ${item}`,
+                        },
+                    ]
                 },
                 {
                     type: "div",
