@@ -2,6 +2,26 @@ import { camel_to_dash } from "./Utils.js";
 import { HtmlString } from "./HtmlString.js";
 import { diff } from './diff.js';
 
+
+let frameCallbacks = [];
+function nextFrame(fn)
+{
+    if (!fn)
+        return;
+    frameCallbacks.push(fn);
+    if (frameCallbacks.length == 1)
+    {
+        requestAnimationFrame(dispatchFrameCallbacks);
+    }
+}
+
+function dispatchFrameCallbacks()
+{
+    let pending = frameCallbacks;
+    frameCallbacks = [];
+    pending.forEach(x => x());
+}
+
 class VNode
 {
     constructor(owner, template, item)
@@ -10,6 +30,15 @@ class VNode
         this.template = template;
         if (item !== undefined)
             this.item = item;
+    }
+
+    invalidate()
+    {
+        if (this.invalid)
+            return;
+
+        this.invalid = true;
+        nextFrame(this.update);
     }
 
     bind(name, value)
@@ -22,34 +51,44 @@ class VNode
         this.owner.unbind(name, value);
     }
 
-    // Get all the dom nodes from this node
-    // that need to be added to the parent node
-    *getDomNodes()
+    registerUpdateHandler(fn)
     {
-        // If this is a visible, non-template node
-        // then we have one single root dom node
-        if (this.domNode)
-        {
-            yield this.domNode;
+        if (!fn)
             return;
-        }
+        if (!this.updateHandlers)
+            this.updateHandlers = [];
+        this.updateHandlers.push(fn);
+    }
 
-        // If this is an excluded node then
-        // the this.domNode will be null, but
-        // so will the child nodes collection
+    revokeUpdateHandler(fn)
+    {
+        if (!fn)
+            return;
+        if (!this.updateHandlers)
+            return;
+        let index = this.updateHandlers.indexOf(fn);
+        if (index>=0)
+            this.updateHandlers.splice(index, 1);
+    }
 
-        // If this is a template then the dom nodes
-        // come from the child nodes
-        if (this.childNodes)
-        {
-            for (let c of this.childNodes)
-            {
-                for (let n in tc.getDomNodes())
-                {
-                    yield n;
-                }
-            }
-        }
+    _update()
+    {
+        this.invalid = false;
+        this.updateHandlers?.forEach(x => x());  
+    }
+
+    get update()
+    {
+        if (!this.updateHandlers)
+            return null;
+        if (!this._boundUpdate)
+            this._boundUpdate = this._update.bind(this);
+        return this._boundUpdate;
+    }
+
+    invokeCallback(callback)
+    {
+        return callback.call(null, this.item?.item, this.item);
     }
 
     // Get the first dom node of this vnode
@@ -57,15 +96,8 @@ class VNode
     {
         if (this.domNode)
             return this.domNode;
-        if (this.childNodes)
-        {
-            for (let c of this.childNodes)
-            {
-                let n = c.getFirstDomNode();
-                if (n)
-                    return n;
-            }
-        }
+        if (this.fragmentNodes && this.fragmentNodes.length > 0)
+            return this.fragmentNodes[0];
         return null;
     }
 
@@ -74,15 +106,8 @@ class VNode
     {
         if (this.domNode)
             return this.domNode;
-        if (this.childNodes)
-        {
-            for (let i=this.childNodes.length-1; i>=0; i--)
-            {
-                let n = c.getLastDomNode();
-                if (n)
-                    return n;
-            }
-        }
+        if (this.fragmentNodes && this.fragmentNodes.length > 0)
+            return this.fragmentNodes[this.fragmentNodes.length - 1];
         return null;
     }
 
@@ -92,8 +117,8 @@ class VNode
     {
         console.assert(this.childNodes);
 
-        // Find the child node
-        let childNodeIndex = this.childNodes.indexOf(childNode);
+        // Find the child node (do reverse search as faster when creating initial dom)
+        let childNodeIndex = this.childNodes.lastIndexOf(childNode);
         console.assert(childNodeIndex >= 0);
 
         // Look for next node to insert before
@@ -117,7 +142,7 @@ class VNode
             {
                 return {
                     parent: dn.parentNode,
-                    before: null,
+                    before: dn.nextSibling,
                 }
             }
         }
@@ -137,62 +162,52 @@ class VNode
         return this.owner.getDomPosition(this);
     }
 
-    registerUpdateHandler(fn)
+    create()
     {
-        if (!fn)
-            return;
-        if (!this.updateHandlers)
-            this.updateHandlers = [];
-        this.updateHandlers.push(fn);
+        // Create DOM
+        this.createDom();
+
+        // Get insert position
+        let dp = this.owner.getDomPosition(this);
+
+        // Handle fragment nodes differently...
+        if (this.isFragment)
+        {
+            this.fragmentNodes = [ ...this.domNode.childNodes ];
+            dp.parent.insertBefore(this.domNode, dp.before);
+            this.domNode = null;
+        }
+        else
+        {
+            dp.parent.insertBefore(this.domNode, dp.before);
+        }
     }
 
-    revokeUpdateHandler(fn)
+    destroy()
     {
-        if (!fn)
-            return;
-        if (!this.updateHandlers)
-            return;
-        let index = this.updateHandlers.indexOf(fn);
-        if (index>=0)
-            this.updateHandlers.splice(index, 1);
+        // Destroy DOM
+        if (this.isFragment)
+        {
+            this.fragmentNodes.forEach(x => x.parentNode.removeChild(x));
+            delete this.fragmentNodes;
+        }
+        else
+        {
+            this.domNode.parentNode.removeChild(this.domNode);
+            delete this.domNode;
+        }
+
+        // Remove all update handlers
+        delete this.updateHandlers;
+
+        // Remove binding
+        if (this.template.bind)
+        {
+            this.owner.unbind(template.bind, domNode);
+        }
     }
 
-    registerUnmountHandler(fn)
-    {
-        if (!fn)
-            return;
-        if (!this.unmountHandlers)
-            this.unmountHandlers = [];
-        this.unmountHandlers.push(fn);
-    }
-
-    revokeUnmountHandler(fn)
-    {
-        if (!fn)
-            return;
-        if (!this.unmountHandlers)
-            return;
-        let index = this.unmountHandlers.indexOf(fn);
-        if (index>=0)
-            this.unmountHandlers.splice(index, 1);
-    }
-
-    get needsUpdate() 
-    {  
-        return !!this.updateHandlers;
-    }
-
-    update()
-    {
-        this.updateHandlers?.forEach(x => x());  
-    }
-
-    unmount()
-    {
-        this.unmountHandlers?.forEach(x => x());
-    }
-
-    mount()
+    createDom()
     {
         let template = this.template;
 
@@ -217,19 +232,17 @@ class VNode
             let text = this.invokeCallback(template);
             if (typeof(text) === 'string')
             {
-                let dnode = document.createTextNode(text);
-                this.registerUpdateHandler(() => { dnode.nodeValue = this.invokeCallback(template); });
-                this.appendDomNode(dnode);
+                this.domNode = document.createTextNode(text);
+                this.registerUpdateHandler(() => { this.domNode.nodeValue = this.invokeCallback(template); });
                 return;
             }
             else if (text instanceof HtmlString)
             {
-                let dnode = document.createElement('span');
-                dnode.innerHTML = text.html;
+                this.domNode = document.createElement('span');
+                this.domNode.innerHTML = text.html;
                 this.registerUpdateHandler(() => { 
-                    dnode.innerHTML = this.invokeCallback(template).html; 
+                    this.domNode.innerHTML = this.invokeCallback(template).html; 
                 });
-                this.appendDomNode(dnode);
                 return;
             }
             else
@@ -242,218 +255,14 @@ class VNode
         if (template.text !== undefined && template.childNodes !== undefined)
             throw new Error("A template element can't have both 'text' and 'childNodes'");
 
-
-        return this.mountConditional(this);
-
-/*
-        // 'foreach' item?
-        if (template.foreach === undefined)
-            return this.mountConditional(this);
-
-        // Dynamic foreach?
-        if (typeof(template.foreach) === 'function')
-        {
-            this.mountItems(this.invokeCallback(template.foreach));
-            this.registerUpdateHandler(() => this.patchItems());
-        }
-        else
-        {
-            this.mountItems(template.foreach);
-        }
-*/
-    }
-
-/*
-    patchItems()
-    {
-        // Default key is the item itself
-        let item_key = this.template.item_key ?? ((item) => item);
-
-        // Get the new items
-        let newItems = this.invokeCallback(this.template.foreach);
-
-        // Get item keys and contexts
-        let newItemInfos = [];
-        for (let i=0; i<newItems.length; i++)
-        {
-            let info = {
-                itemContext: [
-                    newItems[i],
-                    i,
-                ],
-            }
-            info.key = this.invokeCallback(item_key);
-            newItemInfos.push(info);
-        }
-
-        let dp = this.getDomPosition();
-
-        // Run the diff algorithm
-        diff(this.itemNodes, newItemInfos, apply_diff.bind(this), (a, b) => a.key == b.key);
-
-        function apply_diff(op, index, count)
-        {
-            if (op == 'insert')
-            {
-                for (let i=0; i<count; i++)
-                {
-                    // Get info about the new item
-                    let newItemInfo = newItemInfos[index];
-
-                    // Create new vnode
-                    let vnode = new VNode(this.template, this.component, newItemInfo.itemContext);
-
-                    // Store the item key
-                    vnode.key = newItemInfo.key;
-
-                    // Insert into the item nodes collection
-                    this.itemNodes.splice(index, 0, vnode);
-
-                    // Setup position
-                    vnode.getDomPosition = function()
-                    {
-                        return {
-                            node: dp.node,
-                            index: 0,
-                        }
-                    }
-
-                    // Mount it
-                    vnode.mountConditional();
-                }
-            }
-            else
-            {
-                for (let i=0; i<count; i++)
-                {
-                }
-            }
-        }
-    }
-
-    mountItems(items)
-    {
-        // Default key is the item itself
-        let item_key = this.template.item_key ?? ((item) => item);
-
-        let index = 0;
-        this.itemNodes = [];
-        for (let item of items)
-        {
-            // Create item context
-            let itemContext = [
-                item,
-                index,
-            ];
-
-            // Create loop item vnode
-            let itemNode = new VNode(this.template, this.component, itemContext);
-
-            // Store item key
-            itemNode.key = this.invokeCallback(item_key);
-
-            // Store it
-            this.itemNodes.push(itemNode);
-
-            // Create mount context for the item
-            itemNode.getDomPosition = function()
-            {
-                return {
-                    node: dp.node,
-                    index: dp.node.childNodes.length,
-                }
-            };
-
-            // Mount it
-            itemNode.mountConditional();
-
-            // Bump counter
-            index++;
-        }
-    }
-    */
-
-    mountConditional()
-    {
-        let template = this.template;
-
-        // Conditional?
-        if (template.condition === undefined)
-            return this.mountItem();
-
-        // Static condition?
-        if (typeof(template.condition) !== 'function')
-        {
-            if (template.condition)
-                this.mountItem();
-            else
-                this.excluded = true;
-            return;
-        }
-
-        // Work out if currently included?
-        this.excluded = !this.invokeCallback(template.condition);
-
-        // Mount it if current include
-        if (!this.excluded)
-            this.mountItem();
-
-        // Register update handler
-        this.registerUpdateHandler(() => {
-            let new_excluded = !this.invokeCallback(template.condition);
-            if (new_excluded != this.excluded)
-            {
-                this.excluded = new_excluded;
-
-                if (new_excluded)
-                {  
-                    // Remove from DOM
-                    for (let dn in this.getDomNodes())
-                    {
-                        dn.parentNode.removeChild(dn);
-                    }
-
-                    // Revoke update handler from parent node
-                    this.owner.revokeUpdateHandler(this.update);
-
-                    // Reset child nodes
-                    this.childNodes = [];
-                    this.domNode = null;
-                }
-                else
-                {
-                    // Create child Nodes
-                    this.mountItem();
-
-                    // Register update handler with parent
-                    if (this.needsUpdate)
-                        this.owner.registerUpdateHandler(this.update);
-
-                    // Add child nodes
-                    let dp = this.owner.getDomPosition();
-                    for (let dn in this.getDomNodes())
-                    {
-                        dp.parent.insertBefore(dn, dp.before);
-                    }
-                }
-            }
-        });
-    }
-
-    mountItem()
-    {
+        // Create DOM
         if (this.template.type)
-            return this.mountElement();
+            this.createDomElement();
         else
-            return this.mountNonElement();
+            this.createFragmentElement();
     }
 
-    invokeCallback(callback)
-    {
-        return callback.apply(null, this.item?.item, this.item);
-    }
-
-    mountElement()
+    createDomElement()
     {
         let template = this.template;
 
@@ -468,11 +277,6 @@ class VNode
             
             // Store reference in component
             this.owner.bind(template.bind, domNode);
-
-            // Clear it on unmount
-            this.registerUnmountHandler(() => {
-                this.owner.unbind(template.bind, domNode);
-            });
         }
 
         // Helper for mapping dynamic values
@@ -546,46 +350,220 @@ class VNode
         }
 
         // Child nodes
-        this.mountChildNodes();
+        this.createChildNodes();
     }
 
-    mountNonElement()
+    createFragmentElement()
     {
         if (this.template.bind !== undefined)
             throw new Error("Can't bind a non-element ('type' not set)");
 
+        // Create a temporary fragment to hold the child nodes
+        this.isFragment = true;
+        this.domNode = document.createDocumentFragment();
+
         // Mount child elements into our parent node
-        return this.mountChildNodes();
+        return this.createChildNodes();
     }
 
-    mountChildNodes()
+    createChildNodes()
     {
         // No child nodes?
-        if (!this.template.childNodes || this.template.childNodes.length == 0)
+        if (!this.template.childNodes)
             return;
         
-        // mount nodes
-        this.template.childNodes.forEach(x => {
-            // Create vnode
-            let vnode = new VNode(this, x, this.item);
-            this.childNodes.push(vnode);
-
-            // Mount it
-            vnode.mount();
-
-            // Track for updates
-            if (vnode.needsUpdate)
-                this.registerUpdateHandler(() => vnode.update());
-
-            // Add child dom nodes to this node (unless we're a template node)
-            if (this.domNode)
+        this.childNodes = [];
+        for (let childNodeTemplate of this.template.childNodes)
+        {
+            // foreach loop?
+            if (childNodeTemplate.foreach !== undefined)
             {
-                for (let dn in vnode.getDomNodes())
+                this.createForEachNodes(childNodeTemplate);
+            }
+            else if (childNodeTemplate.condition !== undefined)
+            {
+                this.createConditionalNode(childNodeTemplate);
+            }
+            else
+            {
+                // Create regular child vnode
+                let childNode = new VNode(this, childNodeTemplate, this.item);
+                this.childNodes.push(childNode);
+                childNode.create();
+                this.registerUpdateHandler(childNode.update);
+            }
+        }
+    }
+
+    createForEachNodes(childNodeTemplate)
+    {
+        // If this is the first foreach block, setup the array of foreach block infos
+        if (!this.forEachBlocks)
+            this.forEachBlocks = [];
+
+        // Work out how many nodes besides items nodes so far
+        let nonForEachNodeCount = this.childNodes.length - this.forEachBlocks.reduce((acc, x) => {
+            return acc + x.itemNodes.length;
+        }, 0);
+
+        // Create for each block info
+        let forEachBlock = {
+            itemNodes: [],
+            index: this.forEachBlocks.length
+        };
+        this.forEachBlocks.push(forEachBlock);
+
+        // Get the items
+        let foreach = childNodeTemplate.foreach;
+        let item_key = childNodeTemplate.item_key ?? ((item) => item);
+        let itemNodes = forEachBlock.itemNodes;
+
+        let items;
+        if (typeof(foreach) === 'function')
+        {
+            items = this.invokeCallback(foreach);
+            this.registerUpdateHandler(patchItems.bind(this));
+        }
+        else
+        {
+            items = foreach;
+        }
+
+        // Create child node items
+        let index = 0;
+        for (let item of items)
+        {
+            let itemContext = {
+                item,
+                outer: this.item,
+            };
+
+            itemContext.key = item_key.call(null, item, itemContext);
+            itemContext.index = index++;
+
+            let childNode = new VNode(this, childNodeTemplate, itemContext);
+            itemNodes.push(childNode);
+            this.childNodes.push(childNode);
+            childNode.create();
+            //this.createChildNode(childNode);
+        }
+
+        // Handle updates
+        function patchItems()
+        {
+            // Get the new items and their keys
+            let newItems = this.invokeCallback(foreach);
+            let newItemKeys = newItems.map(item => item_key.call(null, item, { item, outer: this.item }));
+
+            // Work out the base index for items in this list
+            let baseChildNodeIndex = nonForEachNodeCount;
+            for (let i=0; i<forEachBlock.index; i++)
+            {
+                baseChildNodeIndex += this.forEachBlocks[i].itemNodes.length;
+            }
+
+            diff(itemNodes, newItemKeys, 
+                (op, index, count) => {
+                    if (op == 'insert')
+                    {
+                        for (let i=0; i<count; i++)
+                        {
+                            // Create new item context
+                            let itemContext = {
+                                item: newItems[index + i],
+                                outer: this.item,
+                                key: newItemKeys[index + i],
+                                index: index + i,
+                            };
+                
+                            // Create new child node
+                            let childNode = new VNode(this, childNodeTemplate, itemContext);
+                            this.childNodes.splice(baseChildNodeIndex + index + i, 0, childNode);
+                            itemNodes.splice(index + i, 0, childNode);
+                            childNode.create();
+                            //this.createChildNode(childNode);
+                        }
+                    }
+                    else
+                    {
+                        for (let i=0; i<count; i++)
+                        {
+                            // Delete child nodes
+                            let childNode = itemNodes[index + i];
+                            //this.destroyChildNode(childNode);
+                            childNode.destroy();
+                        }
+                        itemNodes.splice(index, count);
+                        this.childNodes.splice(baseChildNodeIndex + index, count);
+                }
+                }, 
+                (a, b) => {
+                    return a.item.key == b;
+                }
+            );
+
+            if (childNodeTemplate.item_needs_index === true)
+            {
+                for (let i=0; i<itemNodes.length; i++)
                 {
-                    this.domNode.appendChild(dn);
+                    let itemNode = itemNodes[i];
+                    if (itemNode.item.index != i)
+                    {
+                        itemNode.item.index = i;
+                        itemNode.update?.();
+                    }
                 }
             }
-        });
+        }
+    }
+
+    createConditionalNode(childNodeTemplate)
+    {
+        let childNode = new VNode(this, childNodeTemplate, this.item);
+        this.childNodes.push(childNode);
+
+        if (typeof(childNodeTemplate.condition) === 'function')
+        {
+            let callback = childNodeTemplate.condition;
+            let included = this.invokeCallback(callback);
+            this.registerUpdateHandler(() => {
+
+                let new_included = this.invokeCallback(callback);
+                if (new_included != included)
+                {
+                    included = new_included;
+                    if (included)
+                    {
+                        this.createChildNode(childNode);
+                    }
+                    else
+                    {
+                        this.destroyChildNode(childNode);
+                    }
+                }
+
+            });
+        }
+        else
+        {
+            // statically excluded node?
+            if (!childNodeTemplate.condition)
+                return;
+        }
+
+        this.createChildNode(childNode);
+    }
+
+    createChildNode(childNode)
+    {
+        childNode.create();
+        this.registerUpdateHandler(childNode.update);
+    }
+
+    destroyChildNode(childNode)
+    {
+        this.revokeUpdateHandler(childNode.update);
+        childNode.destroy();
     }
 }
 
@@ -594,22 +572,32 @@ export class Component
 {
     constructor()
     {
-        super();
+    }
+
+
+    getDomPosition(vnode)
+    {
+        return {
+            parent: this.domNode,
+            before: null,
+        }
     }
 
     mount(domNode)
     {
+        this.domNode = domNode;
         this.vnode = new VNode(this, this.template);
-        this.vnode.mount();
-        for (let dn in this.vnode.getDomNodes())
-        {
-            domNode.appendChild(dn);
-        }
+        this.vnode.create();
     }
 
     update()
     {
         this.vnode.update();
+    }
+
+    invalidate()
+    {
+        this.vnode.invalidate();
     }
 
     bind(name, value)

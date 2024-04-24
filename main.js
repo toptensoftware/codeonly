@@ -10,6 +10,7 @@ class TestComponent extends Component
         this.count = 0;
 
         this.template = {
+            type: 'div',
             childNodes: [
                 {
                     type: 'div',
@@ -21,30 +22,24 @@ class TestComponent extends Component
                             text: () => `click me #${this.count}`,
                             on_click: () => {
                                 this.count++;
-                                this.update();
+                                this.invalidate();
                             },
                             attr_type: 'button',
                             attr_dataMyCount: () => this.count,
                         },
                         {
-                            type: 'label',
-                            text: ' TRUE',
-                            condition: true,
-                        },
-                        {
-                            type: 'label',
-                            text: ' FALSE',
-                            condition: false,
-                        },
-                        {
-                            type: 'label',
-                            text: ' MOD 2',
-                            condition: () => this.count % 2 == 0,
-                        },
-                        {
-                            type: 'label',
-                            text: ' MOD 3',
-                            condition: () => this.count % 3 == 0,
+                            childNodes: [
+                                {
+                                    type: 'label',
+                                    text: ' MOD 2',
+                                    condition: () => this.count % 2 == 0,
+                                },
+                                {
+                                    type: 'label',
+                                    text: ' MOD 3',
+                                    condition: () => this.count % 3 == 0,
+                                },
+                            ]
                         },
                         () => ` - text #${this.count} node - `,
                         {
@@ -53,7 +48,11 @@ class TestComponent extends Component
                         },
                     ]
                 },
-                () => html(`<b>Hello</b> World <i>${this.count}</i>`),
+                html(`<b>Hello</b> World `),
+                {
+                    type: 'i',
+                    text: () => `${this.count}`,
+                },
             ]
         };
     }
@@ -70,20 +69,6 @@ class ListComponent extends Component
             type: "div",
             childNodes: [
                 {
-                    foreach: () => this.items,
-                    type: "div",
-                    childNodes: [
-                        {
-                            type: "button",
-                            text: "Delete",
-                        },
-                        {
-                            type: "span",
-                            text: (item, index) => `#${index + 1}: ${item}`,
-                        },
-                    ]
-                },
-                {
                     type: "div",
                     childNodes: [
                         "Insert: ",
@@ -92,7 +77,7 @@ class ListComponent extends Component
                             text: "Start",
                             on_click: () => {
                                 this.items.unshift(nextIndex++);
-                                this.update();
+                                this.invalidate();
                             }
                         },
                         {
@@ -100,7 +85,7 @@ class ListComponent extends Component
                             text: "Middle",
                             on_click: () => {
                                 this.items.splice(this.items.length / 2, 0, nextIndex++);
-                                this.update();
+                                this.invalidate();
                             }
                         },
                         {
@@ -108,11 +93,96 @@ class ListComponent extends Component
                             text: "End",
                             on_click: () => {
                                 this.items.push(nextIndex++);
-                                this.update();
+                                this.invalidate();
+                            }
+                        },
+                        {
+                            type: "button",
+                            text: "End x1000",
+                            on_click: () => {
+                                for (let i=0; i< 1000; i++)
+                                    this.items.push(nextIndex++);
+                                this.invalidate();
+                            }
+                        },
+                        {
+                            type: "button",
+                            text: "direct x1000",
+                            on_click: () => {
+                                for (let i=0; i < 1000; i++)
+                                {
+                                    let node = document.createElement("div");
+                                    node.innerText = `#${i}: direct`;
+                                    this.heading.before(node);
+                                }
+                            }
+                        }
+
+
+                    ]
+                },
+                {
+                    type: "div",
+                    childNodes: [
+                        "Delete: ",
+                        {
+                            type: "button",
+                            text: "Start",
+                            on_click: () => {
+                                this.items.shift();
+                                this.invalidate();
+                            }
+                        },
+                        {
+                            type: "button",
+                            text: "Middle",
+                            on_click: () => {
+                                this.items.splice(this.items.length / 2, 1);
+                                this.invalidate();
+                            }
+                        },
+                        {
+                            type: "button",
+                            text: "End",
+                            on_click: () => {
+                                this.items.pop();
+                                this.invalidate();
+                            }
+                        },
+                        {
+                            type: "button",
+                            text: "All",
+                            on_click: () => {
+                                this.items = [];
+                                this.invalidate();
                             }
                         }
                     ]
-                }
+                },
+                {
+                    type: "p",
+                    text: "---------------------",
+                    bind: "heading",
+                },
+                {   
+                    foreach: () => this.items,
+                    type: "div",
+                    text: (item, ctx) => `#${ctx.index + 1}: ${item}`,
+                },
+                {
+                    type: "p",
+                    text: "---------------------",
+                },
+                {   
+                    foreach: () => this.items,
+                    type: "div",
+                    text: (item, ctx) => `#${ctx.index + 1}: ${item}`,
+                },
+                {
+                    type: "p",
+                    text: "---------------------",
+                },
+
             ]
         }
     }
