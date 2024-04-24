@@ -67,6 +67,7 @@ class ListComponent extends Component
         this.items = [ 1, 2, 3 ];
         this.template = {
             type: "div",
+            class: "main-div",
             childNodes: [
                 {
                     type: "div",
@@ -194,4 +195,14 @@ class ListComponent extends Component
 export function main()
 {
     new ListComponent().mount(document.getElementById("main"));
+
+    let style = document.createElement("style");
+    style.innerHTML = ".main-div { background-color: yellow}";
+    document.head.appendChild(style);
+
+    /*
+    let css = new CSSStyleSheet();
+    css.insertRule(".main-div { background-color: cyan}");
+    document.adoptedStyleSheets.push(css);
+    */
 }
