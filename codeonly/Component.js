@@ -397,6 +397,18 @@ class VNode
 
     createForEachNodes(childNodeTemplate)
     {
+        // Are items conditional?
+        let item_condition = childNodeTemplate.condition;
+        if (item_condition && typeof(item_condition) != 'function')
+        {
+            // All items excluded?
+            if (!item_condition)
+                return;
+
+            // All items included?
+            item_condition = null;
+        }
+
         // If this is the first foreach block, setup the array of foreach block infos
         if (!this.forEachBlocks)
             this.forEachBlocks = [];
@@ -406,7 +418,7 @@ class VNode
             return acc + x.itemNodes.length;
         }, 0);
 
-        // Create for each block info
+        // Create foreach block info
         let forEachBlock = {
             itemNodes: [],
             index: this.forEachBlocks.length
@@ -444,7 +456,12 @@ class VNode
             let childNode = new VNode(this, childNodeTemplate, itemContext);
             itemNodes.push(childNode);
             this.childNodes.push(childNode);
-            childNode.create();
+
+            if (item_condition != null)
+                childNode.excluded = !item_condition.call(null, item, itemContext);
+
+            if (!childNode.excluded)
+                childNode.create();
             //this.createChildNode(childNode);
         }
 
@@ -462,10 +479,19 @@ class VNode
                 baseChildNodeIndex += this.forEachBlocks[i].itemNodes.length;
             }
 
+            let pos = 0;
             diff(itemNodes, newItemKeys, 
                 (op, index, count) => {
+
+                    // Update condition on any existing nodes
+                    if (pos < index)
+                    {
+                        updateExistingItems(pos, index - pos);
+                    }
+
                     if (op == 'insert')
                     {
+                        pos = index + count;
                         for (let i=0; i<count; i++)
                         {
                             // Create new item context
@@ -480,7 +506,12 @@ class VNode
                             let childNode = new VNode(this, childNodeTemplate, itemContext);
                             this.childNodes.splice(baseChildNodeIndex + index + i, 0, childNode);
                             itemNodes.splice(index + i, 0, childNode);
-                            childNode.create();
+
+                            if (item_condition != null)
+                                childNode.excluded = !item_condition.call(null, itemContext.item, itemContext);
+
+                            if (!childNode.excluded)
+                                childNode.create();
                             //this.createChildNode(childNode);
                         }
                     }
@@ -491,7 +522,8 @@ class VNode
                             // Delete child nodes
                             let childNode = itemNodes[index + i];
                             //this.destroyChildNode(childNode);
-                            childNode.destroy();
+                            if (!childNode.excluded)
+                                childNode.destroy();
                         }
                         itemNodes.splice(index, count);
                         this.childNodes.splice(baseChildNodeIndex + index, count);
@@ -502,14 +534,42 @@ class VNode
                 }
             );
 
-            if (childNodeTemplate.item_needs_index === true)
+            // Update visibility of trailing items
+            if (pos < itemNodes.length)
             {
-                for (let i=0; i<itemNodes.length; i++)
+                updateExistingItems(pos, itemNodes.length - pos);
+            }
+
+            function updateExistingItems(index, count)
+            {
+                // Quit if not necessary
+                if (childNodeTemplate.item_needs_index !== true && !item_condition)
+                    return;
+
+                for (let i=0; i<count; i++)
                 {
-                    let itemNode = itemNodes[i];
-                    if (itemNode.item.index != i)
+                    let itemNode = itemNodes[index + i];
+
+                    if (item_condition)
                     {
-                        itemNode.item.index = i;
+                        let newExcluded = !item_condition.call(null, itemNode.item.item, itemNode.item);
+                        if (newExcluded != itemNode.excluded)
+                        {
+                            itemNode.excluded = newExcluded;
+                            if (newExcluded)
+                            {
+                                itemNode.create();
+                            }
+                            else
+                            {
+                                itemNode.destroy();
+                            }
+                        }
+                    }
+
+                    if (childNodeTemplate.item_needs_index && itemNode.item.index != index + i && !itemNode.excluded)
+                    {
+                        itemNode.item.index = index + i;
                         itemNode.update?.();
                     }
                 }

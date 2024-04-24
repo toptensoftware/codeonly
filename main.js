@@ -166,6 +166,8 @@ class ListComponent extends Component
                 },
                 {   
                     foreach: () => this.items,
+                    item_needs_index: true,
+                    condition: (item) => item < 5 || item > 10,
                     type: "div",
                     text: (item, ctx) => `#${ctx.index + 1}: ${item}`,
                 },
@@ -175,6 +177,7 @@ class ListComponent extends Component
                 },
                 {   
                     foreach: () => this.items,
+                    item_needs_index: true,
                     type: "div",
                     text: (item, ctx) => `#${ctx.index + 1}: ${item}`,
                 },
