@@ -1,4 +1,4 @@
-import { styles } from './Styles.js';
+import { process } from './ProcessStyles.js';
 
 let input = `
 
@@ -71,4 +71,4 @@ main,sub
 
 
 
-console.log(styles(input));
+console.log(process(input));

@@ -1,26 +1,8 @@
 import { camel_to_dash } from "./Utils.js";
 import { HtmlString } from "./HtmlString.js";
 import { diff } from './diff.js';
+import { nextFrame} from "./NextFrame.js";
 
-
-let frameCallbacks = [];
-function nextFrame(fn)
-{
-    if (!fn)
-        return;
-    frameCallbacks.push(fn);
-    if (frameCallbacks.length == 1)
-    {
-        requestAnimationFrame(dispatchFrameCallbacks);
-    }
-}
-
-function dispatchFrameCallbacks()
-{
-    let pending = frameCallbacks;
-    frameCallbacks = [];
-    pending.forEach(x => x());
-}
 
 class VNode
 {
