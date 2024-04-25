@@ -1,17 +1,21 @@
-import { compileTemplateCode } from "./TemplateCompiler.js";
+import { compileTemplateCode, compileTemplate } from "./TemplateCompiler.js";
 import { html } from "./HtmlString.js";
 
 let template = {
     type: "DIV",
     childNodes: [
         {
-            condition: () => false,
-            childNodes: [
-                { type: "P", text: "Hello" },
-                { type: "P", text: "World" },
-            ],
+            condition: () => true,
+            type: "P",
+            text: "Hello World",
+        },
+        {
+            foreach: [ "Apples", "Pears", "Bananas" ],
+            type: "P",
+            text: item => item ,
         }
     ]
 };
+
 
 console.log(compileTemplateCode(template).code);

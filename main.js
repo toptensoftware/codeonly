@@ -32,22 +32,17 @@ export function main()
     let template = compileTemplate({
         type: "div",
         childNodes: [
+            () => `${count}: `,
             {
-                type: "div",
-                text: "Hello World",
-                attr_dataId: () => count,
-                class_odd: () => count % 2 != 0,
-            },
-            {
-                type: "div",
-                text: () => html(`<b>Divisable by Three</b>`),
-                condition: () => count % 3 == 0,
-            },
-            {
-                condition: () => count % 5 != 0,
+                condition: () => count % 2 == 0,
                 childNodes: [
-                    () => html(`Inline html fragment: <b>#${count}</b><br/>`),
-                    () => `Inline text fragment: #${count}`,
+                    "Divisible by 2",
+                    {
+                        condition: () => count % 3 == 0,
+                        childNodes: [
+                            " and 3",
+                        ]
+                    }
                 ]
             }
         ]
