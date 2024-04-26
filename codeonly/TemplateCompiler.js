@@ -14,9 +14,19 @@ class NodeInfo
         this.childNodes = [];
     }
 
+    get isMultiRoot()
+    {
+        return this.isFragment || this.isForEach;
+    }
+
     get isFragment()
     {
         return !this.template.type;
+    }
+
+    get isForEach()
+    {
+        return !!this.template.foreach;
     }
 
     getClosureNodes(result)
@@ -31,10 +41,29 @@ class NodeInfo
         }
     }
 
+    get spreadNodes()
+    {
+        if (!this.isMultiRoot)
+            return this.name;
+        else
+            return `...${this.name}`;
+    }
+
+    get spreadNodesFlat()
+    {
+        if (this.isForEach)
+            return `...${this.name}`;
+
+        if (this.isFragment)
+            return this.spreadChildNodes;
+
+        return this.name;
+    }
+
     get spreadChildNodes()
     {
         return this.childNodes.map(x => {
-            if (!x.isFragment)
+            if (!x.isFragment && !x.isForEach)
                 return x.name;
             if (!x.childNodes.some(x => x.isFragment))
                 return `...${x.name}`;
@@ -61,7 +90,10 @@ export function compileTemplateCode(rootTemplate)
     let rootNodeInfo = new NodeInfo(null, `n${nodeId++}`, rootTemplate);
     nodeMap.set(rootNodeInfo.name, rootNodeInfo);
     
-    let rootClosure = compileNodeToClosure(rootNodeInfo);
+    let rootClosure = new ClosureBuilder();
+    rootClosure.callback_args = "ctx.model";
+    rootClosure.outer_item = "null";
+    compileNodeToClosure(rootClosure, rootNodeInfo);
 
     // Return the code and context
     return { 
@@ -71,10 +103,9 @@ export function compileTemplateCode(rootTemplate)
         }
     }
 
-    function compileNodeToClosure(ni)
+    function compileNodeToClosure(closure, ni)
     {
         // Setup closure
-        let closure = new ClosureBuilder();
         closure.addLocal(ni.name);
         closure.attach = closure.addFunction("attach").code;
         closure.update = closure.addFunction("update").code;
@@ -86,12 +117,10 @@ export function compileTemplateCode(rootTemplate)
         compileNode(closure, ni);
 
         let rnf = closure.addFunction('getRootNodesFlat');
-        rnf.code.appendLine(`return [${ni.spreadChildNodes}];`);
+        rnf.code.appendLine(`return [${ni.spreadNodesFlat}];`);
 
         // Return interface to the closure
         closure.code.appendLine(`return { rootNode: ${ni.name}, get rootNodesFlat() { return getRootNodesFlat(); }, attach, update, detach, destroy };`);
-
-        return closure;
     }
 
     // Recursively compile a node from a template
@@ -115,8 +144,8 @@ export function compileTemplateCode(rootTemplate)
         // Dynamic text?
         if (ni.template instanceof Function)
         {
-            closure.create.appendLine(`${ni.name} = helpers.createTextNode(ctx.callbacks[${callbacks.length}].call(ctx.model));`);
-            closure.update.appendLine(`${ni.name} = helpers.setNodeText(${ni.name}, ctx.callbacks[${callbacks.length}].call(ctx.model));`);
+            closure.create.appendLine(`${ni.name} = helpers.createTextNode(${format_callback(callbacks.length)});`);
+            closure.update.appendLine(`${ni.name} = helpers.setNodeText(${ni.name}, ${format_callback(callbacks.length)});`);
             callbacks.push(ni.template);
             return;
         }
@@ -251,9 +280,14 @@ export function compileTemplateCode(rootTemplate)
             // Add all the child nodes to this node
             if (ni.childNodes.length)
             {
-                let op = ni.isFragment ? "push" : "append";
+                let op = (ni.isFragment || ni.isForEach) ? "push" : "append";
                 closure.create.appendLine(`${ni.name}.${op}(${ni.childNodes.map(x => x.name).join(", ")});`);
             }
+        }
+
+        function format_callback(index)
+        {
+            return `ctx.callbacks[${index}].call(${closure.callback_args})`
         }
 
         // Helper to format a dynamic value on a node (ie: a callback)
@@ -266,7 +300,7 @@ export function compileTemplateCode(rootTemplate)
                 let codeBlock = CodeBuilder();
         
                 // Render the update code
-                formatter(codeBlock, `ctx.callbacks[${callbacks.length}].call(ctx.model)`);
+                formatter(codeBlock, format_callback(callbacks.length));
 
                 // Append the code to both the main code block (to set initial value) and to 
                 // the update function.
@@ -292,14 +326,14 @@ export function compileTemplateCode(rootTemplate)
             let nn = child_ni.name;
 
             // Before generating the node, generate the update code
-            closure.update.appendLine(`if (${nn}_included != ctx.callbacks[${callback_index}].call(ctx.model))`)
+            closure.update.appendLine(`if (${nn}_included != ${format_callback(callback_index)})`)
             closure.update.appendLine(`  ((${nn}_included = !${nn}_included) ? attach_${nn} : detach_${nn})();`);
             closure.update.appendLine(`if (${nn}_included) {`);
             closure.update.indent();
 
             // Generate code to create initial
             closure.addLocal(`${nn}_included`);
-            closure.create.appendLine(`${nn}_included = ctx.callbacks[${callback_index}].call(ctx.model);`);
+            closure.create.appendLine(`${nn}_included = ${format_callback(callback_index)};`);
             closure.create.appendLine(`if (${nn}_included)`);
             closure.create.appendLine(`  create_${nn}();`);
             closure.create.appendLine(`else`);
@@ -354,42 +388,65 @@ export function compileTemplateCode(rootTemplate)
 
         }
 
-    }
+        function compileForEachNode(child_ni)
+        {
+            // Create a function for the item
+            let itemClosureFn = closure.addFunction(`item_${child_ni.name}`, ["item", "index", "outer"]);
+            itemClosureFn.code.appendLine("let itemCtx = { item, index, outer }");
+            let itemClosure = new ClosureBuilder();
+            itemClosure.callback_args = "ctx.model, item, itemCtx";
+            itemClosure.outer_item = "outer";
+            compileNodeToClosure(itemClosure, child_ni);
+            itemClosure.appendTo(itemClosureFn.code);
 
-    function compileForEachNode(childNode, nn, varScope)
-    {
-    /*
-        // Create a function to render the item
-        closure.code.appendLine(`function create_${nn}_item(item)`)
-        closure.code.appendLine(`{`);
-        closure.code.indent();
+            // Create the sentinal comment node
+            closure.create.appendLine(`${child_ni.name} = [ document.createComment(' foreach ') ];`);
 
-        // Create a function to update the item and
-        // temporarily replace the main closure.update target
-        let updateItemCode = CodeBuilder();
-        closure.update = updateItemCode;
-        closure.update.appendLine(`function update_${nn}_item(item)`);
-        closure.update.appendLine(`{`);
-        closure.update.indent();
+            // Create an array for all the items
+            closure.create.appendLine(`let ${child_ni.name}_items = [];`);
 
-        // Render node
-        compileNode(childNode, `${nn}`, 'item');
+            if (!(child_ni.template.foreach instanceof Function))
+            {
+                let items = child_ni.template.foreach;
+                for (let i=0; i<items.length; i++)
+                {
+                    closure.create.appendLine(`${child_ni.name}_items.push(item_${child_ni.name}(${JSON.stringify(items[i])}, ${i}, ${closure.outer_item}));`);
+                }
+            }
 
-        closure.update.unindent();
-        closure.update.appendLine(`}`);
+        /*
+            // Create a function to render the item
+            closure.code.appendLine(`function create_${nn}_item(item)`)
+            closure.code.appendLine(`{`);
+            closure.code.indent();
+    
+            // Create a function to update the item and
+            // temporarily replace the main closure.update target
+            let updateItemCode = CodeBuilder();
+            closure.update = updateItemCode;
+            closure.update.appendLine(`function update_${nn}_item(item)`);
+            closure.update.appendLine(`{`);
+            closure.update.indent();
+    
+            // Render node
+            compileNode(childNode, `${nn}`, 'item');
+    
+            closure.update.unindent();
+            closure.update.appendLine(`}`);
+    
+            // Restore state
+            closure.update = saveclosure.update;
+            closure.code.unindent();
+            closure.code.appendLine(`}`);
+    
+            // Add the update item function
+            closure.code.append(updateItemCode);
+    
+            // Create the sentinal node
+        */
+        }
 
-        // Restore state
-        closure.update = saveclosure.update;
-        closure.code.unindent();
-        closure.code.appendLine(`}`);
-
-        // Add the update item function
-        closure.code.append(updateItemCode);
-
-        // Create the sentinal node
-        closure.code.appendLine(`${nn} = document.createComment('foreach');`);
-    */
-    }
+    }    
 
 
 }

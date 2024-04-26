@@ -2,7 +2,7 @@
     "configurations": [
     {
         "name": "Launch Program",
-        "program": "${workspaceFolder}/test/tests.js",
+        "program": "${workspaceFolder}/test/sandbox.js",
         "request": "launch",
         "skipFiles": [
             "<node_internals>/**"
