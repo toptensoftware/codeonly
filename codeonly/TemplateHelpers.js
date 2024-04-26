@@ -61,6 +61,8 @@ export let helpers = {
     },
     insertFragment(placeholder, fragmentNodes)
     {
+        fragmentNodes = fragmentNodes.flat(Infinity);
+
         // Capture the parent
         let parent = placeholder[0].parentNode;
 
@@ -75,6 +77,8 @@ export let helpers = {
     },
     removeFragment(fragmentNodes, placeholder)
     {
+        fragmentNodes = fragmentNodes.flat(Infinity);
+
         // Capture the parent
         let parentNode = fragmentNodes[0].parentNode;
 
@@ -84,7 +88,19 @@ export let helpers = {
         // Remove the other fragment nodes
         for (let i=1; i<fragmentNodes.length; i++)
         {
-            parentNode.removeChild(fragmentNodes[i]);
+            this.removeNode(fragmentNodes[i]);
+        }
+    },
+    removeNode(node)
+    {
+        if (Array.isArray(node))
+        {
+            for (let n of node)
+                this.removeNode(n);
+        }
+        else
+        {
+            node.parentNode.removeChild(node);
         }
     }
 }

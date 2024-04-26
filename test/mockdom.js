@@ -77,8 +77,12 @@ class HTMLNode
 
     replaceWith(newNode)
     {
+        if (!this.parentNode)
+            debugger;
         assert(this.parentNode);
         assert(!newNode.parentNode)
+        if (!(newNode instanceof HTMLNode))
+            throw new Error("not a node");
 
         let index = this.parentNode.childNodes.indexOf(this);
         assert(index >= 0);
@@ -86,6 +90,36 @@ class HTMLNode
         this.parentNode.childNodes[index] = newNode;
         newNode.parentNode = this.parentNode;
         this.parentNode = null;
+    }
+
+    insertBefore(node, before)
+    {
+        assert(this.nodeType == 1);
+        assert(node instanceof HTMLNode);
+        assert(!node.parentNode);
+
+        if (!before)
+        {
+            this.childNodes.push(node);
+        }
+        else
+        {
+            assert(before instanceof HTMLNode);
+            let index = this.childNodes.indexOf(before);
+            assert(index >= 0);
+            this.childNodes.splice(index, 0, node);
+        }
+
+        node.parentNode = this;
+    }
+
+    removeChild(node)
+    {
+        assert(this.nodeType == 1);
+        let index = this.childNodes.indexOf(node);
+        assert(index >= 0);
+        this.childNodes.splice(index, 1);
+        node.parentNode = null;
     }
 
     get classList()
