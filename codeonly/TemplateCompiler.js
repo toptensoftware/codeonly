@@ -1,5 +1,5 @@
 import { camel_to_dash } from "./Utils.js";
-    import { HtmlString } from "./HtmlString.js";
+import { HtmlString } from "./HtmlString.js";
 import { CodeBuilder } from "./CodeBuilder.js";
 import { ClosureBuilder } from "./ClosureBuilder.js";
 import { helpers } from "./TemplateHelpers.js";
@@ -387,6 +387,7 @@ export function compileTemplateCode(rootTemplate)
 export function compileTemplate(rootTemplate)
 {
     let code = compileTemplateCode(rootTemplate);
+    console.log(code.code);
 
     let templateFunction = new Function("ctx", "helpers", "model", code.code);
 
