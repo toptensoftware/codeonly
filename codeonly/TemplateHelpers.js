@@ -1,3 +1,5 @@
+import { HtmlString } from "./HtmlString.js";
+
 export let helpers = {
     createTextNode(text)
     {

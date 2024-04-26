@@ -2,13 +2,12 @@
     "configurations": [
     {
         "name": "Launch Program",
-        "program": "${workspaceFolder}/codeonly/TemplateCompilerTest.js",
+        "program": "${workspaceFolder}/test/tests.js",
         "request": "launch",
         "skipFiles": [
             "<node_internals>/**"
         ],
         "type": "node",
-        "console": "externalTerminal"
     }
     ]
 }

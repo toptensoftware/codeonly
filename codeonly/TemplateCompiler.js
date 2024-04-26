@@ -1,8 +1,32 @@
 import { camel_to_dash } from "./Utils.js";
-import { HtmlString } from "./HtmlString.js";
+    import { HtmlString } from "./HtmlString.js";
 import { CodeBuilder } from "./CodeBuilder.js";
 import { ClosureBuilder } from "./ClosureBuilder.js";
 import { helpers } from "./TemplateHelpers.js";
+
+class NodeInfo
+{
+    constructor(parent, name, template)
+    {
+        this.parent = parent;
+        this.name =  name;
+        this.template = template;
+        this.childNodes = [];
+        this.isFragment = false;
+    }
+
+    getClosureNodes(result)
+    {
+        for (let c of this.childNodes)
+        {
+            // Ignore item nodes
+            if (c.foreach)
+                continue;
+            result.push(c);
+            c.getClosureNodes(result);
+        }
+    }
+}
 
 export function compileTemplateCode(rootTemplate)
 {
@@ -14,11 +38,15 @@ export function compileTemplateCode(rootTemplate)
     // when the template is instantiated via ctx.callbacks
     let callbacks = [];
 
-    // The names of any nodes that are fragments (as opposed to single nodes)
-    let fragmentNodes = new Set();
+    // Map of info about all nodes
+    // NodeName => NodeInfo
+    let nodeMap = new Map();
 
-    // Compile the template
-    let rootClosure = compileNodeToClosure(rootTemplate);
+    // Create node info        
+    let rootNodeInfo = new NodeInfo(null, `n${nodeId++}`, rootTemplate);
+    nodeMap.set(rootNodeInfo.name, rootNodeInfo);
+    
+    let rootClosure = compileNodeToClosure(rootNodeInfo);
 
     // Return the code and context
     return { 
@@ -28,174 +56,168 @@ export function compileTemplateCode(rootTemplate)
         }
     }
 
-    function compileNodeToClosure(template)
+    function compileNodeToClosure(ni)
     {
         // Setup closure
         let closure = new ClosureBuilder();
-        let rootNodeName = `n${nodeId++}`;
-        closure.addLocal(rootNodeName);
+        closure.addLocal(ni.name);
         closure.attach = closure.addFunction("attach").code;
         closure.update = closure.addFunction("update").code;
         closure.detach = closure.addFunction("detach").code;
         closure.destroy = closure.addFunction("destroy").code;
 
         // Render code
-        compileNode(closure, template, rootNodeName);
+        compileNode(closure, ni);
 
         // Return interface to the closure
-        closure.code.appendLine(`return { rootNode: ${rootNodeName}, attach, update, detach, destroy };`);
+        closure.code.appendLine(`return { rootNode: ${ni.name}, attach, update, detach, destroy };`);
 
         return closure;
     }
 
     // Recursively compile a node from a template
-    function compileNode(closure, template, nodeVar)
+    function compileNode(closure, ni)
     {
         // Normal text?
-        if (typeof(template) === 'string')
+        if (typeof(ni.template) === 'string')
         {
-            closure.code.appendLine(`${nodeVar} = document.createTextNode(${JSON.stringify(template)});`);
+            closure.code.appendLine(`${ni.name} = document.createTextNode(${JSON.stringify(ni.template)});`);
             return;
         }
 
         // HTML Text?
-        if (template instanceof HtmlString)
+        if (ni.template instanceof HtmlString)
         {
-            closure.code.appendLine(`${nodeVar} = document.createElement("SPAN");`);
-            closure.code.appendLine(`${nodeVar}.innerHTML = ${JSON.stringify(template.html)};`);
+            closure.code.appendLine(`${ni.name} = document.createElement("SPAN");`);
+            closure.code.appendLine(`${ni.name}.innerHTML = ${JSON.stringify(ni.template.html)};`);
             return;
         }
 
         // Dynamic text?
-        if (template instanceof Function)
+        if (ni.template instanceof Function)
         {
-            closure.code.appendLine(`${nodeVar} = helpers.createTextNode(ctx.callbacks[${callbacks.length}].call(ctx.model));`);
-            closure.update.appendLine(`${nodeVar} = helpers.setNodeText(${nodeVar}, ctx.callbacks[${callbacks.length}].call(ctx.model));`);
-            callbacks.push(template);
+            closure.code.appendLine(`${ni.name} = helpers.createTextNode(ctx.callbacks[${callbacks.length}].call(ctx.model));`);
+            closure.update.appendLine(`${ni.name} = helpers.setNodeText(${ni.name}, ctx.callbacks[${callbacks.length}].call(ctx.model));`);
+            callbacks.push(ni.template);
             return;
         }
 
         // Element node?
-        if (template.type)
+        if (ni.template.type)
         {
             // Create the element
-            closure.code.appendLine(`${nodeVar} = document.createElement(${JSON.stringify(template.type)});`);
+            closure.code.appendLine(`${ni.name} = document.createElement(${JSON.stringify(ni.template.type)});`);
 
             // ID
-            if (template.id)
+            if (ni.template.id)
             {
-                format_dynamic(template.class, (codeBlock, valueExpr) => {
-                    codeBlock.appendLine(`${nodeVar}.setAttribute("id", ${valueExpr});`);
+                format_dynamic(ni.template.id, (codeBlock, valueExpr) => {
+                    codeBlock.appendLine(`${ni.name}.setAttribute("id", ${valueExpr});`);
                 });
             }
 
             // Class
-            if (template.class)
+            if (ni.template.class)
             {
-                format_dynamic(template.class, (codeBlock, valueExpr) => {
-                    codeBlock.appendLine(`${nodeVar}.setAttribute("class", ${valueExpr});`);
+                format_dynamic(ni.template.class, (codeBlock, valueExpr) => {
+                    codeBlock.appendLine(`${ni.name}.setAttribute("class", ${valueExpr});`);
                 });
             }
 
             // Boolean classes
-            for (let cls of Object.keys(template).filter(x => x.startsWith("class_")))
+            for (let cls of Object.keys(ni.template).filter(x => x.startsWith("class_")))
             {
                 let className = camel_to_dash(cls.substring(6));
 
-                format_dynamic(template[cls], (codeBlock, valueExpr) => {
-                    codeBlock.appendLine(`helpers.setNodeClass(${nodeVar}, ${JSON.stringify(className)}, ${valueExpr});`);
+                format_dynamic(ni.template[cls], (codeBlock, valueExpr) => {
+                    codeBlock.appendLine(`helpers.setNodeClass(${ni.name}, ${JSON.stringify(className)}, ${valueExpr});`);
                 });
             }
 
             // Style
-            if (template.style)
+            if (ni.template.style)
             {
-                format_dynamic(template.style, (codeBlock, valueExpr) => {
-                    codeBlock.appendLine(`${nodeVar}.setAttribute("style", ${valueExpr});`);
+                format_dynamic(ni.template.style, (codeBlock, valueExpr) => {
+                    codeBlock.appendLine(`${ni.name}.setAttribute("style", ${valueExpr});`);
                 });
             }
 
             // Attributes
-            for (let attr of Object.keys(template).filter(x => x.startsWith("attr_")))
+            for (let attr of Object.keys(ni.template).filter(x => x.startsWith("attr_")))
             {
                 let attrName = camel_to_dash(attr.substring(5));
 
-                format_dynamic(template[attr], (codeBlock, valueExpr) => {
-                    codeBlock.appendLine(`${nodeVar}.setAttribute(${JSON.stringify(attrName)}, ${valueExpr});`);
+                format_dynamic(ni.template[attr], (codeBlock, valueExpr) => {
+                    codeBlock.appendLine(`${ni.name}.setAttribute(${JSON.stringify(attrName)}, ${valueExpr});`);
                 });
             }
 
             // Set inner text
-            if (template.text)
+            if (ni.template.text)
             {
-                if (template.text instanceof Function)
+                if (ni.template.text instanceof Function)
                 {
-                    format_dynamic(template.text, (codeBlock, valueExpr) => {
-                        codeBlock.appendLine(`helpers.setElementText(${nodeVar}, ${valueExpr});`);
+                    format_dynamic(ni.template.text, (codeBlock, valueExpr) => {
+                        codeBlock.appendLine(`helpers.setElementText(${ni.name}, ${valueExpr});`);
                     });
                 }
-                else if (template.text instanceof HtmlString)
+                else if (ni.template.text instanceof HtmlString)
                 {
-                    closure.code.appendLine(`${nodeVar}.innerHTML = ${JSON.stringify(template.text.html)};`);
+                    closure.code.appendLine(`${ni.name}.innerHTML = ${JSON.stringify(ni.template.text.html)};`);
                 }
-                if (typeof(template.text) === 'string')
+                if (typeof(ni.template.text) === 'string')
                 {
-                    closure.code.appendLine(`${nodeVar}.innerText = ${JSON.stringify(template.text)};`);
+                    closure.code.appendLine(`${ni.name}.innerText = ${JSON.stringify(ni.template.text)};`);
                 }
             }
         }
         else
         {
             // It's a fragment node, render the nodes and store them in an array
-            closure.code.appendLine(`${nodeVar} = [];`);
-
-            // Remember this node is a fragment for special handling where required
-            // (ie: special because the node variable is an array of domm nodes, not
-            //  a single dom node)
-            fragmentNodes.add(nodeVar);
+            closure.code.appendLine(`${ni.name} = [];`);
+            ni.isFragment = true;
         }
 
         // Child nodes?
-        if (template.childNodes)
+        if (ni.template.childNodes)
         {
-            // Allocate names for all the child nodes
-            let childNodeNames = [];
-            for (let i=0; i<template.childNodes.length; i++)
+            // Create node infos for all children
+            for (let i=0; i<ni.template.childNodes.length; i++)
             {
-                let varName = `n${nodeId++}`;
-                closure.addLocal(varName);
-                childNodeNames.push(varName);
+                let child_ni = new NodeInfo(ni, `n${nodeId++}`, ni.template.childNodes[i]);
+                child_ni.index = i;
+                ni.childNodes.push(child_ni);
+                closure.addLocal(child_ni.name);
             }
 
             // Create the child nodes
-            for (let i=0; i<template.childNodes.length; i++)
+            for (let child_ni of ni.childNodes)
             {
                 // Get the child node template
-                let childNode = template.childNodes[i];
-                let nn = childNodeNames[i];
+                let nn = child_ni.name;
 
                 // Is it a foreach node?
-                if (childNode.foreach !== undefined)
+                if (child_ni.template.foreach !== undefined)
                 {
-                    compileForEachNode(childNode, nn);
+                    compileForEachNode(child_ni);
                     continue;
                 }
 
                 // Is it a conditional node?
-                if (childNode.condition !== undefined)
+                if (child_ni.template.condition !== undefined)
                 {
-                    if (childNode.condition instanceof Function)
+                    if (child_ni.template.condition instanceof Function)
                     {
                         // Dynamic conditional...
-                        compileConditionalNode(childNode, nn);
+                        compileConditionalNode(child_ni);
                         continue;
                     }
                     else
                     {
                         // Static conditional, either include it or not?
-                        if (!childNode.condition)
+                        if (!child_ni.template.condition)
                         {
-                            if (fragmentNodes.has(nn))
+                            if (child_ni.isFragment)
                                 closure.code.appendLine(`${nn} = [ document.createComment(' omitted by condition ') ];`);
                             else
                                 closure.code.appendLine(`${nn} = document.createComment(' omitted by condition ');`);
@@ -205,14 +227,14 @@ export function compileTemplateCode(rootTemplate)
                 }
 
                 // Regular node (or static true condition)
-                compileNode(childNode, nn);
+                compileNode(closure, child_ni);
             }
 
             // Add all the child nodes to this node
-            if (childNodeNames.length)
+            if (ni.childNodes.length)
             {
-                let op = fragmentNodes.has(nodeVar) ? "push" : "append";
-                closure.code.appendLine(`${nodeVar}.${op}(${childNodeNames.map(x => fragmentNodes.has(x) ? `...${x}` : x).join(", ")});`);
+                let op = ni.isFragment ? "push" : "append";
+                closure.code.appendLine(`${ni.name}.${op}(${ni.childNodes.map(x => x.isFragment ? `...${x.name}` : x.name).join(", ")});`);
             }
         }
 
@@ -244,11 +266,12 @@ export function compileTemplateCode(rootTemplate)
         }
 
 
-        function compileConditionalNode(childNode, nn)
+        function compileConditionalNode(child_ni)
         {
-            let first_sub_node_id = nodeId;
             let callback_index = callbacks.length;
-            callbacks.push(childNode.condition);
+            callbacks.push(child_ni.template.condition);
+
+            let nn = child_ni.name;
 
             // Before generating the node, generate the update code
             closure.update.appendLine(`if (${nn}_included != ctx.callbacks[${callback_index}].call(ctx.model))`)
@@ -259,7 +282,7 @@ export function compileTemplateCode(rootTemplate)
             // Generate function to create the node
             closure.code.appendLine(`function create_${nn}() {`);
             closure.code.indent();
-            compileNode(closure, childNode, nn);
+            compileNode(closure, child_ni);
             closure.code.unindent();
             closure.code.appendLine(`}`);
             let last_sub_node_id = nodeId;
@@ -269,17 +292,19 @@ export function compileTemplateCode(rootTemplate)
             closure.code.indent();
             closure.code.appendLine(`let save = ${nn};`);
             closure.code.appendLine(`create_${nn}();`);
-            if (fragmentNodes.has(nn))
+            if (child_ni.isFragment)
                 closure.code.appendLine(`helpers.insertFragment(save, ${nn});`);
             else
                 closure.code.appendLine(`save.replaceWith(${nn});`);
+            if (child_ni.parent.isFragment)
+                closure.code.appendLine(`${child_ni.parent.name}[${child_ni.index}] = ${nn};`);
             closure.code.unindent();
             closure.code.appendLine(`}`);
 
             // Generate function to detach the node
             closure.code.appendLine(`function detach_${nn}() {`);
             closure.code.indent();
-            if (fragmentNodes.has(nn))
+            if (child_ni.isFragment)
             {
                 closure.code.appendLine(`let replacement = [ document.createComment(" omitted by condition ") ];`);
                 closure.code.appendLine(`helpers.removeFragment(${nn}, replacement);`);
@@ -290,13 +315,14 @@ export function compileTemplateCode(rootTemplate)
                 closure.code.appendLine(`${nn}.replaceWith(replacement)`);
             }
             closure.code.appendLine(`${nn} = replacement;`);
-            let clear = "";
-            for (let i=first_sub_node_id; i < last_sub_node_id; i++)
+            if (child_ni.parent.isFragment)
+                closure.code.appendLine(`${child_ni.parent.name}[${child_ni.index}] = replacement;`);
+            let closureNodes = [];
+            child_ni.getClosureNodes(closureNodes);
+            if (closureNodes.length)
             {
-                clear += `n${i} = `;
+                closure.code.appendLine(`${closureNodes.map(x => x.name).join(" = ")} = null;`);
             }
-            if (clear.length)
-                closure.code.appendLine(`${clear}null;`);
             closure.code.unindent();
             closure.code.appendLine(`}`);
 
@@ -306,7 +332,7 @@ export function compileTemplateCode(rootTemplate)
             closure.code.appendLine(`if (${nn}_included)`);
             closure.code.appendLine(`  create_${nn}();`);
             closure.code.appendLine(`else`);
-            if (fragmentNodes.has(nn))
+            if (child_ni.isFragment)
                 closure.code.appendLine(`  ${nn} = [ document.createComment(' omitted by condition ') ];`);
             else
                 closure.code.appendLine(`  ${nn} = document.createComment(' omitted by condition ');`);
@@ -361,7 +387,6 @@ export function compileTemplateCode(rootTemplate)
 export function compileTemplate(rootTemplate)
 {
     let code = compileTemplateCode(rootTemplate);
-    console.log(code.code);
 
     let templateFunction = new Function("ctx", "helpers", "model", code.code);
 
