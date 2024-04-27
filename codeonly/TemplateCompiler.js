@@ -2,7 +2,7 @@ import { camel_to_dash } from "./Utils.js";
 import { HtmlString } from "./HtmlString.js";
 import { CodeBuilder } from "./CodeBuilder.js";
 import { ClosureBuilder } from "./ClosureBuilder.js";
-import { helpers } from "./TemplateHelpers.js";
+import { TemplateHelpers } from "./TemplateHelpers.js";
 
 class NodeInfo
 {
@@ -133,7 +133,6 @@ export function compileTemplateCode(rootTemplate)
     
     let rootClosure = new ClosureBuilder();
     rootClosure.callback_args = "ctx.model";
-    rootClosure.outer_item = "null";
     compileNodeToClosure(rootClosure, rootNodeInfo);
 
     // Return the code and context
@@ -168,8 +167,8 @@ export function compileTemplateCode(rootTemplate)
         {
             closure.code.appendLines([
                 `return { `,
-                `  item,`,
                 `  rootNode: ${ni.name},`,
+                `  get itemCtx() { return itemCtx; },`,
                 `  getRootNodesFlat,`,
                 `  update,`,
                 `  destroy`,
@@ -347,8 +346,10 @@ export function compileTemplateCode(rootTemplate)
             // Add all the child nodes to this node
             if (ni.childNodes.length)
             {
-                let op = (ni.isFragment || ni.isForEach) ? "push" : "append";
-                closure.create.appendLine(`${ni.name}.${op}(${ni.childNodes.map(x => x.name).join(", ")});`);
+                if (ni.isMultiRoot)
+                    closure.create.appendLine(`${ni.name}.push(${ni.childNodes.map(x => x.name).join(", ")});`);
+                else
+                    closure.create.appendLine(`${ni.name}.append(${ni.childNodes.map(x => x.spreadNodes).join(", ")});`);
             }
         }
 
@@ -461,67 +462,49 @@ export function compileTemplateCode(rootTemplate)
             // Create a node item for the child
             let child_item_ni = new NodeInfo(null, `i${child_ni.name}`, child_ni.template, true);
 
-            // Create a function for the item
-            let itemClosureFn = closure.addFunction(`item_${child_item_ni.name}`, ["item", "index", "outer"]);
-            itemClosureFn.code.appendLine("let itemCtx = { item, index, outer }");
+            // Create a construction function for the items
+            let itemClosureFn = closure.addFunction(`${child_ni.name}_item_constructor`, [ "itemCtx" ]);
             let itemClosure = new ClosureBuilder();
-            itemClosure.callback_args = "ctx.model, item, itemCtx";
+            itemClosure.callback_args = "ctx.model, itemCtx.item, itemCtx";
             itemClosure.outer_item = "outer";
             compileNodeToClosure(itemClosure, child_item_ni);
             itemClosure.appendTo(itemClosureFn.code);
 
-            // Create the sentinal comment node
-            closure.create.appendLine(`${child_ni.name} = document.createComment(' foreach ');`);
+            // Create the "foreach" manager
+            closure.create.appendLine(`let ${child_ni.name}_manager = new helpers.ForEachManager({`);
+            closure.create.appendLine(`  item_constructor: ${child_ni.name}_item_constructor,`);
+            closure.create.appendLine(`  model: ctx.model,`);
+            if (closure.outer_item)
+                closure.create.appendLine(`  outer_item: ${closure.outer_item},`);
+            if (child_item_ni.isMultiRoot)
+                closure.create.appendLine(`  multi_root_items: true,`);
+            if (child_ni.item_key)
+            {
+                let itemkey_index = objrefs.length;
+                objrefs.push(child_ni.template.item_key);
+                closure.create.appendLine(`  item_key: ctx.objrefs[${itemkey_index}],`);
+            }
+            if (child_ni.condition)
+            {
+                let condition_index = objrefs.length;
+                objrefs.push(child_ni.template.condition);
+                closure.create.appendLine(`  condition: ctx.objrefs[${condition_index+1}],`);
+            }
+            closure.create.appendLine(`});`);
 
-            // Create an array for all the items
-            closure.create.appendLine(`let ${child_ni.name}_items = [];`);
-
+            let objref_index = objrefs.length;
+            objrefs.push(child_ni.template.foreach);
             if (!(child_ni.template.foreach instanceof Function))
             {
-                let objref_index = objrefs.length;
-                objrefs.push(child_ni.template.foreach);
-
-                closure.create.appendLines([
-                    `for (let i=0, len = objrefs[${objref_index}].length; i < len; i++)`,
-                    `   ${child_ni.name}_items.push(item_${child_item_ni.name}(objrefs[${objref_index}][i], i, ${closure.outer_item}));`
-                ]);
+                closure.create.appendLine(`${child_ni.name} = ${child_ni.name}_manager.loadItems(ctx.objrefs[${objref_index}]);`);
             }
-
-        /*
-            // Create a function to render the item
-            closure.code.appendLine(`function create_${nn}_item(item)`)
-            closure.code.appendLine(`{`);
-            closure.code.indent();
-    
-            // Create a function to update the item and
-            // temporarily replace the main closure.update target
-            let updateItemCode = CodeBuilder();
-            closure.update = updateItemCode;
-            closure.update.appendLine(`function update_${nn}_item(item)`);
-            closure.update.appendLine(`{`);
-            closure.update.indent();
-    
-            // Render node
-            compileNode(childNode, `${nn}`, 'item');
-    
-            closure.update.unindent();
-            closure.update.appendLine(`}`);
-    
-            // Restore state
-            closure.update = saveclosure.update;
-            closure.code.unindent();
-            closure.code.appendLine(`}`);
-    
-            // Add the update item function
-            closure.code.append(updateItemCode);
-    
-            // Create the sentinal node
-        */
+            else
+            {
+                closure.create.appendLine(`${child_ni.name} = ${child_ni.name}_manager.loadItems(${format_callback(objref_index)});`);
+                closure.update.appendLine(`${child_ni.name}_manager.updateItems(${format_callback(objref_index)});`);
+            }
         }
-
     }    
-
-
 }
 
 
@@ -536,6 +519,6 @@ export function compileTemplate(rootTemplate)
 
     return function (model)
     {
-        return templateFunction(code.ctx, helpers, model);
+        return templateFunction(code.ctx, TemplateHelpers, model);
     }
 }

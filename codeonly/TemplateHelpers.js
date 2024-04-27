@@ -1,6 +1,12 @@
 import { HtmlString } from "./HtmlString.js";
+import { ForEachManager } from "./ForEachManager.js";
 
-export let helpers = {
+export let TemplateHelpers = {
+    // The foreach manager class
+    ForEachManager,
+
+    // Create either a text node from a string, or
+    // a SPAN from an HtmlString
     createTextNode(text)
     {
         if (text instanceof HtmlString)
@@ -14,6 +20,9 @@ export let helpers = {
             return document.createTextNode(text);
         }
     },
+
+    // Set either the inner text of an element to a string
+    // or the inner html to a HtmlString
     setElementText(node, text)
     {
         if (text instanceof HtmlString)
@@ -25,6 +34,9 @@ export let helpers = {
             node.innerText = text;
         }
     },
+
+    // Set a node to text or HTML, replacing the 
+    // node if it doesn't match the supplied text.
     setNodeText(node, text)
     {
         if (text instanceof HtmlString)
@@ -52,6 +64,8 @@ export let helpers = {
             return newNode;
         }
     },
+
+    // Set or remove a class on an element
     setNodeClass(node, cls, set)
     {
         if (set)
@@ -59,6 +73,8 @@ export let helpers = {
         else
             node.classList.remove(cls);
     },
+
+
     insertFragment(placeholder, fragmentNodes)
     {
         fragmentNodes = fragmentNodes.flat(Infinity);
@@ -88,19 +104,96 @@ export let helpers = {
         // Remove the other fragment nodes
         for (let i=1; i<fragmentNodes.length; i++)
         {
-            this.removeNode(fragmentNodes[i]);
+            this.complexRemove(fragmentNodes[i]);
         }
     },
-    removeNode(node)
+
+    // Replace a complex set of nodes with another, keeping
+    // a placeholder to manage the position of empty sets.
+    complexReplace(oldNodes, newNodes)
     {
-        if (Array.isArray(node))
+        if (!Array.isArray(oldNodes) || !Array.isArray(newNodes))
+            throw new Error("complexReplace expects both parameters to be arrays of nodes");
+
+        // Handle old node is a placeholder
+        if (oldNodes.length == 0)
         {
-            for (let n of node)
-                this.removeNode(n);
+            if (oldNodes.placeholder)
+                oldNodes = [ oldNodes.placeholder ];
         }
         else
         {
-            node.parentNode.removeChild(node);
+            oldNodes = oldNodes.flat(Infinity);
+        }
+
+        // Handle new nodes needs a placeholder
+        newNodes = newNodes.flat(Infinity);
+        if (newNodes.length == 0)
+        {
+            // Create a place holder and store it in the supplied array
+            newNodes.placeholder = document.createComment(" placeholder ");
+
+            // Create a new array that's just got the place holder as a normal
+            // indexed element
+            newNodes = [ newNodes.placeholder ];
+        }
+
+        // We should now have two flat arrays, each of at least one node
+        
+        // Remove the old nodes (except the first)
+        if (oldNodes.length > 1)
+        {
+            for (let i=1; i < oldNodes.length; i++)
+                oldNodes[i].remove();
+        }
+
+        // Replace the 1 remaining old node with the new nodes
+        oldNodes[0].replaceWith(...newNodes);
+    },
+
+    // Remove a complex set of nodes
+    complexRemove(node)
+    {
+        if (Array.isArray(node))
+        {
+            for (let i=0; i<node.length; i++)
+                this.complexRemove(node[i]);
+        }
+        else
+        {
+            node.remove();
+        }
+    },
+
+    // Insert a complex set of nodes before node
+    complexInsertBefore(node, before)
+    {
+        if (Array.isArray(node))
+        {
+            for (let i=0; i<node.length; i++)
+            {
+                this.complexInsertBefore(node[i], before);
+            }
+        }
+        else
+        {
+            before.parentNode.insertBefore(node, before);
+        }
+    },
+
+    // Insert a complex set of nodes after a node
+    complexInsertAfter(node, after)
+    {
+        if (Array.isArray(node))
+        {
+            for (let i=node.length - 1; i >= 0; i--)
+            {
+                this.complexInsertBefore(node[i], after);
+            }
+        }
+        else
+        {
+            after.parentNode.insertAfter(node, after);
         }
     }
 }

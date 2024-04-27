@@ -75,6 +75,12 @@ class HTMLNode
         this.childNodes.push(...arguments);
     }
 
+    remove()
+    {
+        assert(this.parentNode)
+        this.parentNode.removeChild(this);
+    }
+
     replaceWith(newNode)
     {
         if (!this.parentNode)

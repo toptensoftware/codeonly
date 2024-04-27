@@ -449,3 +449,42 @@ test("Double Nested Fragment (with conditional)", () => {
     assert(outer.childNodes.every(x => x.nodeType == 3));       // 5x text nodes
 });
 
+
+
+test("ForEach Static", () => {
+    let r = compileTemplate({
+        type: "DIV",
+        childNodes: [
+            {
+                foreach: [ "apples", "pears", "bananas" ],
+                type: "DIV",
+                text: x => x,
+            }
+        ]
+    })();
+
+    assert.equal(r.rootNode.childNodes.length, 3);
+});
+
+test("ForEach Dynamic", () => {
+
+    let items = [ "apples", "pears", "bananas" ];
+
+    let r = compileTemplate({
+        type: "DIV",
+        childNodes: [
+            {
+                foreach: () => items,
+                type: "DIV",
+                text: x => x,
+            }
+        ]
+    })();
+
+    assert.equal(r.rootNode.childNodes.length, 3);
+
+    items.push("oranges", "watermelon");
+    r.update();
+
+    assert.equal(r.rootNode.childNodes.length, 5);
+});
