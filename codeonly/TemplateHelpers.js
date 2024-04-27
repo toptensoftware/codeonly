@@ -77,124 +77,23 @@ export let TemplateHelpers = {
 
     insertFragment(placeholder, fragmentNodes)
     {
-        fragmentNodes = fragmentNodes.flat(Infinity);
-
         // Capture the parent
-        let parent = placeholder[0].parentNode;
+        let parent = placeholder.parentNode;
 
-        // Insert nodes before the place holder
-        for (let i=0; i<fragmentNodes.length-1; i++)
-        {
-            parent.insertBefore(fragmentNodes[i], placeholder[0]);
-        }
-
-        // Replace the place holder with the last node
-        placeholder[0].replaceWith(fragmentNodes[fragmentNodes.length - 1]);
+        placeholder.after(...fragmentNodes);
+        placeholder.remove();
     },
+
     removeFragment(fragmentNodes, placeholder)
     {
-        fragmentNodes = fragmentNodes.flat(Infinity);
-
-        // Capture the parent
-        let parentNode = fragmentNodes[0].parentNode;
-
         // Insert the place holder
-        fragmentNodes[0].replaceWith(placeholder[0]);
+        fragmentNodes[0].replaceWith(placeholder);
 
         // Remove the other fragment nodes
         for (let i=1; i<fragmentNodes.length; i++)
         {
-            this.complexRemove(fragmentNodes[i]);
+            fragmentNodes[i].remove();
         }
     },
-
-    // Replace a complex set of nodes with another, keeping
-    // a placeholder to manage the position of empty sets.
-    complexReplace(oldNodes, newNodes)
-    {
-        if (!Array.isArray(oldNodes) || !Array.isArray(newNodes))
-            throw new Error("complexReplace expects both parameters to be arrays of nodes");
-
-        // Handle old node is a placeholder
-        if (oldNodes.length == 0)
-        {
-            if (oldNodes.placeholder)
-                oldNodes = [ oldNodes.placeholder ];
-        }
-        else
-        {
-            oldNodes = oldNodes.flat(Infinity);
-        }
-
-        // Handle new nodes needs a placeholder
-        newNodes = newNodes.flat(Infinity);
-        if (newNodes.length == 0)
-        {
-            // Create a place holder and store it in the supplied array
-            newNodes.placeholder = document.createComment(" placeholder ");
-
-            // Create a new array that's just got the place holder as a normal
-            // indexed element
-            newNodes = [ newNodes.placeholder ];
-        }
-
-        // We should now have two flat arrays, each of at least one node
-        
-        // Remove the old nodes (except the first)
-        if (oldNodes.length > 1)
-        {
-            for (let i=1; i < oldNodes.length; i++)
-                oldNodes[i].remove();
-        }
-
-        // Replace the 1 remaining old node with the new nodes
-        oldNodes[0].replaceWith(...newNodes);
-    },
-
-    // Remove a complex set of nodes
-    complexRemove(node)
-    {
-        if (Array.isArray(node))
-        {
-            for (let i=0; i<node.length; i++)
-                this.complexRemove(node[i]);
-        }
-        else
-        {
-            node.remove();
-        }
-    },
-
-    // Insert a complex set of nodes before node
-    complexInsertBefore(node, before)
-    {
-        if (Array.isArray(node))
-        {
-            for (let i=0; i<node.length; i++)
-            {
-                this.complexInsertBefore(node[i], before);
-            }
-        }
-        else
-        {
-            before.parentNode.insertBefore(node, before);
-        }
-    },
-
-    // Insert a complex set of nodes after a node
-    complexInsertAfter(node, after)
-    {
-        if (Array.isArray(node))
-        {
-            for (let i=node.length - 1; i >= 0; i--)
-            {
-                this.complexInsertBefore(node[i], after);
-            }
-        }
-        else
-        {
-            after.parentNode.insertAfter(node, after);
-        }
-    }
 }
 

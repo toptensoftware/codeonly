@@ -48,6 +48,48 @@ class NodeInfo
         }
     }
 
+    *enumChildDomNodes()
+    {
+        for (let i=0; i<this.childNodes.length; i++)
+        {
+            yield *this.childNodes[i].enumDomNodes();
+        }
+    }
+
+    // Generate code to list out all this nodes dom nodes
+    *enumDomNodes(excludeConditional)
+    {
+        if (this.isForEach)
+        {
+            yield `...${this.name}_manager.enumDomNodes()`;
+            return;
+        }
+
+        if (this.isConditional)
+        {
+            if (this.isFragment)
+            {
+                yield `...[${this.name}_included ? [${Array.from(this.enumDomNodes(true)).join(", ")}] : [${this.name}_placeholder])`;
+            }
+            else
+            {
+                yield `(${this.name}_included ? ${this.name} : ${this.name}_placeholder)`;
+            }
+            return;
+        }
+
+        if (this.isFragment)
+        {
+            for (let i=0; i<this.childNodes.length; i++)
+            {
+                yield *this.childNodes[i].enumNodes();
+            }
+            return;
+        }
+
+        yield this.name;
+    }
+
     get spreadNodes()
     {
         if (!this.isMultiRoot)
@@ -145,8 +187,7 @@ export function compileTemplateCode(rootTemplate)
 
     function compileNodeToClosure(closure, ni)
     {
-        // Setup closure
-        closure.addLocal(ni.name);
+        // Setup closure functions
         if (!ni.isItemNode)
         {
             closure.attach = closure.addFunction("attach").code;
@@ -159,17 +200,16 @@ export function compileTemplateCode(rootTemplate)
         // Render code
         compileNode(closure, ni);
 
-        let rnf = closure.addFunction('*getRootNodesFlat');
-        ni.renderYieldRootNodes(rnf.code);
+        let rnf = closure.addFunction('getRootNodes');
+        rnf.code.appendLine(`return [${Array.from(ni.enumDomNodes()).join(", ")}];`);
 
         // Return interface to the closure
         if (ni.isItemNode)
         {
             closure.code.appendLines([
                 `return { `,
-                `  rootNode: ${ni.name},`,
+                `  get rootNodes() { return getRootNodes(); },`,
                 `  get itemCtx() { return itemCtx; },`,
-                `  getRootNodesFlat,`,
                 `  update,`,
                 `  destroy`,
                 `};`]);
@@ -178,9 +218,8 @@ export function compileTemplateCode(rootTemplate)
         {
             closure.code.appendLines([
                 `return { `,
-                `  rootNode: ${ni.name},`,
+                `  get rootNodes() { return getRootNodes(); },`,
                 `  isMultiRoot: ${ni.isMultiRoot},`,
-                `  get rootNodesFlat() { return Array.from(getRootNodesFlat()); },`,
                 `  attach,`,
                 `  update,`,
                 `  detach,`,
@@ -192,9 +231,11 @@ export function compileTemplateCode(rootTemplate)
     // Recursively compile a node from a template
     function compileNode(closure, ni)
     {
+
         // Normal text?
         if (typeof(ni.template) === 'string')
         {
+            closure.addLocal(ni.name);
             closure.create.appendLine(`${ni.name} = document.createTextNode(${JSON.stringify(ni.template)});`);
             return;
         }
@@ -202,6 +243,7 @@ export function compileTemplateCode(rootTemplate)
         // HTML Text?
         if (ni.template instanceof HtmlString)
         {
+            closure.addLocal(ni.name);
             closure.create.appendLine(`${ni.name} = document.createElement("SPAN");`);
             closure.create.appendLine(`${ni.name}.innerHTML = ${JSON.stringify(ni.template.html)};`);
             return;
@@ -210,6 +252,7 @@ export function compileTemplateCode(rootTemplate)
         // Dynamic text?
         if (ni.template instanceof Function)
         {
+            closure.addLocal(ni.name);
             closure.create.appendLine(`${ni.name} = helpers.createTextNode(${format_callback(objrefs.length)});`);
             closure.update.appendLine(`${ni.name} = helpers.setNodeText(${ni.name}, ${format_callback(objrefs.length)});`);
             objrefs.push(ni.template);
@@ -220,6 +263,7 @@ export function compileTemplateCode(rootTemplate)
         if (ni.template.type)
         {
             // Create the element
+            closure.addLocal(ni.name);
             closure.create.appendLine(`${ni.name} = document.createElement(${JSON.stringify(ni.template.type)});`);
 
             // ID
@@ -285,11 +329,6 @@ export function compileTemplateCode(rootTemplate)
                 }
             }
         }
-        else
-        {
-            // It's a fragment node, render the nodes and store them in an array
-            closure.create.appendLine(`${ni.name} = [];`);
-        }
 
         // Child nodes?
         if (ni.template.childNodes)
@@ -300,7 +339,6 @@ export function compileTemplateCode(rootTemplate)
                 let child_ni = new NodeInfo(ni, `n${nodeId++}`, ni.template.childNodes[i], false);
                 child_ni.index = i;
                 ni.childNodes.push(child_ni);
-                closure.addLocal(child_ni.name);
             }
 
             // Create the child nodes
@@ -344,12 +382,9 @@ export function compileTemplateCode(rootTemplate)
             }
 
             // Add all the child nodes to this node
-            if (ni.childNodes.length)
+            if (ni.childNodes.length && !ni.isFragment)
             {
-                if (ni.isMultiRoot)
-                    closure.create.appendLine(`${ni.name}.push(${ni.childNodes.map(x => x.name).join(", ")});`);
-                else
-                    closure.create.appendLine(`${ni.name}.append(${ni.childNodes.map(x => x.spreadNodes).join(", ")});`);
+                closure.create.appendLine(`${ni.name}.append(${Array.from(ni.enumChildDomNodes()).join(", ")});`);
             }
         }
 

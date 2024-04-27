@@ -9,15 +9,15 @@ test("Single Node", () => {
         type: "DIV",
     })();
 
-    assert.equal(r.rootNode.nodeName, "DIV");
+    assert.equal(r.rootNodes[0].nodeName, "DIV");
 });
 
 test("Static Text Node", () => {
 
     let r = compileTemplate("Hello World")();
 
-    assert.equal(r.rootNode.nodeType, 3);
-    assert.equal(r.rootNode.nodeValue, "Hello World");
+    assert.equal(r.rootNodes[0].nodeType, 3);
+    assert.equal(r.rootNodes[0].nodeValue, "Hello World");
 });
 
 test("Dynamic Text Node", () => {
@@ -25,21 +25,21 @@ test("Dynamic Text Node", () => {
     let val = "foo";
     let r = compileTemplate(() => val)();
 
-    assert.equal(r.rootNode.nodeType, 3);
-    assert.equal(r.rootNode.nodeValue, val);
+    assert.equal(r.rootNodes[0].nodeType, 3);
+    assert.equal(r.rootNodes[0].nodeValue, val);
     val = "bar";
     r.update();
-    assert.equal(r.rootNode.nodeType, 3);
-    assert.equal(r.rootNode.nodeValue, val);
+    assert.equal(r.rootNodes[0].nodeType, 3);
+    assert.equal(r.rootNodes[0].nodeValue, val);
 });
 
 test("Static HTML Node", () => {
 
     let r = compileTemplate(html("Hello World"))();
 
-    assert.equal(r.rootNode.nodeType, 1);
-    assert.equal(r.rootNode.nodeName, "SPAN");
-    assert.equal(r.rootNode.innerHTML, "Hello World");
+    assert.equal(r.rootNodes[0].nodeType, 1);
+    assert.equal(r.rootNodes[0].nodeName, "SPAN");
+    assert.equal(r.rootNodes[0].innerHTML, "Hello World");
 });
 
 test("Dynamic HTML Node", () => {
@@ -47,16 +47,16 @@ test("Dynamic HTML Node", () => {
     let val = "foo";
     let r = compileTemplate(() => html(val))();
 
-    assert.equal(r.rootNode.nodeType, 1);
-    assert.equal(r.rootNode.nodeName, "SPAN");
-    assert.equal(r.rootNode.innerHTML, val);
+    assert.equal(r.rootNodes[0].nodeType, 1);
+    assert.equal(r.rootNodes[0].nodeName, "SPAN");
+    assert.equal(r.rootNodes[0].innerHTML, val);
 
     val = "bar";
     r.update();
 
-    assert.equal(r.rootNode.nodeType, 1);
-    assert.equal(r.rootNode.nodeName, "SPAN");
-    assert.equal(r.rootNode.innerHTML, val);
+    assert.equal(r.rootNodes[0].nodeType, 1);
+    assert.equal(r.rootNodes[0].nodeName, "SPAN");
+    assert.equal(r.rootNodes[0].innerHTML, val);
 });
 
 
@@ -64,8 +64,8 @@ test("Text Node", () => {
 
     let r = compileTemplate("Hello World")();
 
-    assert.equal(r.rootNode.nodeType, 3);
-    assert.equal(r.rootNode.nodeValue, "Hello World");
+    assert.equal(r.rootNodes[0].nodeType, 3);
+    assert.equal(r.rootNodes[0].nodeValue, "Hello World");
 });
 
 test("Inner Text", () => {
@@ -75,8 +75,8 @@ test("Inner Text", () => {
         text: "Hello World",
     })();
 
-    assert.equal(r.rootNode.nodeName, "DIV");
-    assert.equal(r.rootNode.innerText, "Hello World");
+    assert.equal(r.rootNodes[0].nodeName, "DIV");
+    assert.equal(r.rootNodes[0].innerText, "Hello World");
 });
 
 test("Inner HTML", () => {
@@ -86,8 +86,8 @@ test("Inner HTML", () => {
         text: html("Hello World"),
     })();
 
-    assert.equal(r.rootNode.nodeName, "DIV");
-    assert.equal(r.rootNode.innerHTML, "Hello World");
+    assert.equal(r.rootNodes[0].nodeName, "DIV");
+    assert.equal(r.rootNodes[0].innerHTML, "Hello World");
 });
 
 test("Dynamic Text", () => {
@@ -98,11 +98,11 @@ test("Dynamic Text", () => {
         text: () => text,
     })();
 
-    assert.equal(r.rootNode.innerText, "foo");
+    assert.equal(r.rootNodes[0].innerText, "foo");
 
     text = 'bar';
     r.update();
-    assert.equal(r.rootNode.innerText, "bar");
+    assert.equal(r.rootNodes[0].innerText, "bar");
 });
 
 
@@ -113,7 +113,7 @@ test("Static ID Attribute", () => {
         id: "foo",
     })();
 
-    assert.equal(r.rootNode.getAttribute("id"), "foo");
+    assert.equal(r.rootNodes[0].getAttribute("id"), "foo");
 });
 
 test("Dynamic ID Attribute", () => {
@@ -124,10 +124,10 @@ test("Dynamic ID Attribute", () => {
         id: () => val,
     })();
 
-    assert.equal(r.rootNode.getAttribute("id"), val);
+    assert.equal(r.rootNodes[0].getAttribute("id"), val);
     val = "bar";
     r.update();
-    assert.equal(r.rootNode.getAttribute("id"), val);
+    assert.equal(r.rootNodes[0].getAttribute("id"), val);
 });
 
 test("Static Class Attribute", () => {
@@ -137,7 +137,7 @@ test("Static Class Attribute", () => {
         class: "foo",
     })();
 
-    assert.equal(r.rootNode.getAttribute("class"), "foo");
+    assert.equal(r.rootNodes[0].getAttribute("class"), "foo");
 });
 
 test("Dynamic Class Attribute", () => {
@@ -148,10 +148,10 @@ test("Dynamic Class Attribute", () => {
         class: () => val,
     })();
 
-    assert.equal(r.rootNode.getAttribute("class"), val);
+    assert.equal(r.rootNodes[0].getAttribute("class"), val);
     val = "bar";
     r.update();
-    assert.equal(r.rootNode.getAttribute("class"), val);
+    assert.equal(r.rootNodes[0].getAttribute("class"), val);
 });
 
 
@@ -163,9 +163,9 @@ test("Static Boolean Class", () => {
         class_bar: false,
     })();
 
-    assert.equal(r.rootNode.getAttribute("class"), "foo");
-    assert(r.rootNode.classList.has("foo"));
-    assert(!r.rootNode.classList.has("bar"));
+    assert.equal(r.rootNodes[0].getAttribute("class"), "foo");
+    assert(r.rootNodes[0].classList.has("foo"));
+    assert(!r.rootNodes[0].classList.has("bar"));
 });
 
 test("Dynamic Boolean Class", () => {
@@ -176,13 +176,13 @@ test("Dynamic Boolean Class", () => {
         class_foo: () => val,
     })();
 
-    assert.equal(r.rootNode.getAttribute("class"), "foo");
+    assert.equal(r.rootNodes[0].getAttribute("class"), "foo");
     val = false;
     r.update();
-    assert.equal(r.rootNode.getAttribute("class"), "");
+    assert.equal(r.rootNodes[0].getAttribute("class"), "");
     val = true;
     r.update();
-    assert.equal(r.rootNode.getAttribute("class"), "foo");
+    assert.equal(r.rootNodes[0].getAttribute("class"), "foo");
 });
 
 test("Static Style Attribute", () => {
@@ -192,7 +192,7 @@ test("Static Style Attribute", () => {
         style: "foo",
     })();
 
-    assert.equal(r.rootNode.getAttribute("style"), "foo");
+    assert.equal(r.rootNodes[0].getAttribute("style"), "foo");
 });
 
 test("Dynamic Style Attribute", () => {
@@ -203,10 +203,10 @@ test("Dynamic Style Attribute", () => {
         style: () => val,
     })();
 
-    assert.equal(r.rootNode.getAttribute("style"), val);
+    assert.equal(r.rootNodes[0].getAttribute("style"), val);
     val = "bar";
     r.update();
-    assert.equal(r.rootNode.getAttribute("style"), val);
+    assert.equal(r.rootNodes[0].getAttribute("style"), val);
 });
 
 
@@ -217,7 +217,7 @@ test("Static Attribute", () => {
         attr_dataMyData: "foo",
     })();
 
-    assert.equal(r.rootNode.getAttribute("data-my-data"), "foo");
+    assert.equal(r.rootNodes[0].getAttribute("data-my-data"), "foo");
 });
 
 test("Dynamic Attribute", () => {
@@ -228,10 +228,10 @@ test("Dynamic Attribute", () => {
         attr_dataMyData: () => val,
     })();
 
-    assert.equal(r.rootNode.getAttribute("data-my-data"), val);
+    assert.equal(r.rootNodes[0].getAttribute("data-my-data"), val);
     val = "bar";
     r.update();
-    assert.equal(r.rootNode.getAttribute("data-my-data"), val);
+    assert.equal(r.rootNodes[0].getAttribute("data-my-data"), val);
 });
 
 
@@ -245,9 +245,9 @@ test("Child Nodes", () => {
         ]
     })();
 
-    assert.equal(r.rootNode.childNodes.length, 2);
-    assert.equal(r.rootNode.childNodes[0].nodeName, "SPAN");
-    assert.equal(r.rootNode.childNodes[1].nodeName, "SPAN");
+    assert.equal(r.rootNodes[0].childNodes.length, 2);
+    assert.equal(r.rootNodes[0].childNodes[0].nodeName, "SPAN");
+    assert.equal(r.rootNodes[0].childNodes[1].nodeName, "SPAN");
 });
 
 test("Child Nodes with Dynamic", () => {
@@ -260,10 +260,10 @@ test("Child Nodes with Dynamic", () => {
         ]
     })();
 
-    assert.equal(r.rootNode.childNodes[0].innerText, val);
+    assert.equal(r.rootNodes[0].childNodes[0].innerText, val);
     val = "bar";
     r.update();
-    assert.equal(r.rootNode.childNodes[0].innerText, val);
+    assert.equal(r.rootNodes[0].childNodes[0].innerText, val);
 });
 
 
@@ -276,7 +276,7 @@ test("Conditional Child (true)", () => {
         ]
     })();
 
-    assert.equal(r.rootNode.childNodes[0].nodeType, 1);
+    assert.equal(r.rootNodes[0].childNodes[0].nodeType, 1);
 });
 
 
@@ -289,7 +289,7 @@ test("Conditional Child (false)", () => {
         ]
     })();
 
-    assert.equal(r.rootNode.childNodes[0].nodeType, 8);
+    assert.equal(r.rootNodes[0].childNodes[0].nodeType, 8);
 });
 
 
@@ -307,14 +307,14 @@ test("Conditional Child (dynamic)", () => {
         ]
     })();
 
-    assert.equal(r.rootNode.childNodes[0].nodeType, 8);
+    assert.equal(r.rootNodes[0].childNodes[0].nodeType, 8);
     val = true;
     r.update();
-    assert.equal(r.rootNode.childNodes[0].nodeType, 1);
-    assert.equal(r.rootNode.childNodes[0].nodeName, "DIV");
+    assert.equal(r.rootNodes[0].childNodes[0].nodeType, 1);
+    assert.equal(r.rootNodes[0].childNodes[0].nodeName, "DIV");
     val = false;
     r.update();
-    assert.equal(r.rootNode.childNodes[0].nodeType, 8);
+    assert.equal(r.rootNodes[0].childNodes[0].nodeType, 8);
 });
 
 test("Fragment", () => {
@@ -325,7 +325,7 @@ test("Fragment", () => {
         ]
     })();
     assert(Array.isArray(r.rootNode));
-    assert.equal(r.rootNode.length, 2);
+    assert.equal(r.rootNodes[0].length, 2);
 });
 
 test("Fragment (with conditional)", () => {
@@ -338,7 +338,7 @@ test("Fragment (with conditional)", () => {
     })();
 
     assert(Array.isArray(r.rootNode));
-    assert.equal(r.rootNode.length, 2);
+    assert.equal(r.rootNodes[0].length, 2);
     assert.equal(r.rootNode[0].nodeType, 8);
 
     // Attach the root nodes to a div so replaceWith works
@@ -348,13 +348,13 @@ test("Fragment (with conditional)", () => {
     // Condition true
     val = true;
     r.update();
-    assert.equal(r.rootNode.length, 2);
+    assert.equal(r.rootNodes[0].length, 2);
     assert.equal(r.rootNode[0].nodeType, 1);
 
     // Condition false
     val = false;
     r.update();
-    assert.equal(r.rootNode.length, 2);
+    assert.equal(r.rootNodes[0].length, 2);
     assert.equal(r.rootNode[0].nodeType, 8);
 });
 
@@ -368,7 +368,7 @@ test("Nested Fragment", () => {
         ]
     })();
     assert(Array.isArray(r.rootNode));
-    assert.equal(r.rootNode.length, 2);
+    assert.equal(r.rootNodes[0].length, 2);
     assert.equal(r.rootNodesFlat.length, 4);
 });
 
@@ -387,7 +387,7 @@ test("Double Nested Fragment", () => {
         ]
     })();
     assert(Array.isArray(r.rootNode));
-    assert.equal(r.rootNode.length, 1);
+    assert.equal(r.rootNodes[0].length, 1);
     assert.equal(r.rootNodesFlat.length, 3);
 });
 
@@ -463,7 +463,7 @@ test("ForEach Static", () => {
         ]
     })();
 
-    assert.equal(r.rootNode.childNodes.length, 3);
+    assert.equal(r.rootNodes[0].childNodes.length, 3);
 });
 
 test("ForEach Dynamic", () => {
@@ -481,10 +481,10 @@ test("ForEach Dynamic", () => {
         ]
     })();
 
-    assert.equal(r.rootNode.childNodes.length, 3);
+    assert.equal(r.rootNodes[0].childNodes.length, 3);
 
     items.push("oranges", "watermelon");
     r.update();
 
-    assert.equal(r.rootNode.childNodes.length, 5);
+    assert.equal(r.rootNodes[0].childNodes.length, 5);
 });
