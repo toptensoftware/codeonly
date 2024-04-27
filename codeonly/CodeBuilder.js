@@ -18,6 +18,10 @@ export function CodeBuilder()
             lines.push(...code.split("\n").map(x => indentStr + x));
         }
     }
+    function appendLines(arr)
+    {
+        arr.forEach(x => appendLine(x));
+    }
     function appendLine(str)
     {
         lines.push(...str.split("\n").map(x => indentStr + x));
@@ -45,6 +49,7 @@ export function CodeBuilder()
 
     return {
         append,
+        appendLines,
         appendLine,
         indent,
         unindent,
