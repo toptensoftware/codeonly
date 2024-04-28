@@ -74,25 +74,15 @@ export let TemplateHelpers = {
             node.classList.remove(cls);
     },
 
-
-    insertFragment(placeholder, fragmentNodes)
-    {
-        // Capture the parent
-        let parent = placeholder.parentNode;
-
-        placeholder.after(...fragmentNodes);
-        placeholder.remove();
-    },
-
-    removeFragment(fragmentNodes, placeholder)
+    replaceMany(nodes, placeholder)
     {
         // Insert the place holder
-        fragmentNodes[0].replaceWith(placeholder);
+        nodes[0].replaceWith(placeholder);
 
         // Remove the other fragment nodes
-        for (let i=1; i<fragmentNodes.length; i++)
+        for (let i=1; i<nodes.length; i++)
         {
-            fragmentNodes[i].remove();
+            nodes[i].remove();
         }
     },
 }

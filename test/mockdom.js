@@ -64,10 +64,10 @@ class HTMLNode
         return this.attributes.get(name);
     }
 
-    append()
+    append(...nodes)
     {
         assert(this.nodeType == 1);
-        for (let arg of [...arguments])
+        for (let arg of nodes)
         {
             assert(arg instanceof HTMLNode);
             arg.parentNode = this;
@@ -81,21 +81,38 @@ class HTMLNode
         this.parentNode.removeChild(this);
     }
 
-    replaceWith(newNode)
+    replaceWith(...newNodes)
     {
-        if (!this.parentNode)
-            debugger;
+        this.after(...newNodes);
+        this.remove();
+    }
+
+    after(...newNodes)
+    {
         assert(this.parentNode);
-        assert(!newNode.parentNode)
-        if (!(newNode instanceof HTMLNode))
-            throw new Error("not a node");
+        assert(!newNodes.some(x => x.parentNode));
+        assert(!newNodes.some(x => !(x instanceof HTMLNode)));
 
         let index = this.parentNode.childNodes.indexOf(this);
-        assert(index >= 0);
 
-        this.parentNode.childNodes[index] = newNode;
-        newNode.parentNode = this.parentNode;
-        this.parentNode = null;
+        this.parentNode.childNodes.splice(index + 1, 0, ...newNodes);
+
+        for (let i=0; i<newNodes.length; i++)
+            newNodes[i].parentNode = this.parentNode;
+    }
+
+    before(...newNodes)
+    {
+        assert(this.parentNode);
+        assert(!newNodes.some(x => x.parentNode));
+        assert(!newNodes.some(x => !(x instanceof HTMLNode)));
+
+        let index = this.parentNode.childNodes.indexOf(this);
+
+        this.parentNode.childNodes.splice(index, 0, ...newNodes);
+
+        for (let i=0; i<newNodes.length; i++)
+            newNodes[i].parentNode = this.parentNode;
     }
 
     insertBefore(node, before)

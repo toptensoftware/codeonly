@@ -20,7 +20,7 @@ export function CodeBuilder()
     }
     function appendLines(arr)
     {
-        arr.forEach(x => appendLine(x));
+        arr.forEach(x => { if (x) appendLine(x) });
     }
     function appendLine(str)
     {

@@ -6,7 +6,34 @@ export class ForEachManager
     {
         this.options = options;
         this.items = [];
-        this.nodes = [];
+        this.headSentinal = document.createComment(" enter foreach ");
+        this.tailSentinal = document.createComment(" leave foreach ");
+    }
+
+    get nodes()
+    {
+        if (this.options.multi_root_items)
+        {
+            let r = [ this.headSentinal ];
+            for (let i=0; i<this.items.length; i++)
+            {
+                r.push(...this.items[i].rootNodes);
+            }
+            r.push(this.tailSentinal);
+            return r;
+        }
+        else
+        {
+            return [this.headSentinal, ...this.items.map(x => x.rootNode), this.tailSentinal];
+        }
+    }
+
+    destroy()
+    {
+        for (let i=0; i<this.items.length; i++)
+        {
+            this.items[i].destroy();
+        }
     }
 
     // Load initial items
@@ -16,7 +43,10 @@ export class ForEachManager
             items = [];
 
         // Construct all items
-        items.forEach((item, index) => {
+        for (let index=0; index<items.length; index++)
+        {
+            // Get item
+            let item = items[index];
 
             // Setup item context
             let itemCtx = {
@@ -24,10 +54,14 @@ export class ForEachManager
                 outer: this.options.outer,
             };
 
+            // Test condition
+            if (this.options.condition && !this.options.condition.call(this.options.model, item, item.itemCtx))
+                continue;
+
             // Setup key
             if (this.options.key)
             {
-                itemCtx.key = this.options.item_key.call(this.options.model, item.itemCtx);
+                itemCtx.key = this.options.item_key.call(this.options.model, item, item.itemCtx);
             }
             else
             {
@@ -42,27 +76,39 @@ export class ForEachManager
 
             // Add to collections
             this.items.push(item_closure);
-            this.nodes.push(item_closure.rootNode);
-        });
-
-        // Return array of nodes
-        return this.nodes;
+        }
     }
 
     // Update items
-    updateItems(items)
+    updateItems(newItems)
     {
         // Get keys for all items
         let tempCtx = { outer: this.options.outer };
-        let newKeys = this.options.item_key ? item.map((item) => {
+
+        // Filter out conditional items
+        if (this.options.condition)
+        {
+            newItems = newItems.filter((item) => {
+                tempCtx.item = item;
+                return this.options.condition.call(this.options.model, item, tempCtx);
+            });
+        }
+
+        // Generate keys
+        let newKeys = this.options.item_key ? newItems.map((item) => {
             tempCtx.item = item;
             return this.options.item_key.call(this.options.model, item, tempCtx);
-        }) : items;
+        }) : newItems;
 
-        // Diff keys
-        diff(this.items, newKeys, (op, index, count) => {
+        // Run diff
+        diff(this.items, newKeys, (this.options.multi_root_items ? multi_root_diff_handler : single_root_diff_handler).bind(this), (a, b) => a.itemCtx.key == b );
+
+        // Diff handler for when item's might have multiple roots
+        function multi_root_diff_handler(op, index, count)
+        {
             if (op == 'insert')
             {
+                let newNodes = [];
                 for (let i=0; i<count; i++)
                 {
                     // Setup item context
@@ -76,24 +122,99 @@ export class ForEachManager
                     // Construct the item
                     let item_closure = this.options.item_constructor(itemCtx);
 
-                    // Add to collections
+                    // Add to item collection
                     this.items.splice(index + i, 0, item_closure);
-                    this.nodes.splice(index + i, 0, item_closure.rootNode);
+
+                    // Build list of nodes to be inserted
+                    newNodes.push(...item_closure.rootNodes);
                 }
+
+                // Insert the nodes
+                let insertBefore;
+                if (index + count < this.items.length)
+                {
+                    insertBefore = this.items[index + count].rootNodes[0];
+                }
+                else
+                {
+                    insertBefore = this.tailSentinal;
+                }
+                insertBefore.before(...newNodes);
             }
             else
             {
                 // Destroy the items
                 for (let i=0; i<count; i++)
                 {
+                    // Remove child nodes
+                    let children = this.items[index + i].rootNodes;
+                    for (let j = 0; j<children.length; j++)
+                    {
+                        children[j].remove();
+                    }
+
+                    // Destroy the item
                     this.items[index + i].destroy();
                 }
 
                 // Splice arrays
                 this.items.splice(index, count);
-                this.nodes.splice(index, count);
             }
-        },
-        (a, b) => a.itemCtx.key == b );
+        }
+
+        // Diff handler when the items are known to be single root
+        function single_root_diff_handler(op, index, count)
+        {
+            if (op == 'insert')
+            {
+                let newNodes = [];
+                for (let i=0; i<count; i++)
+                {
+                    // Setup item context
+                    let itemCtx = {
+                        item: newItems[index + i],
+                        outer: this.options.outer,
+                        key: newKeys[index + i],
+                        index: index + i,
+                    };
+
+                    // Construct the item
+                    let item_closure = this.options.item_constructor(itemCtx);
+
+                    // Add to item collection
+                    this.items.splice(index + i, 0, item_closure);
+
+                    // Build list of nodes to be inserted
+                    newNodes.push(item_closure.rootNode);
+                }
+
+                // Insert the nodes
+                let insertBefore;
+                if (index + count < this.items.length)
+                {
+                    insertBefore = this.items[index + count].rootNode;
+                }
+                else
+                {
+                    insertBefore = this.tailSentinal;
+                }
+                insertBefore.before(...newNodes);
+            }
+            else
+            {
+                // Destroy the items
+                for (let i=0; i<count; i++)
+                {
+                    // Remove child nodes
+                    this.items[index + i].rootNode.remove();
+
+                    // Destroy the item
+                    this.items[index + i].destroy();
+                }
+
+                // Splice arrays
+                this.items.splice(index, count);
+            }
+        }
     }
 }
