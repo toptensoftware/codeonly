@@ -215,9 +215,9 @@ export function compileTemplateCode(rootTemplate)
                 }
 
                 // Is it a conditional node?
-                if (child_ni.template.condition !== undefined)
+                if (child_ni.template.if !== undefined)
                 {
-                    if (child_ni.template.condition instanceof Function)
+                    if (child_ni.template.if instanceof Function)
                     {
                         // Dynamic conditional...
                         compileConditionalNode(child_ni);
@@ -226,7 +226,7 @@ export function compileTemplateCode(rootTemplate)
                     else
                     {
                         // Static conditional, either include it or not?
-                        if (!child_ni.template.condition)
+                        if (!child_ni.template.if)
                         {
                             ni.childNodes.splice(i, 1);
                             i--;
@@ -282,7 +282,7 @@ export function compileTemplateCode(rootTemplate)
         function compileConditionalNode(child_ni)
         {
             let callback_index = objrefs.length;
-            objrefs.push(child_ni.template.condition);
+            objrefs.push(child_ni.template.if);
 
             let nn = child_ni.name;
             child_ni.isConditional = true;
@@ -371,10 +371,10 @@ export function compileTemplateCode(rootTemplate)
                 objrefs.push(child_ni.template.item_key);
                 closure.create.appendLine(`  item_key: ctx.objrefs[${itemkey_index}],`);
             }
-            if (child_ni.template.condition)
+            if (child_ni.template.if)
             {
                 let condition_index = objrefs.length;
-                objrefs.push(child_ni.template.condition);
+                objrefs.push(child_ni.template.if);
                 closure.create.appendLine(`  condition: ctx.objrefs[${condition_index}],`);
             }
             closure.create.appendLine(`});`);

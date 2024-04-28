@@ -16,7 +16,7 @@ test("Fragment (with conditional)", () => {
     let val = false;
     let r = compileTemplate({
         childNodes: [
-            { type: "SPAN", text: "foo", condition: () => val },
+            { type: "SPAN", text: "foo", if: () => val },
             { type: "SPAN", text: "bar" },
         ]
     })();
@@ -77,11 +77,11 @@ test("Double Nested Fragment (with conditional)", () => {
     let r = compileTemplate({
         childNodes: [
             { 
-                condition: () => val1,
+                if: () => val1,
                 childNodes: [
                     "A", "B",
                     {
-                        condition: () => val2,
+                        if: () => val2,
                         childNodes: ["C", "D", "E"],
                     }
                 ],

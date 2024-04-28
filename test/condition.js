@@ -9,7 +9,7 @@ test("Conditional Child (true)", () => {
     let r = compileTemplate({
         type: "DIV",
         childNodes: [
-            { type: "SPAN", text: "foo", condition: true },
+            { type: "SPAN", text: "foo", if: true },
         ]
     })();
 
@@ -22,7 +22,7 @@ test("Conditional Child (false)", () => {
     let r = compileTemplate({
         type: "DIV",
         childNodes: [
-            { type: "SPAN", text: "foo", condition: false },
+            { type: "SPAN", text: "foo", if: false },
         ]
     })();
 
@@ -38,7 +38,7 @@ test("Conditional Child (dynamic)", () => {
         childNodes: [
             { 
                 type: "DIV", 
-                condition: () => val,
+                if: () => val,
                 childNodes: [ "A", "B", "C" ]
             },
         ]
@@ -62,7 +62,7 @@ test("Conditional Foreach", () => {
         type: "DIV",
         childNodes: [
             {
-                condition: () => val,
+                if: () => val,
                 childNodes: [
                     "text",
                     { 
