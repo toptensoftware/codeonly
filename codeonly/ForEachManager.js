@@ -82,6 +82,20 @@ export class ForEachManager
     // Update items
     updateItems(newItems)
     {
+        // If not array sensitive, don't bother diffing
+        if (!this.options.array_sensitive)
+        {
+            // If item's are sensitive then update them
+            if (this.options.item_sensitive)
+            {
+                for (let i=0; i<this.items; i++)
+                {
+                    this.items[i].update();
+                }
+            }
+            return;
+        }
+
         // Get keys for all items
         let tempCtx = { outer: this.options.outer };
 
@@ -100,12 +114,48 @@ export class ForEachManager
             return this.options.item_key.call(this.options.model, item, tempCtx);
         }) : newItems;
 
+        let patchedTo = 0;
+        let self = this;
+
         // Run diff
         diff(this.items, newKeys, (this.options.multi_root_items ? multi_root_diff_handler : single_root_diff_handler).bind(this), (a, b) => a.itemCtx.key == b );
+
+        patch_existing(this.items.length);
+
+        // Patch existing items (ie: update item index)
+        function patch_existing(to)
+        {
+            if (self.options.item_sensitive)
+            {
+                // If item sensitive, always update index and item
+                for (let i=patchedTo; i<to; i++)
+                {
+                    let item = self.items[i];
+                    item.itemCtx.index = i;
+                    item.update();
+                }
+            }
+            else if (self.options.index_sensitive)
+            {
+                // If index sensitive, only update when index changes
+                for (let i=patchedTo; i<to; i++)
+                {
+                    let item = self.items[i];
+                    if (item.itemCtx.index != i)
+                    {
+                        item.itemCtx.index = i;
+                        item.update();
+                    }
+                }
+            }
+            patchedTo = to;
+        }
 
         // Diff handler for when item's might have multiple roots
         function multi_root_diff_handler(op, index, count)
         {
+            patch_existing(index);
+
             if (op == 'insert')
             {
                 let newNodes = [];
@@ -165,6 +215,8 @@ export class ForEachManager
         // Diff handler when the items are known to be single root
         function single_root_diff_handler(op, index, count)
         {
+            patch_existing(index);
+
             if (op == 'insert')
             {
                 let newNodes = [];

@@ -1,4 +1,4 @@
-import { camel_to_dash } from "./Utils.js";
+import { camel_to_dash, is_constructor } from "./Utils.js";
 import { HtmlString } from "./HtmlString.js";
 import { CodeBuilder } from "./CodeBuilder.js";
 import { ClosureBuilder } from "./ClosureBuilder.js";
@@ -61,7 +61,7 @@ export function compileTemplateCode(rootTemplate)
                 `return { `,
                 ni.isMultiRoot ? null : `  get rootNode() { return ${ni.name}; },`,
                 `  get rootNodes() { return getRootNodes(); },`,
-                `  get itemCtx() { return itemCtx; },`,
+                `  itemCtx,`,
                 `  update,`,
                 `  destroy`,
                 `};`]);
@@ -111,9 +111,16 @@ export function compileTemplateCode(rootTemplate)
             return;
         }
 
+        // Embedded component
+        if (is_constructor(ni.template.type))
+        {
+            throw new Error("Embedded components not implemented");
+        }
+
         // Element node?
         if (ni.template.type)
         {
+
             // Create the element
             closure.addLocal(ni.name);
             closure.create.appendLine(`${ni.name} = document.createElement(${JSON.stringify(ni.template.type)});`);
@@ -283,7 +290,7 @@ export function compileTemplateCode(rootTemplate)
             // Before generating the node, generate the update code
             closure.update.appendLine(`if (${nn}_included != ${format_callback(callback_index)})`)
             closure.update.appendLine(`  ((${nn}_included = !${nn}_included) ? attach_${nn} : detach_${nn})();`);
-            closure.update.appendLine(`if (${nn}_included) {`);
+            let cblock = closure.update.enterCollapsibleBlock(`if (${nn}_included) {`);
             closure.update.indent();
 
             // Generate code to create initial
@@ -331,7 +338,7 @@ export function compileTemplateCode(rootTemplate)
             }
 
             closure.update.unindent();
-            closure.update.appendLine(`}`);
+            closure.update.leaveCollapsibleBlock(cblock, `}`);
         }
 
         function compileForEachNode(child_ni)
@@ -343,7 +350,7 @@ export function compileTemplateCode(rootTemplate)
             let itemClosureFn = closure.addFunction(`${child_ni.name}_item_constructor`, [ "itemCtx" ]);
             let itemClosure = new ClosureBuilder();
             itemClosure.callback_args = "ctx.model, itemCtx.item, itemCtx";
-            itemClosure.outer_item = "outer";
+            itemClosure.outer = "itemCtx";
             compileNodeToClosure(itemClosure, child_item_ni);
             itemClosure.appendTo(itemClosureFn.code);
 
@@ -351,10 +358,13 @@ export function compileTemplateCode(rootTemplate)
             closure.create.appendLine(`let ${child_ni.name}_manager = new helpers.ForEachManager({`);
             closure.create.appendLine(`  item_constructor: ${child_ni.name}_item_constructor,`);
             closure.create.appendLine(`  model: ctx.model,`);
-            if (closure.outer_item)
-                closure.create.appendLine(`  outer_item: ${closure.outer_item},`);
+            if (closure.outer)
+                closure.create.appendLine(`  outer: ${closure.outer},`);
             if (child_item_ni.isMultiRoot)
                 closure.create.appendLine(`  multi_root_items: true,`);
+            closure.create.appendLine(`  array_sensitive: ${child_ni.template.array_sensitive !== false},`);
+            closure.create.appendLine(`  index_sensitive: ${child_ni.template.index_sensitive !== false},`);
+            closure.create.appendLine(`  item_sensitive: ${!!child_ni.template.item_sensitive},`);
             if (child_ni.item_key)
             {
                 let itemkey_index = objrefs.length;

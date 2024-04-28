@@ -185,3 +185,112 @@ test("ForEach with Conditional Items", () => {
     }
 
 });
+
+test("ForEach Array Inensitive", () => {
+
+    let items = [ "A", "B", "C" ];
+
+    let r = compileTemplate({
+        type: "DIV",
+        childNodes: [
+            {
+                foreach: () => items,
+                array_sensitive: false,
+                type: "DIV",
+                text: (x, ctx) => `${x}${ctx.index}`,
+            }
+        ]
+    })();
+
+    assert.deepStrictEqual(["A0", "B1", "C2"], r.rootNode.childNodes.slice(1, -1).map(x => x.innerText));
+
+    items.unshift("Z");
+    r.update();
+
+    assert.deepStrictEqual(["A0", "B1", "C2"], r.rootNode.childNodes.slice(1, -1).map(x => x.innerText));
+});
+
+test("ForEach Index Sensitive", () => {
+
+    let items = [ "A", "B", "C" ];
+
+    let r = compileTemplate({
+        type: "DIV",
+        childNodes: [
+            {
+                foreach: () => items,
+                type: "DIV",
+                text: (x, ctx) => `${x}${ctx.index}`,
+            }
+        ]
+    })();
+
+    assert.deepStrictEqual(["A0", "B1", "C2"], r.rootNode.childNodes.slice(1, -1).map(x => x.innerText));
+
+    items.unshift("Z");
+    r.update();
+
+    assert.deepStrictEqual(["Z0", "A1", "B2", "C3"], r.rootNode.childNodes.slice(1, -1).map(x => x.innerText));
+
+    items.splice(2, 1);
+    r.update();
+
+    assert.deepStrictEqual(["Z0", "A1", "C2"], r.rootNode.childNodes.slice(1, -1).map(x => x.innerText));
+});
+
+
+
+test("ForEach Index Inensitive", () => {
+
+    let items = [ "A", "B", "C" ];
+
+    let r = compileTemplate({
+        type: "DIV",
+        childNodes: [
+            {
+                foreach: () => items,
+                index_sensitive: false,         // Update items when index changes
+                type: "DIV",
+                text: (x, ctx) => `${x}${ctx.index}`,
+            }
+        ]
+    })();
+
+    assert.deepStrictEqual(["A0", "B1", "C2"], r.rootNode.childNodes.slice(1, -1).map(x => x.innerText));
+
+    items.unshift("Z");
+    r.update();
+
+    assert.deepStrictEqual(["Z0", "A0", "B1", "C2"], r.rootNode.childNodes.slice(1, -1).map(x => x.innerText));
+});
+
+
+
+test("ForEach Nested", () => {
+
+    let items = [
+        { name: "A", subs: [ "1", "2"], },
+        { name: "B", subs: [ "3", "4"], },
+    ];
+
+    let r = compileTemplate({
+        type: "DIV",
+        childNodes: [
+            {
+                foreach: () => items,
+                childNodes: [
+                    {
+                        type: "DIV",
+                        foreach: (item) => item.subs,
+                        text: (item, ctx) => `${ctx.outer.item.name}${item}`,
+                    }
+                ],
+            }
+        ]
+    })();
+
+    assert.deepStrictEqual([
+        "A1", "A2", "B3", "B4"
+        ], r.rootNode.childNodes.filter(x => x.nodeType == 1).map(x => x.innerText));
+});
+
