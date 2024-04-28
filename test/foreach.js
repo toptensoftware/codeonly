@@ -264,7 +264,10 @@ test("ForEach Index Inensitive", () => {
     assert.deepStrictEqual(["Z0", "A0", "B1", "C2"], r.rootNode.childNodes.slice(1, -1).map(x => x.innerText));
 });
 
-
+function div(opts)
+{
+    return Object.assign({ type: "DIV" }, opts)
+}
 
 test("ForEach Nested", () => {
 
@@ -273,12 +276,15 @@ test("ForEach Nested", () => {
         { name: "B", subs: [ "3", "4"], },
     ];
 
-    let r = compileTemplate({
+    let r = compileTemplate(
+    {
         type: "DIV",
-        childNodes: [
+        childNodes: 
+        [
             {
                 foreach: () => items,
-                childNodes: [
+                childNodes: 
+                [
                     {
                         type: "DIV",
                         foreach: (item) => item.subs,
