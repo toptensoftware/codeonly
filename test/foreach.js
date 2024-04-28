@@ -147,8 +147,7 @@ test("ForEach Dynamic Fragment", () => {
 });
 
 
-
-test("ForEach Conditional", () => {
+test("ForEach with Conditional Items", () => {
 
     let items = [ "A", "B", "C" ];
 

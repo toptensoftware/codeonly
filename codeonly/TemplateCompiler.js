@@ -3,107 +3,8 @@ import { HtmlString } from "./HtmlString.js";
 import { CodeBuilder } from "./CodeBuilder.js";
 import { ClosureBuilder } from "./ClosureBuilder.js";
 import { TemplateHelpers } from "./TemplateHelpers.js";
+import { NodeInfo } from "./NodeInfo.js";
 
-class NodeInfo
-{
-    constructor(parent, name, template, isItemNode)
-    {
-        this.parent = parent;
-        this.name =  name;
-        this.template = template;
-        this.childNodes = [];
-        this.isItemNode = isItemNode;
-    }
-
-    get isMultiRoot()
-    {
-        return this.isFragment || this.isForEach;
-    }
-
-    get isFragment()
-    {
-        if (typeof(this.template) != 'object')
-            return false;
-        if (this.template instanceof HtmlString)
-            return false;
-        if (this.template instanceof Function)
-            return false;
-        return !this.template.type;
-    }
-
-    get isForEach()
-    {
-        return !!this.template.foreach && !this.isItemNode;
-    }
-
-    *enumLocalNodes()
-    {
-        if (this.isForEach)
-            return;
-
-        if (!this.isFragment)
-            yield this.name;
-
-        for (let i=0; i<this.childNodes.length; i++)
-        {
-            yield *this.childNodes[i].enumLocalNodes();
-        }
-
-    }
-
-    spreadChildDomNodes()
-    {
-        return Array.from(enum_nodes(this)).join(", ");
-
-        function *enum_nodes(n)
-        {
-            for (let i=0; i<n.childNodes.length; i++)
-            {
-                yield n.childNodes[i].spreadDomNodes(false);
-            }
-        }
-    
-    }
-
-    spreadDomNodes(excludeConditional)
-    {
-        return Array.from(enum_nodes(this, excludeConditional)).join(", ");
-
-        // Generate code to list out all this nodes dom nodes
-        function *enum_nodes(n, excludeConditional)
-        {
-            if (n.isForEach)
-            {
-                yield `...${n.name}_manager.nodes`;
-                return;
-            }
-
-            if (n.isConditional && !excludeConditional)
-            {
-                if (n.isFragment)
-                {
-                    yield `...(${n.name}_included ? [${Array.from(enum_nodes(n, true)).join(", ")}] : [${n.name}_placeholder])`;
-                }
-                else
-                {
-                    yield `(${n.name}_included ? ${n.name} : ${n.name}_placeholder)`;
-                }
-                return;
-            }
-
-            if (n.isFragment)
-            {
-                for (let i=0; i<n.childNodes.length; i++)
-                {
-                    yield *enum_nodes(n.childNodes[i]);
-                }
-                return;
-            }
-
-            yield n.name;
-        }
-    }
-}
 
 export function compileTemplateCode(rootTemplate)
 {
@@ -183,7 +84,6 @@ export function compileTemplateCode(rootTemplate)
     // Recursively compile a node from a template
     function compileNode(closure, ni)
     {
-
         // Normal text?
         if (typeof(ni.template) === 'string')
         {
@@ -294,9 +194,10 @@ export function compileTemplateCode(rootTemplate)
             }
 
             // Create the child nodes
-            for (let child_ni of ni.childNodes)
+            for (let i=0; i<ni.childNodes.length; i++)
             {
-                // Get the child node template
+                // Get the child node
+                let child_ni = ni.childNodes[i];
                 let nn = child_ni.name;
 
                 // Is it a foreach node?
@@ -320,10 +221,8 @@ export function compileTemplateCode(rootTemplate)
                         // Static conditional, either include it or not?
                         if (!child_ni.template.condition)
                         {
-                            if (child_ni.isFragment)
-                                closure.create.appendLine(`${nn} = [ document.createComment(' omitted by condition ') ];`);
-                            else
-                                closure.create.appendLine(`${nn} = document.createComment(' omitted by condition ');`);
+                            ni.childNodes.splice(i, 1);
+                            i--;
                             continue;
                         }
                     }
@@ -421,23 +320,18 @@ export function compileTemplateCode(rootTemplate)
                 fn.code.appendLine(`${nn}.replaceWith(${nn}_placeholder)`);
             }
 
-            fn.code.appendLine(`${Array.from(child_ni.enumLocalNodes()).join(" = ")} = null;`);
-
-            /*
-            if (child_ni.parent.isFragment)
-                fn.code.appendLine(`${child_ni.parent.name}[${child_ni.index}] = replacement;`);
-            let closureNodes = [];
-            child_ni.getClosureNodes(closureNodes);
-            if (closureNodes.length)
+            for (let ln of child_ni.enumLocalNodes())
             {
-                fn.code.appendLine(`${closureNodes.map(x => x.name).join(" = ")} = null;`);
+                fn.code.appendLine(`${ln} = null;`);
             }
-            */
-
+            for (let fe of child_ni.enumLocalForEach())
+            {
+                fn.code.appendLine(`${fe}_manager?.destroy();`);
+                fn.code.appendLine(`${fe}_manager = null;`);
+            }
 
             closure.update.unindent();
             closure.update.appendLine(`}`);
-
         }
 
         function compileForEachNode(child_ni)

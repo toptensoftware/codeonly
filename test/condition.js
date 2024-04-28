@@ -26,7 +26,7 @@ test("Conditional Child (false)", () => {
         ]
     })();
 
-    assert.equal(r.rootNodes[0].childNodes[0].nodeType, 8);
+    assert.equal(r.rootNodes[0].childNodes.length, 0);
 });
 
 
@@ -52,4 +52,27 @@ test("Conditional Child (dynamic)", () => {
     val = false;
     r.update();
     assert.equal(r.rootNodes[0].childNodes[0].nodeType, 8);
+});
+
+
+test("Conditional Foreach", () => {
+
+    let val = false;
+    let r = compileTemplate({
+        type: "DIV",
+        childNodes: [
+            {
+                condition: () => val,
+                childNodes: [
+                    "text",
+                    { 
+                        foreach: [ "A", "B", "C" ],
+                        type: "DIV", 
+                        text: x => x,
+                    },
+                ]
+            }
+        ]
+    })();
+
 });
