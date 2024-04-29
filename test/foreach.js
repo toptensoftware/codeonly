@@ -163,7 +163,7 @@ test("ForEach with Conditional Items", () => {
             {
                 type: "DIV",
                 foreach: () => items,
-                condition: check_condition,
+                if: check_condition,
                 text: x => x,
             }
         ]

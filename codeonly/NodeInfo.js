@@ -87,9 +87,9 @@ export class NodeInfo
     // as a sequence of spread variables.
     spreadChildDomNodes()
     {
-        return Array.from(enum_nodes(this)).join(", ");
+        return Array.from(enumChildNodes(this)).join(", ");
 
-        function *enum_nodes(n)
+        function *enumChildNodes(n)
         {
             for (let i=0; i<n.childNodes.length; i++)
             {
@@ -107,40 +107,70 @@ export class NodeInfo
     // but before it's been removed from the DOM.
     spreadDomNodes(excludeConditional)
     {
-        return Array.from(enum_nodes(this, excludeConditional)).join(", ");
+        return Array.from(this.enumAllNodes(excludeConditional)).join(", ");
+    }
 
-        // Generate code to list out all this nodes dom nodes
-        function *enum_nodes(n, excludeConditional)
+    // Generate code to list out all this node's dom nodes
+    *enumAllNodes(excludeConditional)
+    {
+        if (this.isForEach)
         {
-            if (n.isForEach)
-            {
-                yield `...${n.name}_manager.nodes`;
-                return;
-            }
-
-            if (n.isConditional && !excludeConditional)
-            {
-                if (n.isFragment)
-                {
-                    yield `...(${n.name}_included ? [${Array.from(enum_nodes(n, true)).join(", ")}] : [${n.name}_placeholder])`;
-                }
-                else
-                {
-                    yield `(${n.name}_included ? ${n.name} : ${n.name}_placeholder)`;
-                }
-                return;
-            }
-
-            if (n.isFragment)
-            {
-                for (let i=0; i<n.childNodes.length; i++)
-                {
-                    yield *enum_nodes(n.childNodes[i]);
-                }
-                return;
-            }
-
-            yield n.name;
+            yield `...${this.name}_manager.nodes`;
+            return;
         }
+
+        if (this.conditionGroup && !excludeConditional)
+        {
+            if (this != this.conditionGroup[0])
+                throw new Error("internal error");
+
+            let multiRoot = this.conditionGroup.some(x => x.isMultiRoot);
+            let str = multiRoot ? "...(" : "(";
+            let closing = ")";
+            for (let i=0; i<this.conditionGroup.length; i++)
+            {
+                let br = this.conditionGroup[i];
+
+                str += `${this.name}_branch == ${i} ? `;
+                if (multiRoot)
+                    str += `[${Array.from(br.enumAllNodes(true)).join(", ")}] : `;
+                else
+                    str += `${br.name} : `
+
+                if (multiRoot)
+                {
+                    str += `[`;
+                    closing = `]` + closing;
+                }
+            }
+            if (this.conditionGroup[this.conditionGroup.length-1].clause != 'else')
+            {
+                str += `${this.name}_placeholder`;
+            }
+
+            str += closing;
+            yield str;
+            return;
+            /*
+            {
+                yield `...(${n.name}_included ? [${Array.from(enum_nodes(n, true)).join(", ")}] : [${n.name}_placeholder])`;
+            }
+            else
+            {
+                yield `(${n.name}_included ? ${n.name} : ${n.name}_placeholder)`;
+            }
+            */
+        }
+
+        if (this.isFragment)
+        {
+            for (let i=0; i<this.childNodes.length; i++)
+            {
+                yield *this.childNodes[i].enumAllNodes();
+            }
+            return;
+        }
+
+        yield this.name;
     }
 }

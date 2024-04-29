@@ -50,12 +50,12 @@ class TestComponent extends Component
                                 {
                                     type: 'label',
                                     text: ' MOD 2',
-                                    condition: () => this.count % 2 == 0,
+                                    if: () => this.count % 2 == 0,
                                 },
                                 {
                                     type: 'label',
                                     text: ' MOD 3',
-                                    condition: () => this.count % 3 == 0,
+                                    if: () => this.count % 3 == 0,
                                 },
                             ]
                         },
@@ -187,7 +187,7 @@ class ListComponent extends Component
                 {   
                     foreach: () => this.items,
                     item_needs_index: true,
-                    condition: (item) => item < 5 || item > 10,
+                    if: (item) => item < 5 || item > 10,
                     type: "div",
                     text: (item, ctx) => `#${ctx.index + 1}: ${item}`,
                 },

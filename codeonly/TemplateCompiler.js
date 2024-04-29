@@ -23,6 +23,10 @@ export function compileTemplateCode(rootTemplate)
     // Create node info        
     let rootNodeInfo = new NodeInfo(null, `n${nodeId++}`, rootTemplate, false);
     nodeMap.set(rootNodeInfo.name, rootNodeInfo);
+
+    // Create condition group for root 'if' block
+    if (rootTemplate.if !== undefined && rootTemplate.foreach === undefined)
+        rootNodeInfo.conditionGroup = [ rootNodeInfo ];
     
     let rootClosure = new ClosureBuilder();
     rootClosure.callback_args = "ctx.model";
@@ -39,11 +43,6 @@ export function compileTemplateCode(rootTemplate)
     function compileNodeToClosure(closure, ni)
     {
         // Setup closure functions
-        if (!ni.isItemNode)
-        {
-            closure.attach = closure.addFunction("attach").code;
-            closure.detach = closure.addFunction("detach").code;
-        }
         closure.update = closure.addFunction("update").code;
         closure.destroy = closure.addFunction("destroy").code;
         closure.create = closure.code;
@@ -52,12 +51,12 @@ export function compileTemplateCode(rootTemplate)
         compileNode(closure, ni);
 
         let rnf = closure.addFunction('getRootNodes');
-        rnf.code.appendLine(`return [${ni.spreadDomNodes()}];`);
+        rnf.code.append(`return [${ni.spreadDomNodes()}];`);
 
         // Return interface to the closure
         if (ni.isItemNode)
         {
-            closure.code.appendLines([
+            closure.code.append([
                 `return { `,
                 ni.isMultiRoot ? null : `  get rootNode() { return ${ni.name}; },`,
                 `  get rootNodes() { return getRootNodes(); },`,
@@ -68,14 +67,12 @@ export function compileTemplateCode(rootTemplate)
         }
         else
         {
-            closure.code.appendLines([
+            closure.code.append([
                 `return { `,
                 ni.isMultiRoot ? null : `  get rootNode() { return ${ni.name}; },`,
                 `  get rootNodes() { return getRootNodes(); },`,
                 `  isMultiRoot: ${ni.isMultiRoot},`,
-                `  attach,`,
                 `  update,`,
-                `  detach,`,
                 `  destroy`,
                 `};`]);
         }
@@ -88,27 +85,27 @@ export function compileTemplateCode(rootTemplate)
         if (typeof(ni.template) === 'string')
         {
             closure.addLocal(ni.name);
-            closure.create.appendLine(`${ni.name} = document.createTextNode(${JSON.stringify(ni.template)});`);
-            return;
+            closure.create.append(`${ni.name} = document.createTextNode(${JSON.stringify(ni.template)});`);
+            return true;
         }
 
         // HTML Text?
         if (ni.template instanceof HtmlString)
         {
             closure.addLocal(ni.name);
-            closure.create.appendLine(`${ni.name} = document.createElement("SPAN");`);
-            closure.create.appendLine(`${ni.name}.innerHTML = ${JSON.stringify(ni.template.html)};`);
-            return;
+            closure.create.append(`${ni.name} = document.createElement("SPAN");`);
+            closure.create.append(`${ni.name}.innerHTML = ${JSON.stringify(ni.template.html)};`);
+            return true;
         }
 
         // Dynamic text?
         if (ni.template instanceof Function)
         {
             closure.addLocal(ni.name);
-            closure.create.appendLine(`${ni.name} = helpers.createTextNode(${format_callback(objrefs.length)});`);
-            closure.update.appendLine(`${ni.name} = helpers.setNodeText(${ni.name}, ${format_callback(objrefs.length)});`);
+            closure.create.append(`${ni.name} = helpers.createTextNode(${format_callback(objrefs.length)});`);
+            closure.update.append(`${ni.name} = helpers.setNodeText(${ni.name}, ${format_callback(objrefs.length)});`);
             objrefs.push(ni.template);
-            return;
+            return true;
         }
 
         // Embedded component
@@ -117,19 +114,50 @@ export function compileTemplateCode(rootTemplate)
             throw new Error("Embedded components not implemented");
         }
 
+        // Is it a foreach node?
+        if (ni.isForEach)
+        {
+            compileForEachNode();
+            return true;
+        }
+
+        // Is it a conditional node?
+        if (ni.conditionGroup !== undefined)
+        {
+            compileConditionalNode();
+            return true;
+        }
+
+        // Comment?
+        if (ni.template.type == 'comment')
+        {
+            closure.addLocal(ni.name);
+
+            if (ni.template.text instanceof Function)
+            {
+                closure.create.append(`${ni.name} = document.createComment(${format_callback(objrefs.length)});`);
+                closure.update.append(`${ni.name} = ${ni.name}.nodeValue = ${format_callback(objrefs.length)};`);
+                objrefs.push(ni.template.text);
+            }
+            else
+            {
+                closure.create.append(`${ni.name} = document.createComment(${JSON.stringify(ni.template.text)});`);
+            }
+            return true;
+        }
+        
         // Element node?
         if (ni.template.type)
         {
-
             // Create the element
             closure.addLocal(ni.name);
-            closure.create.appendLine(`${ni.name} = document.createElement(${JSON.stringify(ni.template.type)});`);
+            closure.create.append(`${ni.name} = document.createElement(${JSON.stringify(ni.template.type)});`);
 
             // ID
             if (ni.template.id)
             {
                 format_dynamic(ni.template.id, (codeBlock, valueExpr) => {
-                    codeBlock.appendLine(`${ni.name}.setAttribute("id", ${valueExpr});`);
+                    codeBlock.append(`${ni.name}.setAttribute("id", ${valueExpr});`);
                 });
             }
 
@@ -137,7 +165,7 @@ export function compileTemplateCode(rootTemplate)
             if (ni.template.class)
             {
                 format_dynamic(ni.template.class, (codeBlock, valueExpr) => {
-                    codeBlock.appendLine(`${ni.name}.setAttribute("class", ${valueExpr});`);
+                    codeBlock.append(`${ni.name}.setAttribute("class", ${valueExpr});`);
                 });
             }
 
@@ -147,7 +175,7 @@ export function compileTemplateCode(rootTemplate)
                 let className = camel_to_dash(cls.substring(6));
 
                 format_dynamic(ni.template[cls], (codeBlock, valueExpr) => {
-                    codeBlock.appendLine(`helpers.setNodeClass(${ni.name}, ${JSON.stringify(className)}, ${valueExpr});`);
+                    codeBlock.append(`helpers.setNodeClass(${ni.name}, ${JSON.stringify(className)}, ${valueExpr});`);
                 });
             }
 
@@ -155,7 +183,7 @@ export function compileTemplateCode(rootTemplate)
             if (ni.template.style)
             {
                 format_dynamic(ni.template.style, (codeBlock, valueExpr) => {
-                    codeBlock.appendLine(`${ni.name}.setAttribute("style", ${valueExpr});`);
+                    codeBlock.append(`${ni.name}.setAttribute("style", ${valueExpr});`);
                 });
             }
 
@@ -165,7 +193,7 @@ export function compileTemplateCode(rootTemplate)
                 let attrName = camel_to_dash(attr.substring(5));
 
                 format_dynamic(ni.template[attr], (codeBlock, valueExpr) => {
-                    codeBlock.appendLine(`${ni.name}.setAttribute(${JSON.stringify(attrName)}, ${valueExpr});`);
+                    codeBlock.append(`${ni.name}.setAttribute(${JSON.stringify(attrName)}, ${valueExpr});`);
                 });
             }
 
@@ -175,16 +203,16 @@ export function compileTemplateCode(rootTemplate)
                 if (ni.template.text instanceof Function)
                 {
                     format_dynamic(ni.template.text, (codeBlock, valueExpr) => {
-                        codeBlock.appendLine(`helpers.setElementText(${ni.name}, ${valueExpr});`);
+                        codeBlock.append(`helpers.setElementText(${ni.name}, ${valueExpr});`);
                     });
                 }
                 else if (ni.template.text instanceof HtmlString)
                 {
-                    closure.create.appendLine(`${ni.name}.innerHTML = ${JSON.stringify(ni.template.text.html)};`);
+                    closure.create.append(`${ni.name}.innerHTML = ${JSON.stringify(ni.template.text.html)};`);
                 }
                 if (typeof(ni.template.text) === 'string')
                 {
-                    closure.create.appendLine(`${ni.name}.innerText = ${JSON.stringify(ni.template.text)};`);
+                    closure.create.append(`${ni.name}.innerText = ${JSON.stringify(ni.template.text)};`);
                 }
             }
         }
@@ -193,58 +221,52 @@ export function compileTemplateCode(rootTemplate)
         if (ni.template.childNodes)
         {
             // Create node infos for all children
+            let conditionGroup = null;
             for (let i=0; i<ni.template.childNodes.length; i++)
             {
-                let child_ni = new NodeInfo(ni, `n${nodeId++}`, ni.template.childNodes[i], false);
-                child_ni.index = i;
-                ni.childNodes.push(child_ni);
+                let child = new NodeInfo(ni, `n${nodeId++}`, ni.template.childNodes[i], false);
+                ni.childNodes.push(child);
+
+                // Connect if/elseif/else elements
+                if (child.template.if !== undefined)
+                {
+                    conditionGroup = [child];
+                    child.conditionGroup = conditionGroup;
+                }
+                else if (child.template.else !== undefined || child.template.elseif != undefined)
+                {
+                    if (conditionGroup == null)
+                        throw new Error("Element has an 'else' or 'elseif' condition but doesn't follow and 'if' or 'elseif' item");
+
+                    conditionGroup.push(child);
+
+                    if (child.template.else != undefined)
+                        conditionGroup = null;
+                }
+                else
+                {
+                    conditionGroup = null;
+                }
             }
 
             // Create the child nodes
             for (let i=0; i<ni.childNodes.length; i++)
             {
-                // Get the child node
-                let child_ni = ni.childNodes[i];
-                let nn = child_ni.name;
-
-                // Is it a foreach node?
-                if (child_ni.template.foreach !== undefined)
+                if (!compileNode(closure, ni.childNodes[i]))
                 {
-                    compileForEachNode(child_ni);
-                    continue;
+                    ni.childNodes.splice(i, 1);
+                    i--;
                 }
-
-                // Is it a conditional node?
-                if (child_ni.template.condition !== undefined)
-                {
-                    if (child_ni.template.condition instanceof Function)
-                    {
-                        // Dynamic conditional...
-                        compileConditionalNode(child_ni);
-                        continue;
-                    }
-                    else
-                    {
-                        // Static conditional, either include it or not?
-                        if (!child_ni.template.condition)
-                        {
-                            ni.childNodes.splice(i, 1);
-                            i--;
-                            continue;
-                        }
-                    }
-                }
-
-                // Regular node (or static true condition)
-                compileNode(closure, child_ni);
             }
 
             // Add all the child nodes to this node
             if (ni.childNodes.length && !ni.isFragment)
             {
-                closure.create.appendLine(`${ni.name}.append(${ni.spreadChildDomNodes()});`);
+                closure.create.append(`${ni.name}.append(${ni.spreadChildDomNodes()});`);
             }
         }
+
+        return true;
 
         function format_callback(index)
         {
@@ -279,75 +301,177 @@ export function compileTemplateCode(rootTemplate)
         }
 
 
-        function compileConditionalNode(child_ni)
+        function compileConditionalNode()
         {
-            let callback_index = objrefs.length;
-            objrefs.push(child_ni.template.condition);
+            let nn = ni.name;
 
-            let nn = child_ni.name;
-            child_ni.isConditional = true;
-
-            // Before generating the node, generate the update code
-            closure.update.appendLine(`if (${nn}_included != ${format_callback(callback_index)})`)
-            closure.update.appendLine(`  ((${nn}_included = !${nn}_included) ? attach_${nn} : detach_${nn})();`);
-            let cblock = closure.update.enterCollapsibleBlock(`if (${nn}_included) {`);
-            closure.update.indent();
-
-            // Generate code to create initial
-            closure.addLocal(`${nn}_included`);
-            closure.addLocal(`${nn}_placeholder`);
-            closure.create.appendLine(`${nn}_included = ${format_callback(callback_index)};`);
-            closure.create.appendLine(`if (${nn}_included)`);
-            closure.create.appendLine(`  create_${nn}();`);
-            closure.create.appendLine(`else`);
-            closure.create.appendLine(`  ${nn}_placeholder = document.createComment(' omitted by condition ');`);
-
-            // Generate function to create the node
-            let fn = closure.addFunction(`create_${nn}`);
-            let oldCreate = closure.create;
-            closure.create = fn.code;
-            compileNode(closure, child_ni);
-            closure.create = oldCreate;
-
-            // Generate function to create and attach the node
-            fn = closure.addFunction(`attach_${nn}`);
-            fn.code.appendLine(`create_${nn}();`);
-            fn.code.appendLine(`${nn}_placeholder.replaceWith(${child_ni.spreadDomNodes(true)});`);
-            fn.code.appendLine(`${nn}_placeholder = null`);
-
-            // Generate function to detach the node
-            fn = closure.addFunction(`detach_${nn}`);
-            fn.code.appendLine(`${nn}_placeholder = document.createComment(" omitted by condition ");`);
-            if (child_ni.isFragment)
+            // Setup the clause kind, branch index and callback
+            ni.callback_index = objrefs.length;
+            ni.branch_index = ni.conditionGroup.indexOf(ni);
+            if (ni.template.if !== undefined)
             {
-                fn.code.appendLine(`helpers.replaceMany([${child_ni.spreadDomNodes(true)}], ${nn}_placeholder);`);
+                ni.clause = "if";
+                objrefs.push(ni.template.if);
+            }
+            else if (ni.template.elseif !== undefined)
+            {
+                ni.clause = "else if";
+                objrefs.push(ni.template.elseif);
+            }
+            else if (ni.template.else !== undefined)
+            {
+                ni.clause = "else";
+                objrefs.push(ni.template.else);
             }
             else
             {
-                fn.code.appendLine(`${nn}.replaceWith(${nn}_placeholder)`);
+                throw new Error(`internal error configuring if/elseif/else blocks`);
             }
 
-            for (let ln of child_ni.enumLocalNodes())
+            if (!(objrefs[ni.callback_index] instanceof Function))
             {
-                fn.code.appendLine(`${ln} = null;`);
+                let val = objrefs[ni.callback_index];
+                objrefs[ni.callback_index] = () => val;
             }
-            for (let fe of child_ni.enumLocalForEach())
+    
+            let ni_if = ni.conditionGroup[0];
+
+            // Is this the first, primary "if" element?
+            let isFirst = ni.conditionGroup[0] == ni;
+            let isLast = ni.conditionGroup[ni.conditionGroup.length-1] == ni;
+
+            let prolog = ni_if.prolog;
+            if (isFirst)
             {
-                fn.code.appendLine(`${fe}_manager?.destroy();`);
-                fn.code.appendLine(`${fe}_manager = null;`);
+                ni_if.prolog = prolog = closure.addProlog();
+                prolog.append(`let ${ni.name}_branches = `);
+                prolog.append(`[`);
+                prolog.indent();
+
+                closure.update.append(`${ni_if.name}_select(${ni_if.name}_resolve());`);
+            }
+
+
+
+            let cblock = closure.update.enterCollapsibleBlock(`if (${ni_if.name}_branch == ${ni.branch_index}) {`);
+            closure.update.indent();
+
+            // Generate function to create the node
+            prolog.append(`{`);
+            prolog.indent();
+            prolog.append(`create: function()`);
+            prolog.append(`{`);
+            prolog.indent();
+            let save = ni.conditionGroup;
+            delete ni.conditionGroup;
+            let saveCreate = closure.create;
+            closure.create = prolog;
+            compileNode(closure, ni);
+            closure.create = saveCreate;
+            ni.conditionGroup = save;
+            prolog.unindent();
+            prolog.append(`},`);
+            prolog.append(`destroy: function()`);
+            prolog.append(`{`);
+            prolog.indent();
+            for (let ln of ni.enumLocalNodes())
+            {
+                prolog.append(`${ln} = null;`);
+            }
+            for (let fe of ni.enumLocalForEach())
+            {
+                prolog.append(`${fe}_manager?.destroy();`);
+                prolog.append(`${fe}_manager = null;`);
+            }
+            prolog.unindent();
+            prolog.append(`},`);
+            prolog.unindent();
+            prolog.append(`},`);
+
+
+            if (isLast)
+            {
+                if (ni.conditionGroup[ni.conditionGroup.length-1].clause != 'else')
+                {
+                    closure.addLocal(`${ni_if.name}_placeholder`);
+                    prolog.append(`{`);
+                    prolog.indent();
+                    prolog.append(`create: function()`);
+                    prolog.append(`{`);
+                    prolog.indent();
+                    prolog.append(`${ni_if.name}_placeholder = document.createComment(" omitted if ");`);
+                    prolog.unindent();
+                    prolog.append(`},`);
+                    prolog.append(`destroy: function()`);
+                    prolog.append(`{`);
+                    prolog.indent();
+                    prolog.append(`${ni_if.name}_placeholder = null;`);
+                    prolog.unindent();
+                    prolog.append(`},`);
+                    prolog.unindent();
+                    prolog.append(`}`);
+                }
+
+                prolog.unindent();
+                prolog.append(`];`);
+
+                // Generate code to create initial items
+                closure.addLocal(`${ni_if.name}_branch`);
+                closure.create.append(`${ni_if.name}_branch = ${ni_if.name}_resolve();`);
+                closure.create.append(`${ni_if.name}_branches[${ni_if.name}_branch].create();`);
+
+
+                let fnResolve = closure.addFunction(`${ni_if.name}_resolve`);
+
+                for (let i=0; i<ni.conditionGroup.length; i++)
+                {
+                    let ni_branch = ni.conditionGroup[i];
+
+                    fnResolve.code.append(`${ni_branch.clause} (${format_callback(ni_branch.callback_index)})`);
+                    fnResolve.code.append(`  return ${ni_branch.branch_index};`);
+                }
+                if (ni.conditionGroup[ni.conditionGroup.length-1].clause != 'else')
+                {
+                    fnResolve.code.append(`else`);
+                    fnResolve.code.append(`  return ${ni.conditionGroup.length};`);
+                }
+
+                // Generate function to create and attach the node
+                let multiRoot = ni.conditionGroup.some(x => x.isMultiRoot);
+                let fn = closure.addFunction(`${ni_if.name}_select`, ['branch']);
+                fn.code.append(`if (${ni_if.name}_branch == branch)`);
+                fn.code.append(`  return;`);
+                fn.code.append(`let old_branch = ${ni_if.name}_branch;`);
+                fn.code.append(`${ni_if.name}_branches[branch].create();`);
+                if (multiRoot)
+                {
+                    fn.code.append(`let old_nodes = [${ni_if.spreadDomNodes(false)}];`);
+                    fn.code.append(`${ni_if.name}_branch = branch;`);
+                    fn.code.append(`let new_nodes = [${ni_if.spreadDomNodes(false)}];`);
+                    fn.code.append(`helpers.replaceMany(old_nodes, new_nodes);`);
+                }
+                else
+                {
+                    fn.code.append(`let old_node = ${ni_if.spreadDomNodes(false)};`);
+                    fn.code.append(`${ni_if.name}_branch = branch;`);
+                    fn.code.append(`let new_node = ${ni_if.spreadDomNodes(false)};`);
+                    fn.code.append(`old_node.replaceWith(new_node);`);
+                }
+                fn.code.append(`${ni_if.name}_branches[old_branch].destroy();`);
             }
 
             closure.update.unindent();
             closure.update.leaveCollapsibleBlock(cblock, `}`);
+
         }
 
-        function compileForEachNode(child_ni)
+        function compileForEachNode()
         {
             // Create a node item for the child
-            let child_item_ni = new NodeInfo(null, `i${child_ni.name}`, child_ni.template, true);
+            let child_item_ni = new NodeInfo(null, `i${ni.name}`, ni.template, true);
 
             // Create a construction function for the items
-            let itemClosureFn = closure.addFunction(`${child_ni.name}_item_constructor`, [ "itemCtx" ]);
+            let itemClosureFn = closure.addFunction(`${ni.name}_item_constructor`, [ "itemCtx" ]);
             let itemClosure = new ClosureBuilder();
             itemClosure.callback_args = "ctx.model, itemCtx.item, itemCtx";
             itemClosure.outer = "itemCtx";
@@ -355,40 +479,40 @@ export function compileTemplateCode(rootTemplate)
             itemClosure.appendTo(itemClosureFn.code);
 
             // Create the "foreach" manager
-            closure.create.appendLine(`let ${child_ni.name}_manager = new helpers.ForEachManager({`);
-            closure.create.appendLine(`  item_constructor: ${child_ni.name}_item_constructor,`);
-            closure.create.appendLine(`  model: ctx.model,`);
+            closure.create.append(`let ${ni.name}_manager = new helpers.ForEachManager({`);
+            closure.create.append(`  item_constructor: ${ni.name}_item_constructor,`);
+            closure.create.append(`  model: ctx.model,`);
             if (closure.outer)
-                closure.create.appendLine(`  outer: ${closure.outer},`);
+                closure.create.append(`  outer: ${closure.outer},`);
             if (child_item_ni.isMultiRoot)
-                closure.create.appendLine(`  multi_root_items: true,`);
-            closure.create.appendLine(`  array_sensitive: ${child_ni.template.array_sensitive !== false},`);
-            closure.create.appendLine(`  index_sensitive: ${child_ni.template.index_sensitive !== false},`);
-            closure.create.appendLine(`  item_sensitive: ${child_ni.template.item_sensitive !== false},`);
-            if (child_ni.item_key)
+                closure.create.append(`  multi_root_items: true,`);
+            closure.create.append(`  array_sensitive: ${ni.template.array_sensitive !== false},`);
+            closure.create.append(`  index_sensitive: ${ni.template.index_sensitive !== false},`);
+            closure.create.append(`  item_sensitive: ${ni.template.item_sensitive !== false},`);
+            if (ni.item_key)
             {
                 let itemkey_index = objrefs.length;
-                objrefs.push(child_ni.template.item_key);
-                closure.create.appendLine(`  item_key: ctx.objrefs[${itemkey_index}],`);
+                objrefs.push(ni.template.item_key);
+                closure.create.append(`  item_key: ctx.objrefs[${itemkey_index}],`);
             }
-            if (child_ni.template.condition)
+            if (ni.template.if)
             {
                 let condition_index = objrefs.length;
-                objrefs.push(child_ni.template.condition);
-                closure.create.appendLine(`  condition: ctx.objrefs[${condition_index}],`);
+                objrefs.push(ni.template.if);
+                closure.create.append(`  condition: ctx.objrefs[${condition_index}],`);
             }
-            closure.create.appendLine(`});`);
+            closure.create.append(`});`);
 
             let objref_index = objrefs.length;
-            objrefs.push(child_ni.template.foreach);
-            if (!(child_ni.template.foreach instanceof Function))
+            objrefs.push(ni.template.foreach);
+            if (!(ni.template.foreach instanceof Function))
             {
-                closure.create.appendLine(`${child_ni.name}_manager.loadItems(ctx.objrefs[${objref_index}]);`);
+                closure.create.append(`${ni.name}_manager.loadItems(ctx.objrefs[${objref_index}]);`);
             }
             else
             {
-                closure.create.appendLine(`${child_ni.name}_manager.loadItems(${format_callback(objref_index)});`);
-                closure.update.appendLine(`${child_ni.name}_manager.updateItems(${format_callback(objref_index)});`);
+                closure.create.append(`${ni.name}_manager.loadItems(${format_callback(objref_index)});`);
+                closure.update.append(`${ni.name}_manager.updateItems(${format_callback(objref_index)});`);
             }
         }
     }    

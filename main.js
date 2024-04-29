@@ -34,11 +34,11 @@ export function main()
         childNodes: [
             () => `${count}: `,
             {
-                condition: () => count % 2 == 0,
+                if: () => count % 2 == 0,
                 childNodes: [
                     "Divisible by 2",
                     {
-                        condition: () => count % 3 == 0,
+                        if: () => count % 3 == 0,
                         childNodes: [
                             " and 3",
                         ]

@@ -7,6 +7,22 @@ export class ClosureBuilder
         this.code = CodeBuilder();
         this.functions = [];
         this.locals = [];
+        this.prologs = [];
+        this.epilogs = [];
+    }
+
+    addProlog()
+    {
+        let cb = CodeBuilder();
+        this.prologs.push(cb);
+        return cb;
+    }
+
+    addEpilog()
+    {
+        let cb = CodeBuilder();
+        this.epilogs.push(cb);
+        return cb;
     }
 
     // Add a local variable to this closure
@@ -43,12 +59,18 @@ export class ClosureBuilder
         // Declare locals
         if (this.locals.length > 0)
         {
-            out.appendLine(`let ${this.locals.map((l) => {
+            out.append(`let ${this.locals.map((l) => {
                 if (l.init)
                     return `${l.name} = ${l.init}`;
                 else
                     return l.name;
             }).join(', ')};`)
+        }
+
+        // Prologs
+        for (let f of this.prologs)
+        {
+            out.append(f);
         }
 
         // Append main code
@@ -57,12 +79,18 @@ export class ClosureBuilder
         // Append functions
         for (let f of this.functions)
         {
-            out.appendLine(`function ${f.name}(${f.args.join(", ")})`);
-            out.appendLine(`{`);
+            out.append(`function ${f.name}(${f.args.join(", ")})`);
+            out.append(`{`);
             out.indent();
             f.code.appendTo(out);
             out.unindent();
-            out.appendLine(`}`);
+            out.append(`}`);
+        }
+
+        // Epilogs
+        for (let f of this.epilogs)
+        {
+            out.append(f);
         }
     }
 }

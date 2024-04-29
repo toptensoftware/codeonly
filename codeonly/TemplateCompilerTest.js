@@ -5,7 +5,7 @@ let template = {
     type: "DIV",
     childNodes: [
         {
-            condition: () => true,
+            if: () => true,
             type: "P",
             text: "Hello World",
         },
