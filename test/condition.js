@@ -26,7 +26,7 @@ test("Conditional Child (false)", () => {
         ]
     })();
 
-    assert.equal(r.rootNodes[0].childNodes.length, 0);
+    assert.equal(r.rootNodes[0].childNodes[0].nodeType, 8);
 });
 
 

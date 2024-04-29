@@ -51,12 +51,12 @@ export function compileTemplateCode(rootTemplate)
         compileNode(closure, ni);
 
         let rnf = closure.addFunction('getRootNodes');
-        rnf.code.appendLine(`return [${ni.spreadDomNodes()}];`);
+        rnf.code.append(`return [${ni.spreadDomNodes()}];`);
 
         // Return interface to the closure
         if (ni.isItemNode)
         {
-            closure.code.appendLines([
+            closure.code.append([
                 `return { `,
                 ni.isMultiRoot ? null : `  get rootNode() { return ${ni.name}; },`,
                 `  get rootNodes() { return getRootNodes(); },`,
@@ -67,7 +67,7 @@ export function compileTemplateCode(rootTemplate)
         }
         else
         {
-            closure.code.appendLines([
+            closure.code.append([
                 `return { `,
                 ni.isMultiRoot ? null : `  get rootNode() { return ${ni.name}; },`,
                 `  get rootNodes() { return getRootNodes(); },`,
@@ -85,7 +85,7 @@ export function compileTemplateCode(rootTemplate)
         if (typeof(ni.template) === 'string')
         {
             closure.addLocal(ni.name);
-            closure.create.appendLine(`${ni.name} = document.createTextNode(${JSON.stringify(ni.template)});`);
+            closure.create.append(`${ni.name} = document.createTextNode(${JSON.stringify(ni.template)});`);
             return true;
         }
 
@@ -93,8 +93,8 @@ export function compileTemplateCode(rootTemplate)
         if (ni.template instanceof HtmlString)
         {
             closure.addLocal(ni.name);
-            closure.create.appendLine(`${ni.name} = document.createElement("SPAN");`);
-            closure.create.appendLine(`${ni.name}.innerHTML = ${JSON.stringify(ni.template.html)};`);
+            closure.create.append(`${ni.name} = document.createElement("SPAN");`);
+            closure.create.append(`${ni.name}.innerHTML = ${JSON.stringify(ni.template.html)};`);
             return true;
         }
 
@@ -102,8 +102,8 @@ export function compileTemplateCode(rootTemplate)
         if (ni.template instanceof Function)
         {
             closure.addLocal(ni.name);
-            closure.create.appendLine(`${ni.name} = helpers.createTextNode(${format_callback(objrefs.length)});`);
-            closure.update.appendLine(`${ni.name} = helpers.setNodeText(${ni.name}, ${format_callback(objrefs.length)});`);
+            closure.create.append(`${ni.name} = helpers.createTextNode(${format_callback(objrefs.length)});`);
+            closure.update.append(`${ni.name} = helpers.setNodeText(${ni.name}, ${format_callback(objrefs.length)});`);
             objrefs.push(ni.template);
             return true;
         }
@@ -128,20 +128,36 @@ export function compileTemplateCode(rootTemplate)
             return true;
         }
 
+        // Comment?
+        if (ni.template.type == 'comment')
+        {
+            closure.addLocal(ni.name);
+
+            if (ni.template.text instanceof Function)
+            {
+                closure.create.append(`${ni.name} = document.createComment(${format_callback(objrefs.length)});`);
+                closure.update.append(`${ni.name} = ${ni.name}.nodeValue = ${format_callback(objrefs.length)};`);
+                objrefs.push(ni.template.text);
+            }
+            else
+            {
+                closure.create.append(`${ni.name} = document.createComment(${JSON.stringify(ni.template.text)});`);
+            }
+            return true;
+        }
         
         // Element node?
         if (ni.template.type)
         {
-
             // Create the element
             closure.addLocal(ni.name);
-            closure.create.appendLine(`${ni.name} = document.createElement(${JSON.stringify(ni.template.type)});`);
+            closure.create.append(`${ni.name} = document.createElement(${JSON.stringify(ni.template.type)});`);
 
             // ID
             if (ni.template.id)
             {
                 format_dynamic(ni.template.id, (codeBlock, valueExpr) => {
-                    codeBlock.appendLine(`${ni.name}.setAttribute("id", ${valueExpr});`);
+                    codeBlock.append(`${ni.name}.setAttribute("id", ${valueExpr});`);
                 });
             }
 
@@ -149,7 +165,7 @@ export function compileTemplateCode(rootTemplate)
             if (ni.template.class)
             {
                 format_dynamic(ni.template.class, (codeBlock, valueExpr) => {
-                    codeBlock.appendLine(`${ni.name}.setAttribute("class", ${valueExpr});`);
+                    codeBlock.append(`${ni.name}.setAttribute("class", ${valueExpr});`);
                 });
             }
 
@@ -159,7 +175,7 @@ export function compileTemplateCode(rootTemplate)
                 let className = camel_to_dash(cls.substring(6));
 
                 format_dynamic(ni.template[cls], (codeBlock, valueExpr) => {
-                    codeBlock.appendLine(`helpers.setNodeClass(${ni.name}, ${JSON.stringify(className)}, ${valueExpr});`);
+                    codeBlock.append(`helpers.setNodeClass(${ni.name}, ${JSON.stringify(className)}, ${valueExpr});`);
                 });
             }
 
@@ -167,7 +183,7 @@ export function compileTemplateCode(rootTemplate)
             if (ni.template.style)
             {
                 format_dynamic(ni.template.style, (codeBlock, valueExpr) => {
-                    codeBlock.appendLine(`${ni.name}.setAttribute("style", ${valueExpr});`);
+                    codeBlock.append(`${ni.name}.setAttribute("style", ${valueExpr});`);
                 });
             }
 
@@ -177,7 +193,7 @@ export function compileTemplateCode(rootTemplate)
                 let attrName = camel_to_dash(attr.substring(5));
 
                 format_dynamic(ni.template[attr], (codeBlock, valueExpr) => {
-                    codeBlock.appendLine(`${ni.name}.setAttribute(${JSON.stringify(attrName)}, ${valueExpr});`);
+                    codeBlock.append(`${ni.name}.setAttribute(${JSON.stringify(attrName)}, ${valueExpr});`);
                 });
             }
 
@@ -187,16 +203,16 @@ export function compileTemplateCode(rootTemplate)
                 if (ni.template.text instanceof Function)
                 {
                     format_dynamic(ni.template.text, (codeBlock, valueExpr) => {
-                        codeBlock.appendLine(`helpers.setElementText(${ni.name}, ${valueExpr});`);
+                        codeBlock.append(`helpers.setElementText(${ni.name}, ${valueExpr});`);
                     });
                 }
                 else if (ni.template.text instanceof HtmlString)
                 {
-                    closure.create.appendLine(`${ni.name}.innerHTML = ${JSON.stringify(ni.template.text.html)};`);
+                    closure.create.append(`${ni.name}.innerHTML = ${JSON.stringify(ni.template.text.html)};`);
                 }
                 if (typeof(ni.template.text) === 'string')
                 {
-                    closure.create.appendLine(`${ni.name}.innerText = ${JSON.stringify(ni.template.text)};`);
+                    closure.create.append(`${ni.name}.innerText = ${JSON.stringify(ni.template.text)};`);
                 }
             }
         }
@@ -246,7 +262,7 @@ export function compileTemplateCode(rootTemplate)
             // Add all the child nodes to this node
             if (ni.childNodes.length && !ni.isFragment)
             {
-                closure.create.appendLine(`${ni.name}.append(${ni.spreadChildDomNodes()});`);
+                closure.create.append(`${ni.name}.append(${ni.spreadChildDomNodes()});`);
             }
         }
 
@@ -314,7 +330,8 @@ export function compileTemplateCode(rootTemplate)
 
             if (!(objrefs[ni.callback_index] instanceof Function))
             {
-                throw new Error(`'${ni.clause}' isn't a function`);
+                let val = objrefs[ni.callback_index];
+                objrefs[ni.callback_index] = () => val;
             }
     
             let ni_if = ni.conditionGroup[0];
@@ -323,13 +340,15 @@ export function compileTemplateCode(rootTemplate)
             let isFirst = ni.conditionGroup[0] == ni;
             let isLast = ni.conditionGroup[ni.conditionGroup.length-1] == ni;
 
+            let prolog = ni_if.prolog;
             if (isFirst)
             {
-                closure.create.appendLine(`let ${ni.name}_branches = `);
-                closure.create.appendLine(`[`);
-                closure.create.indent();
+                ni_if.prolog = prolog = closure.addProlog();
+                prolog.append(`let ${ni.name}_branches = `);
+                prolog.append(`[`);
+                prolog.indent();
 
-                closure.update.appendLine(`${ni_if.name}_select(${ni_if.name}_resolve());`);
+                closure.update.append(`${ni_if.name}_select(${ni_if.name}_resolve());`);
             }
 
 
@@ -338,33 +357,36 @@ export function compileTemplateCode(rootTemplate)
             closure.update.indent();
 
             // Generate function to create the node
-            closure.create.appendLine(`{`);
-            closure.create.indent();
-            closure.create.appendLine(`create: function()`);
-            closure.create.appendLine(`{`);
-            closure.create.indent();
+            prolog.append(`{`);
+            prolog.indent();
+            prolog.append(`create: function()`);
+            prolog.append(`{`);
+            prolog.indent();
             let save = ni.conditionGroup;
             delete ni.conditionGroup;
+            let saveCreate = closure.create;
+            closure.create = prolog;
             compileNode(closure, ni);
+            closure.create = saveCreate;
             ni.conditionGroup = save;
-            closure.create.unindent();
-            closure.create.appendLine(`},`);
-            closure.create.appendLine(`destroy: function()`);
-            closure.create.appendLine(`{`);
-            closure.create.indent();
+            prolog.unindent();
+            prolog.append(`},`);
+            prolog.append(`destroy: function()`);
+            prolog.append(`{`);
+            prolog.indent();
             for (let ln of ni.enumLocalNodes())
             {
-                closure.create.appendLine(`${ln} = null;`);
+                prolog.append(`${ln} = null;`);
             }
             for (let fe of ni.enumLocalForEach())
             {
-                closure.create.appendLine(`${fe}_manager?.destroy();`);
-                closure.create.appendLine(`${fe}_manager = null;`);
+                prolog.append(`${fe}_manager?.destroy();`);
+                prolog.append(`${fe}_manager = null;`);
             }
-            closure.create.unindent();
-            closure.create.appendLine(`},`);
-            closure.create.unindent();
-            closure.create.appendLine(`},`);
+            prolog.unindent();
+            prolog.append(`},`);
+            prolog.unindent();
+            prolog.append(`},`);
 
 
             if (isLast)
@@ -372,32 +394,32 @@ export function compileTemplateCode(rootTemplate)
                 if (ni.conditionGroup[ni.conditionGroup.length-1].clause != 'else')
                 {
                     closure.addLocal(`${ni_if.name}_placeholder`);
-                    closure.create.appendLine(`{`);
-                    closure.create.indent();
-                    closure.create.appendLine(`create: function()`);
-                    closure.create.appendLine(`{`);
-                    closure.create.indent();
-                    closure.create.appendLine(`${ni_if.name}_placeholder = document.createComment(" omitted if ");`);
-                    closure.create.unindent();
-                    closure.create.appendLine(`},`);
-        
-                    closure.create.appendLine(`destroy: function()`);
-                    closure.create.appendLine(`{`);
-                    closure.create.indent();
-                    closure.create.appendLine(`${ni_if.name}_placeholder = null;`);
-                    closure.create.unindent();
-                    closure.create.appendLine(`},`);
-                    closure.create.unindent();
-                    closure.create.appendLine(`}`);
+                    prolog.append(`{`);
+                    prolog.indent();
+                    prolog.append(`create: function()`);
+                    prolog.append(`{`);
+                    prolog.indent();
+                    prolog.append(`${ni_if.name}_placeholder = document.createComment(" omitted if ");`);
+                    prolog.unindent();
+                    prolog.append(`},`);
+                    prolog.append(`destroy: function()`);
+                    prolog.append(`{`);
+                    prolog.indent();
+                    prolog.append(`${ni_if.name}_placeholder = null;`);
+                    prolog.unindent();
+                    prolog.append(`},`);
+                    prolog.unindent();
+                    prolog.append(`}`);
                 }
 
-                closure.create.unindent();
-                closure.create.appendLine(`];`);
+                prolog.unindent();
+                prolog.append(`];`);
 
                 // Generate code to create initial items
                 closure.addLocal(`${ni_if.name}_branch`);
-                closure.create.appendLine(`${ni_if.name}_branch = ${ni_if.name}_resolve();`);
-                closure.create.appendLine(`${ni_if.name}_branches[${ni_if.name}_branch].create();`);
+                closure.create.append(`${ni_if.name}_branch = ${ni_if.name}_resolve();`);
+                closure.create.append(`${ni_if.name}_branches[${ni_if.name}_branch].create();`);
+
 
                 let fnResolve = closure.addFunction(`${ni_if.name}_resolve`);
 
@@ -405,37 +427,37 @@ export function compileTemplateCode(rootTemplate)
                 {
                     let ni_branch = ni.conditionGroup[i];
 
-                    fnResolve.code.appendLine(`${ni_branch.clause} (${format_callback(ni_branch.callback_index)})`);
-                    fnResolve.code.appendLine(`  return ${ni_branch.branch_index};`);
+                    fnResolve.code.append(`${ni_branch.clause} (${format_callback(ni_branch.callback_index)})`);
+                    fnResolve.code.append(`  return ${ni_branch.branch_index};`);
                 }
                 if (ni.conditionGroup[ni.conditionGroup.length-1].clause != 'else')
                 {
-                    fnResolve.code.appendLine(`else`);
-                    fnResolve.code.appendLine(`  return ${ni.conditionGroup.length};`);
+                    fnResolve.code.append(`else`);
+                    fnResolve.code.append(`  return ${ni.conditionGroup.length};`);
                 }
 
                 // Generate function to create and attach the node
                 let multiRoot = ni.conditionGroup.some(x => x.isMultiRoot);
                 let fn = closure.addFunction(`${ni_if.name}_select`, ['branch']);
-                fn.code.appendLine(`if (${ni_if.name}_branch == branch)`);
-                fn.code.appendLine(`  return;`);
-                fn.code.appendLine(`let old_branch = ${ni_if.name}_branch;`);
-                fn.code.appendLine(`${ni_if.name}_branches[branch].create();`);
+                fn.code.append(`if (${ni_if.name}_branch == branch)`);
+                fn.code.append(`  return;`);
+                fn.code.append(`let old_branch = ${ni_if.name}_branch;`);
+                fn.code.append(`${ni_if.name}_branches[branch].create();`);
                 if (multiRoot)
                 {
-                    fn.code.appendLine(`let old_nodes = [${ni_if.spreadDomNodes(false)}];`);
-                    fn.code.appendLine(`${ni_if.name}_branch = branch;`);
-                    fn.code.appendLine(`let new_nodes = [${ni_if.spreadDomNodes(false)}];`);
-                    fn.code.appendLine(`helpers.replaceMany(old_nodes, new_nodes);`);
+                    fn.code.append(`let old_nodes = [${ni_if.spreadDomNodes(false)}];`);
+                    fn.code.append(`${ni_if.name}_branch = branch;`);
+                    fn.code.append(`let new_nodes = [${ni_if.spreadDomNodes(false)}];`);
+                    fn.code.append(`helpers.replaceMany(old_nodes, new_nodes);`);
                 }
                 else
                 {
-                    fn.code.appendLine(`let old_node = ${ni_if.spreadDomNodes(false)};`);
-                    fn.code.appendLine(`${ni_if.name}_branch = branch;`);
-                    fn.code.appendLine(`let new_node = ${ni_if.spreadDomNodes(false)};`);
-                    fn.code.appendLine(`old_node.replaceWith(new_node);`);
+                    fn.code.append(`let old_node = ${ni_if.spreadDomNodes(false)};`);
+                    fn.code.append(`${ni_if.name}_branch = branch;`);
+                    fn.code.append(`let new_node = ${ni_if.spreadDomNodes(false)};`);
+                    fn.code.append(`old_node.replaceWith(new_node);`);
                 }
-                fn.code.appendLine(`${ni_if.name}_branches[old_branch].destroy();`);
+                fn.code.append(`${ni_if.name}_branches[old_branch].destroy();`);
             }
 
             closure.update.unindent();
@@ -457,40 +479,40 @@ export function compileTemplateCode(rootTemplate)
             itemClosure.appendTo(itemClosureFn.code);
 
             // Create the "foreach" manager
-            closure.create.appendLine(`let ${ni.name}_manager = new helpers.ForEachManager({`);
-            closure.create.appendLine(`  item_constructor: ${ni.name}_item_constructor,`);
-            closure.create.appendLine(`  model: ctx.model,`);
+            closure.create.append(`let ${ni.name}_manager = new helpers.ForEachManager({`);
+            closure.create.append(`  item_constructor: ${ni.name}_item_constructor,`);
+            closure.create.append(`  model: ctx.model,`);
             if (closure.outer)
-                closure.create.appendLine(`  outer: ${closure.outer},`);
+                closure.create.append(`  outer: ${closure.outer},`);
             if (child_item_ni.isMultiRoot)
-                closure.create.appendLine(`  multi_root_items: true,`);
-            closure.create.appendLine(`  array_sensitive: ${ni.template.array_sensitive !== false},`);
-            closure.create.appendLine(`  index_sensitive: ${ni.template.index_sensitive !== false},`);
-            closure.create.appendLine(`  item_sensitive: ${!!ni.template.item_sensitive},`);
+                closure.create.append(`  multi_root_items: true,`);
+            closure.create.append(`  array_sensitive: ${ni.template.array_sensitive !== false},`);
+            closure.create.append(`  index_sensitive: ${ni.template.index_sensitive !== false},`);
+            closure.create.append(`  item_sensitive: ${!!ni.template.item_sensitive},`);
             if (ni.item_key)
             {
                 let itemkey_index = objrefs.length;
                 objrefs.push(ni.template.item_key);
-                closure.create.appendLine(`  item_key: ctx.objrefs[${itemkey_index}],`);
+                closure.create.append(`  item_key: ctx.objrefs[${itemkey_index}],`);
             }
             if (ni.template.if)
             {
                 let condition_index = objrefs.length;
                 objrefs.push(ni.template.if);
-                closure.create.appendLine(`  condition: ctx.objrefs[${condition_index}],`);
+                closure.create.append(`  condition: ctx.objrefs[${condition_index}],`);
             }
-            closure.create.appendLine(`});`);
+            closure.create.append(`});`);
 
             let objref_index = objrefs.length;
             objrefs.push(ni.template.foreach);
             if (!(ni.template.foreach instanceof Function))
             {
-                closure.create.appendLine(`${ni.name}_manager.loadItems(ctx.objrefs[${objref_index}]);`);
+                closure.create.append(`${ni.name}_manager.loadItems(ctx.objrefs[${objref_index}]);`);
             }
             else
             {
-                closure.create.appendLine(`${ni.name}_manager.loadItems(${format_callback(objref_index)});`);
-                closure.update.appendLine(`${ni.name}_manager.updateItems(${format_callback(objref_index)});`);
+                closure.create.append(`${ni.name}_manager.loadItems(${format_callback(objref_index)});`);
+                closure.update.append(`${ni.name}_manager.updateItems(${format_callback(objref_index)});`);
             }
         }
     }    

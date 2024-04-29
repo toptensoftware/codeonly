@@ -3,6 +3,30 @@ import { strict as assert } from "node:assert";
 import { compileTemplate, html } from "../codeonly/codeonly.js";
 import "./mockdom.js";
 
+test("Static Comment", () => {
+    let r = compileTemplate({
+        type: "comment",
+        text: "foo",
+    })();
+
+    assert.equal(r.rootNode.nodeType, 8);
+    assert.equal(r.rootNode.nodeValue, "foo");
+});
+
+test("Dynamic Comment", () => {
+    let val = "foo";
+    let r = compileTemplate({
+        type: "comment",
+        text: () => val,
+    })();
+
+    assert.equal(r.rootNode.nodeType, 8);
+    assert.equal(r.rootNode.nodeValue, "foo");
+    val = "bar";
+
+    assert.equal(r.rootNode.nodeValue, "foo");
+});
+
 test("Single Node", () => {
 
     let r = compileTemplate({

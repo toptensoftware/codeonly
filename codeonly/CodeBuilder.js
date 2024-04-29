@@ -2,29 +2,25 @@ export function CodeBuilder()
 {
     let lines = [];
     let indentStr = "";
-    function append(code)
+    function append(...code)
     {
-        if (code.lines)
+        for (let i=0; i<code.length; i++)
         {
-            // Appending another code builder
-            lines.push(...code.lines.map(x => indentStr + x));
+            let part = code[i];
+            if (part.lines)
+            {
+                // Appending another code builder
+                lines.push(...part.lines.map(x => indentStr + x));
+            }
+            else if (Array.isArray(part))
+            {
+                lines.push(...part.filter(x => x != null).map(x => indentStr + x));
+            }
+            else
+            {
+                lines.push(...part.split("\n").map(x => indentStr + x));
+            }
         }
-        else if (Array.isArray(code.lines))
-        {
-            lines.push(...code.map(x => indentStr + x));
-        }
-        else
-        {
-            lines.push(...code.split("\n").map(x => indentStr + x));
-        }
-    }
-    function appendLines(arr)
-    {
-        arr.forEach(x => { if (x) appendLine(x) });
-    }
-    function appendLine(str)
-    {
-        lines.push(...str.split("\n").map(x => indentStr + x));
     }
     function indent()
     {
@@ -40,11 +36,11 @@ export function CodeBuilder()
     }
     function braced(cb)
     {
-        appendLine("{");
+        append("{");
         indent();
         cb(this);
         unindent();
-        appendLine("}");
+        append("}");
     }
 
     function enterCollapsibleBlock(...header)
@@ -52,7 +48,7 @@ export function CodeBuilder()
         let cblock = {
             pos: this.lines.length,
         }
-        this.appendLines(header);
+        this.append(header);
         cblock.headerLineCount = this.lines.length - cblock.pos;
         return cblock;
     }
@@ -67,14 +63,14 @@ export function CodeBuilder()
         }
         else
         {
-            this.appendLines(footer);
+            this.append(footer);
         }
     }
 
     return {
         append,
-        appendLines,
-        appendLine,
+        append,
+        append,
         enterCollapsibleBlock,
         leaveCollapsibleBlock,
         indent,
