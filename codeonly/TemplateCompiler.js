@@ -364,7 +364,7 @@ export function compileTemplateCode(rootTemplate)
                 closure.create.appendLine(`  multi_root_items: true,`);
             closure.create.appendLine(`  array_sensitive: ${child_ni.template.array_sensitive !== false},`);
             closure.create.appendLine(`  index_sensitive: ${child_ni.template.index_sensitive !== false},`);
-            closure.create.appendLine(`  item_sensitive: ${!!child_ni.template.item_sensitive},`);
+            closure.create.appendLine(`  item_sensitive: ${child_ni.template.item_sensitive !== false},`);
             if (child_ni.item_key)
             {
                 let itemkey_index = objrefs.length;

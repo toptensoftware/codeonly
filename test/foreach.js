@@ -249,6 +249,7 @@ test("ForEach Index Inensitive", () => {
         childNodes: [
             {
                 foreach: () => items,
+                item_sensitive: false,
                 index_sensitive: false,         // Update items when index changes
                 type: "DIV",
                 text: (x, ctx) => `${x}${ctx.index}`,
@@ -272,8 +273,8 @@ function div(opts)
 test("ForEach Nested", () => {
 
     let items = [
-        { name: "A", subs: [ "1", "2"], },
-        { name: "B", subs: [ "3", "4"], },
+        { name: "A", subItems: [ "1", "2"], },
+        { name: "B", subItems: [ "3", "4"], },
     ];
 
     let r = compileTemplate(
@@ -287,8 +288,8 @@ test("ForEach Nested", () => {
                 [
                     {
                         type: "DIV",
-                        foreach: (item) => item.subs,
-                        text: (item, ctx) => `${ctx.outer.item.name}${item}`,
+                        foreach: (item) => item.subItems,
+                        text: (subItem, ctx) => `${ctx.outer.item.name}${subItem}`,
                     }
                 ],
             }
@@ -298,5 +299,13 @@ test("ForEach Nested", () => {
     assert.deepStrictEqual([
         "A1", "A2", "B3", "B4"
         ], r.rootNode.childNodes.filter(x => x.nodeType == 1).map(x => x.innerText));
+
+    items[0].subItems.push("3");
+    r.update();
+
+    assert.deepStrictEqual([
+        "A1", "A2", "A3", "B3", "B4"
+        ], r.rootNode.childNodes.filter(x => x.nodeType == 1).map(x => x.innerText));
+
 });
 
