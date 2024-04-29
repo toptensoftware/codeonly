@@ -23,6 +23,10 @@ export function compileTemplateCode(rootTemplate)
     // Create node info        
     let rootNodeInfo = new NodeInfo(null, `n${nodeId++}`, rootTemplate, false);
     nodeMap.set(rootNodeInfo.name, rootNodeInfo);
+
+    // Create condition group for root 'if' block
+    if (rootTemplate.if !== undefined && rootTemplate.foreach === undefined)
+        rootNodeInfo.conditionGroup = [ rootNodeInfo ];
     
     let rootClosure = new ClosureBuilder();
     rootClosure.callback_args = "ctx.model";
@@ -118,20 +122,10 @@ export function compileTemplateCode(rootTemplate)
         }
 
         // Is it a conditional node?
-        if (ni.template.if !== undefined)
+        if (ni.conditionGroup !== undefined)
         {
-            if (ni.template.if instanceof Function)
-            {
-                // Dynamic conditional...
-                compileConditionalNode();
-                return true;
-            }
-            else
-            {
-                // Static conditional, either include it or not?
-                if (!ni.template.if)
-                    return false;
-            }
+            compileConditionalNode();
+            return true;
         }
 
         
@@ -211,9 +205,32 @@ export function compileTemplateCode(rootTemplate)
         if (ni.template.childNodes)
         {
             // Create node infos for all children
+            let conditionGroup = null;
             for (let i=0; i<ni.template.childNodes.length; i++)
             {
-                ni.childNodes.push(new NodeInfo(ni, `n${nodeId++}`, ni.template.childNodes[i], false));
+                let child = new NodeInfo(ni, `n${nodeId++}`, ni.template.childNodes[i], false);
+                ni.childNodes.push(child);
+
+                // Connect if/elseif/else elements
+                if (child.template.if !== undefined)
+                {
+                    conditionGroup = [child];
+                    child.conditionGroup = conditionGroup;
+                }
+                else if (child.template.else !== undefined || child.template.elseif != undefined)
+                {
+                    if (conditionGroup == null)
+                        throw new Error("Element has an 'else' or 'elseif' condition but doesn't follow and 'if' or 'elseif' item");
+
+                    conditionGroup.push(child);
+
+                    if (child.template.else != undefined)
+                        conditionGroup = null;
+                }
+                else
+                {
+                    conditionGroup = null;
+                }
             }
 
             // Create the child nodes
@@ -270,67 +287,160 @@ export function compileTemplateCode(rootTemplate)
 
         function compileConditionalNode()
         {
-            let callback_index = objrefs.length;
-            objrefs.push(ni.template.if);
-
             let nn = ni.name;
-            ni.isConditional = true;
 
-            // Before generating the node, generate the update code
-            closure.update.appendLine(`if (${nn}_included != ${format_callback(callback_index)})`)
-            closure.update.appendLine(`  ((${nn}_included = !${nn}_included) ? attach_${nn} : detach_${nn})();`);
-            let cblock = closure.update.enterCollapsibleBlock(`if (${nn}_included) {`);
-            closure.update.indent();
-
-            // Generate code to create initial
-            closure.addLocal(`${nn}_included`);
-            closure.addLocal(`${nn}_placeholder`);
-            closure.create.appendLine(`${nn}_included = ${format_callback(callback_index)};`);
-            closure.create.appendLine(`if (${nn}_included)`);
-            closure.create.appendLine(`  create_${nn}();`);
-            closure.create.appendLine(`else`);
-            closure.create.appendLine(`  ${nn}_placeholder = document.createComment(' omitted by condition ');`);
-
-            // Generate function to create the node
-            let fn = closure.addFunction(`create_${nn}`);
-            let oldCreate = closure.create;
-            closure.create = fn.code;
-            let saveCondition = ni.template.if;
-            delete ni.template.if;
-            compileNode(closure, ni);
-            ni.template.if = saveCondition;
-            closure.create = oldCreate;
-
-            // Generate function to create and attach the node
-            fn = closure.addFunction(`attach_${nn}`);
-            fn.code.appendLine(`create_${nn}();`);
-            fn.code.appendLine(`${nn}_placeholder.replaceWith(${ni.spreadDomNodes(true)});`);
-            fn.code.appendLine(`${nn}_placeholder = null`);
-
-            // Generate function to detach the node
-            fn = closure.addFunction(`detach_${nn}`);
-            fn.code.appendLine(`${nn}_placeholder = document.createComment(" omitted by condition ");`);
-            if (ni.isFragment)
+            // Setup the clause kind, branch index and callback
+            ni.callback_index = objrefs.length;
+            ni.branch_index = ni.conditionGroup.indexOf(ni);
+            if (ni.template.if !== undefined)
             {
-                fn.code.appendLine(`helpers.replaceMany([${ni.spreadDomNodes(true)}], ${nn}_placeholder);`);
+                ni.clause = "if";
+                objrefs.push(ni.template.if);
+            }
+            else if (ni.template.elseif !== undefined)
+            {
+                ni.clause = "else if";
+                objrefs.push(ni.template.elseif);
+            }
+            else if (ni.template.else !== undefined)
+            {
+                ni.clause = "else";
+                objrefs.push(ni.template.else);
             }
             else
             {
-                fn.code.appendLine(`${nn}.replaceWith(${nn}_placeholder)`);
+                throw new Error(`internal error configuring if/elseif/else blocks`);
             }
 
+            if (!(objrefs[ni.callback_index] instanceof Function))
+            {
+                throw new Error(`'${ni.clause}' isn't a function`);
+            }
+    
+            let ni_if = ni.conditionGroup[0];
+
+            // Is this the first, primary "if" element?
+            let isFirst = ni.conditionGroup[0] == ni;
+            let isLast = ni.conditionGroup[ni.conditionGroup.length-1] == ni;
+
+            if (isFirst)
+            {
+                closure.create.appendLine(`let ${ni.name}_branches = `);
+                closure.create.appendLine(`[`);
+                closure.create.indent();
+
+                closure.update.appendLine(`${ni_if.name}_select(${ni_if.name}_resolve());`);
+            }
+
+
+
+            let cblock = closure.update.enterCollapsibleBlock(`if (${ni_if.name}_branch == ${ni.branch_index}) {`);
+            closure.update.indent();
+
+            // Generate function to create the node
+            closure.create.appendLine(`{`);
+            closure.create.indent();
+            closure.create.appendLine(`create: function()`);
+            closure.create.appendLine(`{`);
+            closure.create.indent();
+            let save = ni.conditionGroup;
+            delete ni.conditionGroup;
+            compileNode(closure, ni);
+            ni.conditionGroup = save;
+            closure.create.unindent();
+            closure.create.appendLine(`},`);
+            closure.create.appendLine(`destroy: function()`);
+            closure.create.appendLine(`{`);
+            closure.create.indent();
             for (let ln of ni.enumLocalNodes())
             {
-                fn.code.appendLine(`${ln} = null;`);
+                closure.create.appendLine(`${ln} = null;`);
             }
             for (let fe of ni.enumLocalForEach())
             {
-                fn.code.appendLine(`${fe}_manager?.destroy();`);
-                fn.code.appendLine(`${fe}_manager = null;`);
+                closure.create.appendLine(`${fe}_manager?.destroy();`);
+                closure.create.appendLine(`${fe}_manager = null;`);
+            }
+            closure.create.unindent();
+            closure.create.appendLine(`},`);
+            closure.create.unindent();
+            closure.create.appendLine(`},`);
+
+
+            if (isLast)
+            {
+                if (ni.conditionGroup[ni.conditionGroup.length-1].clause != 'else')
+                {
+                    closure.addLocal(`${ni_if.name}_placeholder`);
+                    closure.create.appendLine(`{`);
+                    closure.create.indent();
+                    closure.create.appendLine(`create: function()`);
+                    closure.create.appendLine(`{`);
+                    closure.create.indent();
+                    closure.create.appendLine(`${ni_if.name}_placeholder = document.createComment(" omitted if ");`);
+                    closure.create.unindent();
+                    closure.create.appendLine(`},`);
+        
+                    closure.create.appendLine(`destroy: function()`);
+                    closure.create.appendLine(`{`);
+                    closure.create.indent();
+                    closure.create.appendLine(`${ni_if.name}_placeholder = null;`);
+                    closure.create.unindent();
+                    closure.create.appendLine(`},`);
+                    closure.create.unindent();
+                    closure.create.appendLine(`}`);
+                }
+
+                closure.create.unindent();
+                closure.create.appendLine(`];`);
+
+                // Generate code to create initial items
+                closure.addLocal(`${ni_if.name}_branch`);
+                closure.create.appendLine(`${ni_if.name}_branch = ${ni_if.name}_resolve();`);
+                closure.create.appendLine(`${ni_if.name}_branches[${ni_if.name}_branch].create();`);
+
+                let fnResolve = closure.addFunction(`${ni_if.name}_resolve`);
+
+                for (let i=0; i<ni.conditionGroup.length; i++)
+                {
+                    let ni_branch = ni.conditionGroup[i];
+
+                    fnResolve.code.appendLine(`${ni_branch.clause} (${format_callback(ni_branch.callback_index)})`);
+                    fnResolve.code.appendLine(`  return ${ni_branch.branch_index};`);
+                }
+                if (ni.conditionGroup[ni.conditionGroup.length-1].clause != 'else')
+                {
+                    fnResolve.code.appendLine(`else`);
+                    fnResolve.code.appendLine(`  return ${ni.conditionGroup.length};`);
+                }
+
+                // Generate function to create and attach the node
+                let multiRoot = ni.conditionGroup.some(x => x.isMultiRoot);
+                let fn = closure.addFunction(`${ni_if.name}_select`, ['branch']);
+                fn.code.appendLine(`if (${ni_if.name}_branch == branch)`);
+                fn.code.appendLine(`  return;`);
+                fn.code.appendLine(`let old_branch = ${ni_if.name}_branch;`);
+                fn.code.appendLine(`${ni_if.name}_branches[branch].create();`);
+                if (multiRoot)
+                {
+                    fn.code.appendLine(`let old_nodes = [${ni_if.spreadDomNodes(false)}];`);
+                    fn.code.appendLine(`${ni_if.name}_branch = branch;`);
+                    fn.code.appendLine(`let new_nodes = [${ni_if.spreadDomNodes(false)}];`);
+                    fn.code.appendLine(`helpers.replaceMany(old_nodes, new_nodes);`);
+                }
+                else
+                {
+                    fn.code.appendLine(`let old_node = ${ni_if.spreadDomNodes(false)};`);
+                    fn.code.appendLine(`${ni_if.name}_branch = branch;`);
+                    fn.code.appendLine(`let new_node = ${ni_if.spreadDomNodes(false)};`);
+                    fn.code.appendLine(`old_node.replaceWith(new_node);`);
+                }
+                fn.code.appendLine(`${ni_if.name}_branches[old_branch].destroy();`);
             }
 
             closure.update.unindent();
             closure.update.leaveCollapsibleBlock(cblock, `}`);
+
         }
 
         function compileForEachNode()
