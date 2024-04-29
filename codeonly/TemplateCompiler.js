@@ -89,7 +89,7 @@ export function compileTemplateCode(rootTemplate)
         {
             closure.addLocal(ni.name);
             closure.create.appendLine(`${ni.name} = document.createTextNode(${JSON.stringify(ni.template)});`);
-            return;
+            return true;
         }
 
         // HTML Text?
@@ -98,7 +98,7 @@ export function compileTemplateCode(rootTemplate)
             closure.addLocal(ni.name);
             closure.create.appendLine(`${ni.name} = document.createElement("SPAN");`);
             closure.create.appendLine(`${ni.name}.innerHTML = ${JSON.stringify(ni.template.html)};`);
-            return;
+            return true;
         }
 
         // Dynamic text?
@@ -108,7 +108,7 @@ export function compileTemplateCode(rootTemplate)
             closure.create.appendLine(`${ni.name} = helpers.createTextNode(${format_callback(objrefs.length)});`);
             closure.update.appendLine(`${ni.name} = helpers.setNodeText(${ni.name}, ${format_callback(objrefs.length)});`);
             objrefs.push(ni.template);
-            return;
+            return true;
         }
 
         // Embedded component
@@ -117,6 +117,31 @@ export function compileTemplateCode(rootTemplate)
             throw new Error("Embedded components not implemented");
         }
 
+        // Is it a foreach node?
+        if (ni.isForEach)
+        {
+            compileForEachNode();
+            return true;
+        }
+
+        // Is it a conditional node?
+        if (ni.template.if !== undefined)
+        {
+            if (ni.template.if instanceof Function)
+            {
+                // Dynamic conditional...
+                compileConditionalNode();
+                return true;
+            }
+            else
+            {
+                // Static conditional, either include it or not?
+                if (!ni.template.if)
+                    return false;
+            }
+        }
+
+        
         // Element node?
         if (ni.template.type)
         {
@@ -195,48 +220,17 @@ export function compileTemplateCode(rootTemplate)
             // Create node infos for all children
             for (let i=0; i<ni.template.childNodes.length; i++)
             {
-                let child_ni = new NodeInfo(ni, `n${nodeId++}`, ni.template.childNodes[i], false);
-                child_ni.index = i;
-                ni.childNodes.push(child_ni);
+                ni.childNodes.push(new NodeInfo(ni, `n${nodeId++}`, ni.template.childNodes[i], false));
             }
 
             // Create the child nodes
             for (let i=0; i<ni.childNodes.length; i++)
             {
-                // Get the child node
-                let child_ni = ni.childNodes[i];
-                let nn = child_ni.name;
-
-                // Is it a foreach node?
-                if (child_ni.template.foreach !== undefined)
+                if (!compileNode(closure, ni.childNodes[i]))
                 {
-                    compileForEachNode(child_ni);
-                    continue;
+                    ni.childNodes.splice(i, 1);
+                    i--;
                 }
-
-                // Is it a conditional node?
-                if (child_ni.template.if !== undefined)
-                {
-                    if (child_ni.template.if instanceof Function)
-                    {
-                        // Dynamic conditional...
-                        compileConditionalNode(child_ni);
-                        continue;
-                    }
-                    else
-                    {
-                        // Static conditional, either include it or not?
-                        if (!child_ni.template.if)
-                        {
-                            ni.childNodes.splice(i, 1);
-                            i--;
-                            continue;
-                        }
-                    }
-                }
-
-                // Regular node (or static true condition)
-                compileNode(closure, child_ni);
             }
 
             // Add all the child nodes to this node
@@ -245,6 +239,8 @@ export function compileTemplateCode(rootTemplate)
                 closure.create.appendLine(`${ni.name}.append(${ni.spreadChildDomNodes()});`);
             }
         }
+
+        return true;
 
         function format_callback(index)
         {
@@ -279,13 +275,13 @@ export function compileTemplateCode(rootTemplate)
         }
 
 
-        function compileConditionalNode(child_ni)
+        function compileConditionalNode()
         {
             let callback_index = objrefs.length;
-            objrefs.push(child_ni.template.if);
+            objrefs.push(ni.template.if);
 
-            let nn = child_ni.name;
-            child_ni.isConditional = true;
+            let nn = ni.name;
+            ni.isConditional = true;
 
             // Before generating the node, generate the update code
             closure.update.appendLine(`if (${nn}_included != ${format_callback(callback_index)})`)
@@ -306,32 +302,35 @@ export function compileTemplateCode(rootTemplate)
             let fn = closure.addFunction(`create_${nn}`);
             let oldCreate = closure.create;
             closure.create = fn.code;
-            compileNode(closure, child_ni);
+            let saveCondition = ni.template.if;
+            delete ni.template.if;
+            compileNode(closure, ni);
+            ni.template.if = saveCondition;
             closure.create = oldCreate;
 
             // Generate function to create and attach the node
             fn = closure.addFunction(`attach_${nn}`);
             fn.code.appendLine(`create_${nn}();`);
-            fn.code.appendLine(`${nn}_placeholder.replaceWith(${child_ni.spreadDomNodes(true)});`);
+            fn.code.appendLine(`${nn}_placeholder.replaceWith(${ni.spreadDomNodes(true)});`);
             fn.code.appendLine(`${nn}_placeholder = null`);
 
             // Generate function to detach the node
             fn = closure.addFunction(`detach_${nn}`);
             fn.code.appendLine(`${nn}_placeholder = document.createComment(" omitted by condition ");`);
-            if (child_ni.isFragment)
+            if (ni.isFragment)
             {
-                fn.code.appendLine(`helpers.replaceMany([${child_ni.spreadDomNodes(true)}], ${nn}_placeholder);`);
+                fn.code.appendLine(`helpers.replaceMany([${ni.spreadDomNodes(true)}], ${nn}_placeholder);`);
             }
             else
             {
                 fn.code.appendLine(`${nn}.replaceWith(${nn}_placeholder)`);
             }
 
-            for (let ln of child_ni.enumLocalNodes())
+            for (let ln of ni.enumLocalNodes())
             {
                 fn.code.appendLine(`${ln} = null;`);
             }
-            for (let fe of child_ni.enumLocalForEach())
+            for (let fe of ni.enumLocalForEach())
             {
                 fn.code.appendLine(`${fe}_manager?.destroy();`);
                 fn.code.appendLine(`${fe}_manager = null;`);
@@ -341,13 +340,13 @@ export function compileTemplateCode(rootTemplate)
             closure.update.leaveCollapsibleBlock(cblock, `}`);
         }
 
-        function compileForEachNode(child_ni)
+        function compileForEachNode()
         {
             // Create a node item for the child
-            let child_item_ni = new NodeInfo(null, `i${child_ni.name}`, child_ni.template, true);
+            let child_item_ni = new NodeInfo(null, `i${ni.name}`, ni.template, true);
 
             // Create a construction function for the items
-            let itemClosureFn = closure.addFunction(`${child_ni.name}_item_constructor`, [ "itemCtx" ]);
+            let itemClosureFn = closure.addFunction(`${ni.name}_item_constructor`, [ "itemCtx" ]);
             let itemClosure = new ClosureBuilder();
             itemClosure.callback_args = "ctx.model, itemCtx.item, itemCtx";
             itemClosure.outer = "itemCtx";
@@ -355,40 +354,40 @@ export function compileTemplateCode(rootTemplate)
             itemClosure.appendTo(itemClosureFn.code);
 
             // Create the "foreach" manager
-            closure.create.appendLine(`let ${child_ni.name}_manager = new helpers.ForEachManager({`);
-            closure.create.appendLine(`  item_constructor: ${child_ni.name}_item_constructor,`);
+            closure.create.appendLine(`let ${ni.name}_manager = new helpers.ForEachManager({`);
+            closure.create.appendLine(`  item_constructor: ${ni.name}_item_constructor,`);
             closure.create.appendLine(`  model: ctx.model,`);
             if (closure.outer)
                 closure.create.appendLine(`  outer: ${closure.outer},`);
             if (child_item_ni.isMultiRoot)
                 closure.create.appendLine(`  multi_root_items: true,`);
-            closure.create.appendLine(`  array_sensitive: ${child_ni.template.array_sensitive !== false},`);
-            closure.create.appendLine(`  index_sensitive: ${child_ni.template.index_sensitive !== false},`);
-            closure.create.appendLine(`  item_sensitive: ${!!child_ni.template.item_sensitive},`);
-            if (child_ni.item_key)
+            closure.create.appendLine(`  array_sensitive: ${ni.template.array_sensitive !== false},`);
+            closure.create.appendLine(`  index_sensitive: ${ni.template.index_sensitive !== false},`);
+            closure.create.appendLine(`  item_sensitive: ${!!ni.template.item_sensitive},`);
+            if (ni.item_key)
             {
                 let itemkey_index = objrefs.length;
-                objrefs.push(child_ni.template.item_key);
+                objrefs.push(ni.template.item_key);
                 closure.create.appendLine(`  item_key: ctx.objrefs[${itemkey_index}],`);
             }
-            if (child_ni.template.if)
+            if (ni.template.if)
             {
                 let condition_index = objrefs.length;
-                objrefs.push(child_ni.template.if);
+                objrefs.push(ni.template.if);
                 closure.create.appendLine(`  condition: ctx.objrefs[${condition_index}],`);
             }
             closure.create.appendLine(`});`);
 
             let objref_index = objrefs.length;
-            objrefs.push(child_ni.template.foreach);
-            if (!(child_ni.template.foreach instanceof Function))
+            objrefs.push(ni.template.foreach);
+            if (!(ni.template.foreach instanceof Function))
             {
-                closure.create.appendLine(`${child_ni.name}_manager.loadItems(ctx.objrefs[${objref_index}]);`);
+                closure.create.appendLine(`${ni.name}_manager.loadItems(ctx.objrefs[${objref_index}]);`);
             }
             else
             {
-                closure.create.appendLine(`${child_ni.name}_manager.loadItems(${format_callback(objref_index)});`);
-                closure.update.appendLine(`${child_ni.name}_manager.updateItems(${format_callback(objref_index)});`);
+                closure.create.appendLine(`${ni.name}_manager.loadItems(${format_callback(objref_index)});`);
+                closure.update.appendLine(`${ni.name}_manager.updateItems(${format_callback(objref_index)});`);
             }
         }
     }    
