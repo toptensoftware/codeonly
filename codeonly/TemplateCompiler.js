@@ -39,11 +39,6 @@ export function compileTemplateCode(rootTemplate)
     function compileNodeToClosure(closure, ni)
     {
         // Setup closure functions
-        if (!ni.isItemNode)
-        {
-            closure.attach = closure.addFunction("attach").code;
-            closure.detach = closure.addFunction("detach").code;
-        }
         closure.update = closure.addFunction("update").code;
         closure.destroy = closure.addFunction("destroy").code;
         closure.create = closure.code;
@@ -73,9 +68,7 @@ export function compileTemplateCode(rootTemplate)
                 ni.isMultiRoot ? null : `  get rootNode() { return ${ni.name}; },`,
                 `  get rootNodes() { return getRootNodes(); },`,
                 `  isMultiRoot: ${ni.isMultiRoot},`,
-                `  attach,`,
                 `  update,`,
-                `  detach,`,
                 `  destroy`,
                 `};`]);
         }
