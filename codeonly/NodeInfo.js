@@ -68,7 +68,7 @@ export class NodeInfo
     }
 
     // Similar to the above but finds all the foreach blocks so they can be
-    // reset and nulled out when the node is conditionally removed.
+    // destroyed and nulled out when the node is conditionally removed.
     *enumLocalForEach()
     {
         if (this.isForEach)

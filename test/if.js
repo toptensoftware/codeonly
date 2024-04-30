@@ -30,7 +30,7 @@ test("If (false)", () => {
         ]
     })();
 
-    assert.equal(r.rootNodes[0].childNodes.length, 0);
+    assert.equal(r.rootNodes[0].childNodes.length, 1);
 });
 
 
@@ -165,7 +165,7 @@ test("If-ElseIf-Else", () => {
 
 test("If Foreach Fragment", () => {
 
-    let val = false;
+    let val = true;
     let r = compileTemplate({
         type: "DIV",
         childNodes: [
@@ -183,4 +183,98 @@ test("If Foreach Fragment", () => {
         ]
     })();
 
+    assert.equal(r.rootNode.childNodes.length, 6);      // test + foreach*2 + foreach head/tail sentinal
+
+    val = false;
+    r.update();
+
+    assert.equal(r.rootNode.childNodes.length, 1);      // if placeholder
+
+    val = true;
+    r.update();
+
+    assert.equal(r.rootNode.childNodes.length,6);      // as before
 });
+
+test("If at root", () => {
+
+    let val = true;
+    let r = compileTemplate({
+        type: "DIV",
+        if: () => val,
+    })();
+
+    let outer = document.createElement("DIV");
+    outer.append(r.rootNode);
+
+    assert.equal(r.rootNode.nodeType, 1);
+    assert.equal(r.rootNode, outer.childNodes[0]);
+
+    val = false;
+    r.update();
+    assert.equal(r.rootNode.nodeType, 8);
+    assert.equal(r.rootNode, outer.childNodes[0]);
+
+    val = true;
+    r.update();
+    assert.equal(r.rootNode.nodeType, 1);
+    assert.equal(r.rootNode, outer.childNodes[0]);
+});
+
+test("If at root (true)", () => {
+
+    let r = compileTemplate({
+        type: "DIV",
+        if: true,
+    })();
+
+    let outer = document.createElement("DIV");
+    outer.append(r.rootNode);
+
+    assert.equal(r.rootNode.nodeType, 1);
+});
+
+test("If at root (false)", () => {
+
+    let r = compileTemplate({
+        type: "DIV",
+        if: false,
+    })();
+
+    let outer = document.createElement("DIV");
+    outer.append(r.rootNode);
+
+    assert.equal(r.rootNode.nodeType, 8);
+});
+
+
+test("If on fragment at root", () => {
+
+    let val = true;
+    let r = compileTemplate({
+        if: () => val,
+        childNodes: 
+        [
+            {
+                type: "DIV",
+            }
+        ]
+    })();
+
+    let outer = document.createElement("DIV");
+    outer.append(...r.rootNodes);
+
+    assert.equal(r.rootNodes.length, 1);
+    assert.equal(r.rootNodes[0].nodeType, 1);
+
+    val = false;
+    r.update();
+    assert.equal(r.rootNodes.length, 1);
+    assert.equal(r.rootNodes[0].nodeType, 8);
+
+    val = true;
+    r.update();
+    assert.equal(r.rootNodes.length, 1);
+    assert.equal(r.rootNodes[0].nodeType, 1);
+});
+

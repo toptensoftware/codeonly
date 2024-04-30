@@ -11,18 +11,26 @@ export function compileTemplateCode(rootTemplate)
     // Every node in the template will get an id, starting at 1.
     let nodeId = 1;
 
-    // Every callback value, will be stored here during compilation
-    // These need to be passed back to the template runtime function
-    // when the template is instantiated via ctx.objrefs;
+    // Any callbacks, arrays etc... referenced directly by the template
+    // will be stored here and passed back to the compile code via ctx.objrefs
     let objrefs = [];
 
-    // Create node info        
+    // Create root node info        
     let rootNodeInfo = new NodeInfo(null, `n${nodeId++}`, rootTemplate, false);
-    buildNodeGraph(rootNodeInfo);
 
     // Create condition group for root 'if' block
     if (rootTemplate.if !== undefined && rootTemplate.foreach === undefined)
+    {
         rootNodeInfo.conditionGroup = [ rootNodeInfo ];
+        rootNodeInfo.condition = rootTemplate.if;
+        rootNodeInfo.clause = 'if';
+        finalizeConditionGroup(rootNodeInfo.conditionGroup);
+        if (rootNodeInfo.conditionGroup)
+            rootNodeInfo = rootNodeInfo.conditionGroup[0];
+    }
+
+    // Build the node graph
+    buildNodeGraph(rootNodeInfo);
     
     let rootClosure = new ClosureBuilder();
     rootClosure.callback_args = "ctx.model";
@@ -158,14 +166,32 @@ export function compileTemplateCode(rootTemplate)
                         }
                     }
 
-                    // False, just remove the branch
-                    conditionGroup.splice(i, 1);
-                    i--;
+                    // Removing last?
+                    if (conditionGroup.length == 1)
+                    {
+                        // Replace with a comment
+                        conditionGroup[0] = new NodeInfo(conditionGroup[0].parent, `n${nodeId++}`, {
+                            type: "comment",
+                            text: " !if ",
+                        }, false);
+                    }
+                    else
+                    {
+                        // False, just remove the branch
+                        conditionGroup.splice(i, 1);
+                        i--;
+                    }
                 }
             }
         }
 
         if (conditionGroup.length == 0)
+        {
+            throw new Error("internal error, condition group became empty")
+        }
+
+        // Reduced to a placeholder?
+        if (conditionGroup.length == 1 && conditionGroup[0].condition === undefined)
             return;
 
         // If there's no trailing else block, then add one
@@ -175,7 +201,7 @@ export function compileTemplateCode(rootTemplate)
                 clause: "else",
                 condition: true,
                 type: "comment",
-                text: " implicit else ",
+                text: " !if ",
             }, false);
             ni.condition = true;
             ni.clause = "else";
@@ -208,7 +234,7 @@ export function compileTemplateCode(rootTemplate)
         {
             closure.code.append([
                 `return { `,
-                ni.isMultiRoot ? null : `  get rootNode() { return ${ni.name}; },`,
+                ni.isMultiRoot ? null : `  get rootNode() { return ${ni.spreadDomNodes()}; },`,
                 `  get rootNodes() { return getRootNodes(); },`,
                 `  itemCtx,`,
                 `  update,`,
@@ -219,7 +245,7 @@ export function compileTemplateCode(rootTemplate)
         {
             closure.code.append([
                 `return { `,
-                ni.isMultiRoot ? null : `  get rootNode() { return ${ni.name}; },`,
+                ni.isMultiRoot ? null : `  get rootNode() { return ${ni.spreadDomNodes()}; },`,
                 `  get rootNodes() { return getRootNodes(); },`,
                 `  isMultiRoot: ${ni.isMultiRoot},`,
                 `  update,`,
@@ -542,7 +568,8 @@ export function compileTemplateCode(rootTemplate)
             itemClosure.appendTo(itemClosureFn.code);
 
             // Create the "foreach" manager
-            closure.create.append(`let ${ni.name}_manager = new helpers.ForEachManager({`);
+            closure.addLocal(`${ni.name}_manager`);
+            closure.create.append(`${ni.name}_manager = new helpers.ForEachManager({`);
             closure.create.append(`  item_constructor: ${ni.name}_item_constructor,`);
             closure.create.append(`  model: ctx.model,`);
             if (closure.outer)
