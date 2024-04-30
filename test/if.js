@@ -4,7 +4,7 @@ import { compileTemplate, html } from "../codeonly/codeonly.js";
 import "./mockdom.js";
 
 
-test("If Child (true)", () => {
+test("If (true)", () => {
 
     let r = compileTemplate({
         type: "DIV",
@@ -21,7 +21,7 @@ test("If Child (true)", () => {
 });
 
 
-test("If Child (false)", () => {
+test("If (false)", () => {
 
     let r = compileTemplate({
         type: "DIV",
@@ -30,19 +30,20 @@ test("If Child (false)", () => {
         ]
     })();
 
-    assert.equal(r.rootNodes[0].childNodes[0].nodeType, 8);
+    assert.equal(r.rootNodes[0].childNodes.length, 0);
 });
 
 
-test("If Child (dynamic)", () => {
+test("If", () => {
 
     let val = false;
     let r = compileTemplate({
         type: "DIV",
-        childNodes: [
+        childNodes: 
+        [
             { 
-                type: "DIV", 
                 if: () => val,
+                type: "DIV", 
                 childNodes: [ "A", "B", "C" ]
             },
         ]
@@ -58,7 +59,7 @@ test("If Child (dynamic)", () => {
     assert.equal(r.rootNodes[0].childNodes[0].nodeType, 8);
 });
 
-test("If-Else Child (dynamic)", () => {
+test("If-Else", () => {
 
     let val = true;
     let r = compileTemplate({
@@ -78,9 +79,89 @@ test("If-Else Child (dynamic)", () => {
     })();
 
     assert.equal(r.rootNode.childNodes[0].nodeType, 1);
-    assert.equal(r.rootNode.childNodes[0].innerTExt, "foo");
+    assert.equal(r.rootNode.childNodes[0].innerText, "foo");
+
+    val = false;
+    r.update();
+
+    assert.equal(r.rootNode.childNodes[0].nodeType, 1);
+    assert.equal(r.rootNode.childNodes[0].innerText, "bar");
 });
 
+test("If-ElseIf", () => {
+
+    let val = 1;
+    let r = compileTemplate({
+        type: "DIV",
+        childNodes: [
+            { 
+                if: () => val == 1,
+                type: "DIV", 
+                text: "foo",
+            },
+            { 
+                elseif: () => val == 2,
+                type: "DIV", 
+                text: "bar",
+            },
+        ]
+    })();
+
+    assert.equal(r.rootNode.childNodes[0].nodeType, 1);
+    assert.equal(r.rootNode.childNodes[0].innerText, "foo");
+
+    val = 2;
+    r.update();
+
+    assert.equal(r.rootNode.childNodes[0].nodeType, 1);
+    assert.equal(r.rootNode.childNodes[0].innerText, "bar");
+
+    val = 3;
+    r.update();
+
+    assert.equal(r.rootNode.childNodes[0].nodeType, 8);
+});
+
+
+test("If-ElseIf-Else", () => {
+
+    let val = 1;
+    let r = compileTemplate({
+        type: "DIV",
+        childNodes: [
+            { 
+                if: () => val == 1,
+                type: "DIV", 
+                text: "foo",
+            },
+            { 
+                elseif: () => val == 2,
+                type: "DIV", 
+                text: "bar",
+            },
+            {
+                else: true,
+                type: "DIV", 
+                text: "baz",
+            },
+        ]
+    })();
+
+    assert.equal(r.rootNode.childNodes[0].nodeType, 1);
+    assert.equal(r.rootNode.childNodes[0].innerText, "foo");
+
+    val = 2;
+    r.update();
+
+    assert.equal(r.rootNode.childNodes[0].nodeType, 1);
+    assert.equal(r.rootNode.childNodes[0].innerText, "bar");
+
+    val = 3;
+    r.update();
+
+    assert.equal(r.rootNode.childNodes[0].nodeType, 1);
+    assert.equal(r.rootNode.childNodes[0].innerText, "baz");
+});
 
 test("If Foreach Fragment", () => {
 

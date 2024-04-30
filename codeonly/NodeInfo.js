@@ -132,45 +132,21 @@ export class NodeInfo
             {
                 let br = this.conditionGroup[i];
 
-                if (br.clause == "else")
-                {
-                    if (multiRoot)
-                        str += `[${Array.from(br.enumAllNodes(true)).join(", ")}]`;
-                    else
-                        str += `${br.name}`
-                }
-                else
-                {
+                if (br.clause != "else")
                     str += `${this.name}_branch == ${i} ? `;
-                    if (multiRoot)
-                        str += `[${Array.from(br.enumAllNodes(true)).join(", ")}] : `;
-                    else
-                        str += `${br.name} : `
 
-                    if (multiRoot)
-                    {
-                        str += `[`;
-                        closing = `]` + closing;
-                    }
-                }
-            }
-            if (this.conditionGroup[this.conditionGroup.length-1].clause != 'else')
-            {
-                str += `${this.name}_placeholder`;
+                if (multiRoot)
+                    str += `[${Array.from(br.enumAllNodes(true)).join(", ")}]`;
+                else
+                    str += `${br.name}`
+
+                if (br.clause != "else")
+                    str += ` : `;
             }
 
             str += closing;
             yield str;
             return;
-            /*
-            {
-                yield `...(${n.name}_included ? [${Array.from(enum_nodes(n, true)).join(", ")}] : [${n.name}_placeholder])`;
-            }
-            else
-            {
-                yield `(${n.name}_included ? ${n.name} : ${n.name}_placeholder)`;
-            }
-            */
         }
 
         if (this.isFragment)
