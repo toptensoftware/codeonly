@@ -223,6 +223,10 @@ export function compileTemplateCode(rootTemplate)
         closure.destroy = closure.addFunction("destroy").code;
         closure.create = closure.code;
 
+        // Setup exports array (unless it's an item node)
+        if (!ni.isItemNode)
+            closure.exports = new Map();
+
         // Render code
         compileNode(closure, ni);
 
@@ -243,13 +247,17 @@ export function compileTemplateCode(rootTemplate)
         }
         else
         {
+            let exports = [];
+            closure.exports.forEach((value, key) => exports.push(`  get ${key}() { return ${value}; },`));
+
             closure.code.append([
                 `return { `,
                 ni.isMultiRoot ? null : `  get rootNode() { return ${ni.spreadDomNodes()}; },`,
                 `  get rootNodes() { return getRootNodes(); },`,
                 `  isMultiRoot: ${ni.isMultiRoot},`,
                 `  update,`,
-                `  destroy`,
+                `  destroy,`,
+                ...exports,
                 `};`]);
         }
     }
@@ -328,6 +336,18 @@ export function compileTemplateCode(rootTemplate)
             // Create the element
             closure.addLocal(ni.name);
             closure.create.append(`${ni.name} = document.createElement(${JSON.stringify(ni.template.type)});`);
+
+            // Exported?
+            if (ni.template.export)
+            {
+                if (!closure.exports)
+                    throw new Error("'export' can't be used inside 'foreach'");
+                if (typeof(ni.template.export) !== 'string')
+                    throw new Error("'export' must be a string");
+                if (closure.exports.has(ni.template.export))
+                    throw new Error(`duplicate export name '${ni.template.export}'`);
+                closure.exports.set(ni.template.export, ni.name);
+            }
 
             // ID
             if (ni.template.id)
@@ -450,8 +470,6 @@ export function compileTemplateCode(rootTemplate)
 
         function compileConditionalNode()
         {
-            let nn = ni.name;
-
             closure.update.append(`${ni.name}_select(${ni.name}_resolve());`);
 
             // Generate code to create initially selected branch
@@ -612,13 +630,15 @@ export function compileTemplateCode(rootTemplate)
 
 export function compileTemplate(rootTemplate)
 {
+    // Compile code
     let code = compileTemplateCode(rootTemplate);
     console.log(code.code);
 
+    // Put it in a function
     let templateFunction = new Function("ctx", "helpers", "model", code.code);
 
-
-    return function (model)
+    // Wrap it in a constructor function
+    return function(model)
     {
         return templateFunction(code.ctx, TemplateHelpers, model);
     }
