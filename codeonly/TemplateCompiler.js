@@ -16,13 +16,9 @@ export function compileTemplateCode(rootTemplate)
     // when the template is instantiated via ctx.objrefs;
     let objrefs = [];
 
-    // Map of info about all nodes
-    // NodeName => NodeInfo
-    let nodeMap = new Map();
-
     // Create node info        
     let rootNodeInfo = new NodeInfo(null, `n${nodeId++}`, rootTemplate, false);
-    nodeMap.set(rootNodeInfo.name, rootNodeInfo);
+    buildNodeGraph(rootNodeInfo);
 
     // Create condition group for root 'if' block
     if (rootTemplate.if !== undefined && rootTemplate.foreach === undefined)
@@ -39,6 +35,131 @@ export function compileTemplateCode(rootTemplate)
             objrefs,
         }
     }
+
+    function buildNodeGraph(ni)
+    {
+        // Child nodes?
+        if (!ni.template.childNodes)
+            return;
+
+        // Create node infos for all children
+        let conditionGroup = null;
+        for (let i=0; i<ni.template.childNodes.length; i++)
+        {
+            let child = new NodeInfo(ni, `n${nodeId++}`, ni.template.childNodes[i], false);
+            buildNodeGraph(child);
+
+            // 'if' conditions on foreach blocks handled by the foreach manager
+            if (child.isForEach)
+            {
+                ni.childNodes.push(child);
+                conditionGroup = null;
+            }
+
+            // Connect if/elseif/else elements into condition groups
+            if (child.template.if !== undefined)
+            {
+                conditionGroup = [child];
+                child.conditionGroup = conditionGroup;
+                child.clause = 'if';
+                child.condition = child.template.if;
+                ni.childNodes.push(child);
+            }
+            else if (child.template.else !== undefined)
+            {
+                if (conditionGroup == null)
+                    throw new Error("Element has an 'else' condition that doesn't follow and 'if' or 'elseif'");
+                if (child.template.else !== true)
+                    throw new Error("'else' key must have value 'true'");
+                child.clause = 'else';
+                child.condition = true;
+                conditionGroup.push(child);
+                conditionGroup = null;
+            }
+            else if (child.template.elseif !== undefined)
+            {
+                if (conditionGroup == null)
+                    throw new Error("Element has an 'elseif' condition that doesn't follow and 'if' or 'elseif'");
+                child.clause = 'else if';
+                child.condition = child.template.elseif;
+                conditionGroup.push(child);
+            }
+            else
+            {
+                ni.childNodes.push(child);
+            }
+        }
+
+        // Handle static conditions
+        for (let i = 0; i<ni.childNodes.length; i++)
+        {
+            let child = ni.childNodes[i];
+            if (child.conditionGroup)
+            {
+                let group = child.conditionGroup;
+                trimConditionGroup(group);
+                if (group.length == 0)
+                {
+                    ni.childNodes.splice(i, 1);
+                    i--;
+                }
+                else
+                {
+                    ni.childNodes[i] = group[0];
+                }
+            }
+        }
+    }
+
+    function trimConditionGroup(conditionGroup)
+    {
+        for (let i=0; i<conditionGroup.length; i++)
+        {
+            let branch = conditionGroup[i];
+
+            // Static value?
+            if (!(branch.condition instanceof Function))
+            {
+                if (branch.condition)
+                {
+                    // True
+                    if (i == 0)
+                    {
+                        // First branch is true, whole condition just goes away
+                        delete branch.conditionGroup;
+                        delete branch.condition;
+                        delete branch.clause;
+                        conditionGroup.splice(0, conditionGroup.length, branch);
+                        return;
+                    }
+                    else
+                    {
+                        // Remaining branches can be deleted and this becomes the 'else' block
+                        conditionGroup.splice(i + 1, conditionGroup.length);
+                        branch.clause = 'else';
+                    }
+                }
+                else
+                {
+                    if (i == 0)
+                    {
+                        // "if: false", change the following 'elseif' to if
+                        if (i + 1 < conditionGroup.length && conditionGroup[i+1].clause == 'else if')
+                        {
+                            conditionGroup[i+1].clause = 'if';
+                        }
+                    }
+
+                    // False, just remove the branch
+                    conditionGroup.splice(i, 1);
+                    i--;
+                }
+            }
+        }
+
+            // Final fix ups
+    }
+
 
     function compileNodeToClosure(closure, ni)
     {
@@ -238,6 +359,7 @@ export function compileTemplateCode(rootTemplate)
                     if (conditionGroup == null)
                         throw new Error("Element has an 'else' or 'elseif' condition but doesn't follow and 'if' or 'elseif' item");
 
+                    child.conditionGroup = conditionGroup;
                     conditionGroup.push(child);
 
                     if (child.template.else != undefined)
@@ -458,11 +580,10 @@ export function compileTemplateCode(rootTemplate)
                     fn.code.append(`old_node.replaceWith(new_node);`);
                 }
                 fn.code.append(`${ni_if.name}_branches[old_branch].destroy();`);
+
+                closure.update.unindent();
+                closure.update.leaveCollapsibleBlock(cblock, `}`);
             }
-
-            closure.update.unindent();
-            closure.update.leaveCollapsibleBlock(cblock, `}`);
-
         }
 
         function compileForEachNode()

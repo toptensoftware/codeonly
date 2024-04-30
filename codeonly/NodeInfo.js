@@ -87,7 +87,7 @@ export class NodeInfo
     // as a sequence of spread variables.
     spreadChildDomNodes()
     {
-        return Array.from(enumChildNodes(this)).join(", ");
+        return Array.from(enumChildNodes(this)).filter(x => x.length > 0).join(", ");
 
         function *enumChildNodes(n)
         {
@@ -107,7 +107,8 @@ export class NodeInfo
     // but before it's been removed from the DOM.
     spreadDomNodes(excludeConditional)
     {
-        return Array.from(this.enumAllNodes(excludeConditional)).join(", ");
+        let nodes = Array.from(this.enumAllNodes(excludeConditional));
+        return nodes.join(", ");
     }
 
     // Generate code to list out all this node's dom nodes
@@ -122,7 +123,7 @@ export class NodeInfo
         if (this.conditionGroup && !excludeConditional)
         {
             if (this != this.conditionGroup[0])
-                throw new Error("internal error");
+                return;
 
             let multiRoot = this.conditionGroup.some(x => x.isMultiRoot);
             let str = multiRoot ? "...(" : "(";
@@ -131,16 +132,26 @@ export class NodeInfo
             {
                 let br = this.conditionGroup[i];
 
-                str += `${this.name}_branch == ${i} ? `;
-                if (multiRoot)
-                    str += `[${Array.from(br.enumAllNodes(true)).join(", ")}] : `;
-                else
-                    str += `${br.name} : `
-
-                if (multiRoot)
+                if (br.clause == "else")
                 {
-                    str += `[`;
-                    closing = `]` + closing;
+                    if (multiRoot)
+                        str += `[${Array.from(br.enumAllNodes(true)).join(", ")}]`;
+                    else
+                        str += `${br.name}`
+                }
+                else
+                {
+                    str += `${this.name}_branch == ${i} ? `;
+                    if (multiRoot)
+                        str += `[${Array.from(br.enumAllNodes(true)).join(", ")}] : `;
+                    else
+                        str += `${br.name} : `
+
+                    if (multiRoot)
+                    {
+                        str += `[`;
+                        closing = `]` + closing;
+                    }
                 }
             }
             if (this.conditionGroup[this.conditionGroup.length-1].clause != 'else')
