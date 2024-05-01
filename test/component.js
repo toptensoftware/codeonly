@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { compileTemplate, html } from "../codeonly/codeonly.js";
+import { compileTemplate, cloak } from "../codeonly/codeonly.js";
 import "./mockdom.js";
 
 
@@ -226,5 +226,46 @@ test("Foreach multi-root component", () => {
     value.unshift("foo", "bar");
     r.update();
     assert.equal(r.rootNode.childNodes.length, 12);
+});
+
+
+
+test("Component properties", () => {
+
+    let component = compileTemplate({
+        type: "DIV",
+        text: "foo",
+    });
+
+    let val = "foo";
+    let r = compileTemplate({
+        type: "DIV",
+        childNodes:
+        [
+            {
+                type: component,
+                export: "instance",
+                stringProperty: "Hello World",
+                boolProperty: true,
+                numberProperty: 23,
+                arrayProperty: [1,2,3],
+                dynamicProperty: () => val,
+                functionProperty: cloak(() => val), // Pass function through to underlying component
+            }
+        ]
+    })();
+
+    assert.equal(r.isMultiRoot, false);
+    assert.equal(r.instance.stringProperty, "Hello World");
+    assert.equal(r.instance.boolProperty, true);
+    assert.equal(r.instance.numberProperty, 23);
+    assert.equal(r.instance.dynamicProperty, "foo");
+    assert(r.instance.functionProperty instanceof Function);
+    assert.deepStrictEqual(r.instance.arrayProperty, [1,2,3]);
+
+    val = "bar";
+    r.update();
+    assert.equal(r.instance.dynamicProperty, "bar");
+
 });
 

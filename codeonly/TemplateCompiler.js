@@ -1,5 +1,6 @@
 import { camel_to_dash } from "./Utils.js";
 import { HtmlString } from "./HtmlString.js";
+import { CloakedValue} from "./CloakedValue.js";
 import { CodeBuilder } from "./CodeBuilder.js";
 import { ClosureBuilder } from "./ClosureBuilder.js";
 import { TemplateHelpers } from "./TemplateHelpers.js";
@@ -349,16 +350,31 @@ export function compileTemplateCode(rootTemplate)
                     continue;
 
                 // All other properties, assign to the object
-                let propType = typeof(ni.templates[key]);
+                let propType = typeof(ni.template[key]);
                 if (propType == 'string' || propType == 'number' || propType == 'boolean')
                 {
-                    closure.create.append(`${ni.name}[${key}] = ${JSON.stringify(ni.templates[key])}`);
+                    // Simple literal property
+                    closure.create.append(`${ni.name}[${JSON.stringify(key)}] = ${JSON.stringify(ni.template[key])}`);
+                }
+                else if (propType === 'function')
+                {
+                    // Dynamic property
+                    let callback_index = objrefs.length;
+                    closure.create.append(`${ni.name}[${JSON.stringify(key)}] = ${format_callback(callback_index)};`);
+                    closure.update.append(`${ni.name}[${JSON.stringify(key)}] = ${format_callback(callback_index)};`);
+                    objrefs.push(ni.template[key]);
                 }
                 else
                 {
-                    
-                }
+                    // Unwrap cloaked value
+                    let val = ni.template[key];
+                    if (val instanceof CloakedValue)
+                        val = val.value;
 
+                    // Object property
+                    closure.create.append(`${ni.name}[${JSON.stringify(key)}] = ctx.objrefs[${objrefs.length}];`);
+                    objrefs.push(val);
+                }
             }
 
             return true;
