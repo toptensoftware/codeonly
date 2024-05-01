@@ -56,30 +56,17 @@ export class NodeInfo
     *enumLocalNodes()
     {
         if (this.isForEach)
+        {
+            yield this;
             return;
+        }
 
         if (!this.isFragment)
-            yield this.name;
+            yield this;
 
         for (let i=0; i<this.childNodes.length; i++)
         {
             yield *this.childNodes[i].enumLocalNodes();
-        }
-    }
-
-    // Similar to the above but finds all the foreach blocks so they can be
-    // destroyed and nulled out when the node is conditionally removed.
-    *enumLocalForEach()
-    {
-        if (this.isForEach)
-        {
-            yield this.name;
-            return;
-        }
-
-        for (let i=0; i<this.childNodes.length; i++)
-        {
-            yield *this.childNodes[i].enumLocalForEach();
         }
     }
 
@@ -159,5 +146,24 @@ export class NodeInfo
         }
 
         yield this.name;
+    }
+
+    renderDestroy()
+    {
+        let lines = [];
+        if (this.isForEach)
+        {
+            lines.push(
+                `${this.name}_manager?.destroy();`,
+                `${this.name}_manager = null;`
+                );
+        }
+        else
+        {
+            lines.push(
+                `${this.name} = null;`
+                );
+        }
+        return lines;
     }
 }

@@ -230,6 +230,11 @@ export function compileTemplateCode(rootTemplate)
         // Render code
         compileNode(closure, ni);
 
+        for (let ln of ni.enumLocalNodes())
+        {
+            closure.destroy.append(ln.renderDestroy());
+        }
+
         let rnf = closure.addFunction('getRootNodes');
         rnf.code.append(`return [${ni.spreadDomNodes()}];`);
 
@@ -552,12 +557,7 @@ export function compileTemplateCode(rootTemplate)
                 prolog.indent();
                 for (let ln of br.enumLocalNodes())
                 {
-                    prolog.append(`${ln} = null;`);
-                }
-                for (let fe of br.enumLocalForEach())
-                {
-                    prolog.append(`${fe}_manager?.destroy();`);
-                    prolog.append(`${fe}_manager = null;`);
+                    prolog.append(ln.renderDestroy());
                 }
                 prolog.unindent();
                 prolog.append(`},`);
