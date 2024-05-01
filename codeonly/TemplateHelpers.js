@@ -74,6 +74,41 @@ export let TemplateHelpers = {
             node.classList.remove(cls);
     },
 
+    // Set or remove a style on an element
+    setNodeStyle(node, style, value)
+    {
+        if (value === undefined || value === null)
+            node.style.removeProperty(style);
+        else
+            node.style[style] = value;
+    },
+
+    setNodeDisplay(node, show, prev_display)
+    {
+        if (show)
+        {
+            // Null means the property didn't previously exist so remove it
+            // Undefined means we've not looked at the property before so leave it alone
+            if (prev_display === null)
+            {
+                node.style.removeProperty("display");
+            }
+            else if (prev_display !== undefined)
+            {
+                if (node.style.display != prev_display)
+                    node.style.display = prev_display;
+            }
+            return undefined;
+        }
+        else
+        {
+            let prev = node.style.display;
+            if (node.style.display != "none")
+                node.style.display = "none";
+            return prev ?? null;
+        }
+    },
+
     replaceMany(oldNodes, newNodes)
     {
         // Insert the place holder
@@ -85,5 +120,22 @@ export let TemplateHelpers = {
             oldNodes[i].remove();
         }
     },
+
+    addEventListener(model, el, eventName, handler)
+    {
+        function wrapped_handler(ev)
+        {
+            ev.model = model;
+            let retv = handler(ev);
+            delete ev.model;
+            return retv;
+        }
+
+        el.addEventListener(eventName, wrapped_handler);
+
+        return function() { el.removeEventListener(eventName, wrapped_handler); }
+    }
+
+
 }
 

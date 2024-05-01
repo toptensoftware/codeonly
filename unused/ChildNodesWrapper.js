@@ -19,7 +19,7 @@ let childNodesProxyHandler = {
             if (!isNaN(index))
                 return object.setAt(index, value);
         }
-        return Reflect.get(...arguments);
+        return Reflect.set(...arguments);
     }
 }
 

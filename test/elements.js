@@ -209,6 +209,87 @@ test("Dynamic Boolean Class", () => {
     assert.equal(r.rootNodes[0].getAttribute("class"), "foo");
 });
 
+test("Static Style", () => {
+
+    let r = compileTemplate({
+        type: "DIV",
+        style_backgroundColor: "red",
+    })();
+
+    assert.equal(r.rootNodes[0].getAttribute("style"), "background-color: red");
+});
+
+test("Dynamic Style", () => {
+
+    let val = "red";
+    let r = compileTemplate({
+        type: "DIV",
+        style_backgroundColor: () => val,
+    })();
+
+    assert.equal(r.rootNodes[0].getAttribute("style"), "background-color: red");
+
+    val = "green";
+    r.update();
+    assert.equal(r.rootNodes[0].getAttribute("style"), "background-color: green");
+
+    val = "blue";
+    r.update();
+    assert.equal(r.rootNodes[0].getAttribute("style"), "background-color: blue");
+});
+
+
+test("Static Shown", () => {
+
+    let r = compileTemplate({
+        type: "DIV",
+        show: false,
+    })();
+
+    assert.equal(r.rootNodes[0].getAttribute("style"), "display: none");
+});
+
+test("Dynamic Shown (with prior display set)", () => {
+
+    let val = true;
+    let r = compileTemplate({
+        type: "DIV",
+        style: "display: flex",
+        show: () => val,
+    })();
+
+    assert.equal(r.rootNodes[0].getAttribute("style"), "display: flex");
+
+    val = false;
+    r.update();
+    assert.equal(r.rootNodes[0].getAttribute("style"), "display: none");
+
+    val = true;
+    r.update();
+    assert.equal(r.rootNodes[0].getAttribute("style"), "display: flex");
+});
+
+test("Dynamic Shown (without prior display set)", () => {
+
+    let val = true;
+    let r = compileTemplate({
+        type: "DIV",
+        style: "",
+        show: () => val,
+    })();
+
+    assert.equal(r.rootNodes[0].getAttribute("style"), "");
+
+    val = false;
+    r.update();
+    assert.equal(r.rootNodes[0].getAttribute("style"), "display: none");
+
+    val = true;
+    r.update();
+    assert.equal(r.rootNodes[0].getAttribute("style"), "");
+});
+
+
 test("Static Style Attribute", () => {
 
     let r = compileTemplate({

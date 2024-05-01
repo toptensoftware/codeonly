@@ -163,6 +163,22 @@ export class NodeInfo
             lines.push(
                 `${this.name} = null;`
                 );
+
+            if (this.template.bind)
+            {
+                lines.push(
+                    `model[${JSON.stringify(this.template.bind)}] = null;`
+                    );
+            }
+
+            if (this.listenerCount)
+            {
+                for (let i=0; i<this.listenerCount; i++)
+                {
+                    lines.push(`${this.name}_ev${i+1}?.();`);
+                    lines.push(`${this.name}_ev${i+1} = null;`);
+                }
+            }
         }
         return lines;
     }

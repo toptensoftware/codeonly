@@ -33,7 +33,7 @@ export function compileTemplateCode(rootTemplate)
     buildNodeGraph(rootNodeInfo);
     
     let rootClosure = new ClosureBuilder();
-    rootClosure.callback_args = "ctx.model";
+    rootClosure.callback_args = "model";
     compileNodeToClosure(rootClosure, rootNodeInfo);
 
     // Return the code and context
@@ -46,6 +46,7 @@ export function compileTemplateCode(rootTemplate)
 
     function buildNodeGraph(ni)
     {
+        // ForEach items have a second node info for the item itself.
         if (ni.isForEach)
         {
             ni.item = new NodeInfo(ni, `i${ni.name}`, ni.template, true);
@@ -106,7 +107,7 @@ export function compileTemplateCode(rootTemplate)
             }
         }
 
-        // Handle static conditions
+        // Handle static 'if' conditions and finalize condition groupds
         for (let i = 0; i<ni.childNodes.length; i++)
         {
             let child = ni.childNodes[i];
@@ -127,6 +128,11 @@ export function compileTemplateCode(rootTemplate)
         }
     }
 
+    // Finalize a condition group (ie: a set of related if/else-if/else nodes)
+    // by removing redantant branches due to static eg: "if: true" or "if: false"
+    // and also ensuring that every condition group has an trailing else branch.
+    // This method might modify the conditionGroup array and after processing
+    // the first element in the array should become the root condition element.
     function finalizeConditionGroup(conditionGroup)
     {
         for (let i=0; i<conditionGroup.length; i++)
@@ -186,9 +192,7 @@ export function compileTemplateCode(rootTemplate)
         }
 
         if (conditionGroup.length == 0)
-        {
             throw new Error("internal error, condition group became empty")
-        }
 
         // Reduced to a placeholder?
         if (conditionGroup.length == 1 && conditionGroup[0].condition === undefined)
@@ -225,7 +229,10 @@ export function compileTemplateCode(rootTemplate)
 
         // Setup exports array (unless it's an item node)
         if (!ni.isItemNode)
+        {
             closure.exports = new Map();
+            closure.bindings = new Map();
+        }
 
         // Render code
         compileNode(closure, ni);
@@ -342,78 +349,138 @@ export function compileTemplateCode(rootTemplate)
             closure.addLocal(ni.name);
             closure.create.append(`${ni.name} = document.createElement(${JSON.stringify(ni.template.type)});`);
 
-            // Exported?
-            if (ni.template.export)
+            for (let key of Object.keys(ni.template))
             {
-                if (!closure.exports)
-                    throw new Error("'export' can't be used inside 'foreach'");
-                if (typeof(ni.template.export) !== 'string')
-                    throw new Error("'export' must be a string");
-                if (closure.exports.has(ni.template.export))
-                    throw new Error(`duplicate export name '${ni.template.export}'`);
-                closure.exports.set(ni.template.export, ni.name);
-            }
-
-            // ID
-            if (ni.template.id)
-            {
-                format_dynamic(ni.template.id, (codeBlock, valueExpr) => {
-                    codeBlock.append(`${ni.name}.setAttribute("id", ${valueExpr});`);
-                });
-            }
-
-            // Class
-            if (ni.template.class)
-            {
-                format_dynamic(ni.template.class, (codeBlock, valueExpr) => {
-                    codeBlock.append(`${ni.name}.setAttribute("class", ${valueExpr});`);
-                });
-            }
-
-            // Boolean classes
-            for (let cls of Object.keys(ni.template).filter(x => x.startsWith("class_")))
-            {
-                let className = camel_to_dash(cls.substring(6));
-
-                format_dynamic(ni.template[cls], (codeBlock, valueExpr) => {
-                    codeBlock.append(`helpers.setNodeClass(${ni.name}, ${JSON.stringify(className)}, ${valueExpr});`);
-                });
-            }
-
-            // Style
-            if (ni.template.style)
-            {
-                format_dynamic(ni.template.style, (codeBlock, valueExpr) => {
-                    codeBlock.append(`${ni.name}.setAttribute("style", ${valueExpr});`);
-                });
-            }
-
-            // Attributes
-            for (let attr of Object.keys(ni.template).filter(x => x.startsWith("attr_")))
-            {
-                let attrName = camel_to_dash(attr.substring(5));
-
-                format_dynamic(ni.template[attr], (codeBlock, valueExpr) => {
-                    codeBlock.append(`${ni.name}.setAttribute(${JSON.stringify(attrName)}, ${valueExpr});`);
-                });
-            }
-
-            // Set inner text
-            if (ni.template.text)
-            {
-                if (ni.template.text instanceof Function)
+                if (key == "export")
                 {
-                    format_dynamic(ni.template.text, (codeBlock, valueExpr) => {
-                        codeBlock.append(`helpers.setElementText(${ni.name}, ${valueExpr});`);
+                    if (!closure.exports)
+                        throw new Error("'export' can't be used inside 'foreach'");
+                    if (typeof(ni.template.export) !== 'string')
+                        throw new Error("'export' must be a string");
+                    if (closure.exports.has(ni.template.export))
+                        throw new Error(`duplicate export name '${ni.template.export}'`);
+                    closure.exports.set(ni.template.export, ni.name);
+                    continue;
+                }
+
+                if (key == "bind")
+                {
+                    if (!closure.bindings)
+                        throw new Error("'bind' can't be used inside 'foreach'");
+                    if (typeof(ni.template.bind) !== 'string')
+                        throw new Error("'bind' must be a string");
+                    if (closure.bindings.has(ni.template.export))
+                        throw new Error(`duplicate bind name '${ni.template.bind}'`);
+
+                    // Remember binding
+                    closure.bindings.set(ni.template.bind, true);
+
+                    // Generate it
+                    closure.create.append(`model[${JSON.stringify(ni.template.bind)}] = ${ni.name};`);
+                    continue;
+                }
+
+                if (key == "id")
+                {
+                    format_dynamic(ni.template.id, (codeBlock, valueExpr) => {
+                        codeBlock.append(`${ni.name}.setAttribute("id", ${valueExpr});`);
+                    });
+                    continue;
+                }
+
+                if (key == "class")
+                {
+                    format_dynamic(ni.template.class, (codeBlock, valueExpr) => {
+                        codeBlock.append(`${ni.name}.setAttribute("class", ${valueExpr});`);
+                    });
+                    continue;
+                }
+
+                if (key.startsWith("class_"))
+                {
+                    let className = camel_to_dash(key.substring(6));
+
+                    format_dynamic(ni.template[key], (codeBlock, valueExpr) => {
+                        codeBlock.append(`helpers.setNodeClass(${ni.name}, ${JSON.stringify(className)}, ${valueExpr});`);
+                    });
+                    continue;
+                }
+
+                if (key == "style")
+                {
+                    format_dynamic(ni.template.style, (codeBlock, valueExpr) => {
+                        codeBlock.append(`${ni.name}.setAttribute("style", ${valueExpr});`);
+                    });
+                    continue;
+                }
+
+                if (key.startsWith("style_"))
+                {
+                    let styleName = camel_to_dash(key.substring(6));
+                    format_dynamic(ni.template[key], (codeBlock, valueExpr) => {
+                        codeBlock.append(`helpers.setNodeStyle(${ni.name}, ${JSON.stringify(styleName)}, ${valueExpr});`);
                     });
                 }
-                else if (ni.template.text instanceof HtmlString)
+
+                if (key == "show")
                 {
-                    closure.create.append(`${ni.name}.innerHTML = ${JSON.stringify(ni.template.text.html)};`);
+                    if (ni.template.show instanceof Function)
+                    {
+                        closure.addLocal(`${ni.name}_prev_display`);
+                        format_dynamic(ni.template[key], (codeBlock, valueExpr) => {
+                            codeBlock.append(`${ni.name}_prev_display = helpers.setNodeDisplay(${ni.name}, ${valueExpr}, ${ni.name}_prev_display);`);
+                        });
+                    }
+                    else
+                    {
+                        if (!ni.template.show)
+                            closure.create.append(`${ni.name}.style.display = 'none';`);
+                    }
                 }
-                if (typeof(ni.template.text) === 'string')
+
+                if (key.startsWith("attr_"))
                 {
-                    closure.create.append(`${ni.name}.innerText = ${JSON.stringify(ni.template.text)};`);
+                    let attrName = camel_to_dash(key.substring(5));
+
+                    format_dynamic(ni.template[key], (codeBlock, valueExpr) => {
+                        codeBlock.append(`${ni.name}.setAttribute(${JSON.stringify(attrName)}, ${valueExpr});`);
+                    });
+                }
+
+                if (key == "text")
+                {
+                    if (ni.template.text instanceof Function)
+                    {
+                        format_dynamic(ni.template.text, (codeBlock, valueExpr) => {
+                            codeBlock.append(`helpers.setElementText(${ni.name}, ${valueExpr});`);
+                        });
+                    }
+                    else if (ni.template.text instanceof HtmlString)
+                    {
+                        closure.create.append(`${ni.name}.innerHTML = ${JSON.stringify(ni.template.text.html)};`);
+                    }
+                    if (typeof(ni.template.text) === 'string')
+                    {
+                        closure.create.append(`${ni.name}.innerText = ${JSON.stringify(ni.template.text)};`);
+                    }
+                }
+
+                if (key.startsWith("on_"))
+                {
+                    let eventName = key.substring(3);
+                    if (!(ni.template[key] instanceof Function))
+                        throw new Error(`event handler for '${key}' is not a function`);
+
+                    // create a variable name for the listener
+                    if (!ni.listeners)
+                        ni.listenerCount = 0;
+                    ni.listenerCount++;
+                    let listener_name = `${ni.name}_ev${ni.listenerCount}`;
+                    closure.addLocal(listener_name);
+
+                    // Add listener
+                    closure.create.append(`${listener_name} = helpers.addEventListener(model, ${ni.name}, ${JSON.stringify(eventName)}, ctx.objrefs[${objrefs.length}]);`);
+                    objrefs.push(ni.template[key]);
                 }
             }
         }
@@ -502,7 +569,7 @@ export function compileTemplateCode(rootTemplate)
                 }
             }
 
-            // Generate function to create and attach the node
+            // Generate function to switch branches
             let multiRoot = ni.conditionGroup.some(x => x.isMultiRoot);
             let fn = closure.addFunction(`${ni.name}_select`, ['branch']);
             fn.code.append(`if (${ni.name}_branch == branch)`);
@@ -580,7 +647,7 @@ export function compileTemplateCode(rootTemplate)
             // Create a construction function for the items
             let itemClosureFn = closure.addFunction(`${ni.name}_item_constructor`, [ "itemCtx" ]);
             let itemClosure = new ClosureBuilder();
-            itemClosure.callback_args = "ctx.model, itemCtx.item, itemCtx";
+            itemClosure.callback_args = "model, itemCtx.item, itemCtx";
             itemClosure.outer = "itemCtx";
             compileNodeToClosure(itemClosure, ni_item);
             itemClosure.appendTo(itemClosureFn.code);
@@ -589,7 +656,7 @@ export function compileTemplateCode(rootTemplate)
             closure.addLocal(`${ni.name}_manager`);
             closure.create.append(`${ni.name}_manager = new helpers.ForEachManager({`);
             closure.create.append(`  item_constructor: ${ni.name}_item_constructor,`);
-            closure.create.append(`  model: ctx.model,`);
+            closure.create.append(`  model: model,`);
             if (closure.outer)
                 closure.create.append(`  outer: ${closure.outer},`);
             if (ni_item.isMultiRoot)
