@@ -1,4 +1,4 @@
-import { camel_to_dash, is_constructor } from "./Utils.js";
+import { camel_to_dash } from "./Utils.js";
 import { HtmlString } from "./HtmlString.js";
 import { CodeBuilder } from "./CodeBuilder.js";
 import { ClosureBuilder } from "./ClosureBuilder.js";
@@ -39,6 +39,7 @@ export function compileTemplateCode(rootTemplate)
     // Return the code and context
     return { 
         code: rootClosure.toString(), 
+        isMultiRoot: rootNodeInfo.isMultiRoot,
         ctx: {
             objrefs,
         }
@@ -242,16 +243,13 @@ export function compileTemplateCode(rootTemplate)
             closure.destroy.append(ln.renderDestroy());
         }
 
-        let rnf = closure.addFunction('getRootNodes');
-        rnf.code.append(`return [${ni.spreadDomNodes()}];`);
-
         // Return interface to the closure
         if (ni.isItemNode)
         {
             closure.code.append([
                 `return { `,
                 ni.isMultiRoot ? null : `  get rootNode() { return ${ni.spreadDomNodes()}; },`,
-                `  get rootNodes() { return getRootNodes(); },`,
+                `  get rootNodes() { return [${ni.spreadDomNodes()}]; },`,
                 `  itemCtx,`,
                 `  update,`,
                 `  destroy`,
@@ -265,7 +263,7 @@ export function compileTemplateCode(rootTemplate)
             closure.code.append([
                 `return { `,
                 ni.isMultiRoot ? null : `  get rootNode() { return ${ni.spreadDomNodes()}; },`,
-                `  get rootNodes() { return getRootNodes(); },`,
+                `  get rootNodes() { return [${ni.spreadDomNodes()}]; },`,
                 `  isMultiRoot: ${ni.isMultiRoot},`,
                 `  update,`,
                 `  destroy,`,
@@ -304,12 +302,6 @@ export function compileTemplateCode(rootTemplate)
             return true;
         }
 
-        // Embedded component
-        if (is_constructor(ni.template.type))
-        {
-            throw new Error("Embedded components not implemented");
-        }
-
         // Is it a foreach node?
         if (ni.isForEach)
         {
@@ -325,7 +317,7 @@ export function compileTemplateCode(rootTemplate)
         }
 
         // Comment?
-        if (ni.template.type == 'comment')
+        if (ni.template.type === 'comment')
         {
             closure.addLocal(ni.name);
 
@@ -341,6 +333,36 @@ export function compileTemplateCode(rootTemplate)
             }
             return true;
         }
+
+        // Embedded component
+        if (ni.isComponent)
+        {
+            // Create component
+            closure.addLocal(ni.name);
+            closure.create.append(`${ni.name} = ctx.objrefs[${objrefs.length}]();`);
+            objrefs.push(ni.template.type);
+
+            for (let key of Object.keys(ni.template))
+            {
+                // Process properties common to components and elements
+                if (process_common_property(key))
+                    continue;
+
+                // All other properties, assign to the object
+                let propType = typeof(ni.templates[key]);
+                if (propType == 'string' || propType == 'number' || propType == 'boolean')
+                {
+                    closure.create.append(`${ni.name}[${key}] = ${JSON.stringify(ni.templates[key])}`);
+                }
+                else
+                {
+                    
+                }
+
+            }
+
+            return true;
+        }
         
         // Element node?
         if (ni.template.type)
@@ -351,34 +373,9 @@ export function compileTemplateCode(rootTemplate)
 
             for (let key of Object.keys(ni.template))
             {
-                if (key == "export")
-                {
-                    if (!closure.exports)
-                        throw new Error("'export' can't be used inside 'foreach'");
-                    if (typeof(ni.template.export) !== 'string')
-                        throw new Error("'export' must be a string");
-                    if (closure.exports.has(ni.template.export))
-                        throw new Error(`duplicate export name '${ni.template.export}'`);
-                    closure.exports.set(ni.template.export, ni.name);
+                // Process properties common to components and elements
+                if (process_common_property(key))
                     continue;
-                }
-
-                if (key == "bind")
-                {
-                    if (!closure.bindings)
-                        throw new Error("'bind' can't be used inside 'foreach'");
-                    if (typeof(ni.template.bind) !== 'string')
-                        throw new Error("'bind' must be a string");
-                    if (closure.bindings.has(ni.template.export))
-                        throw new Error(`duplicate bind name '${ni.template.bind}'`);
-
-                    // Remember binding
-                    closure.bindings.set(ni.template.bind, true);
-
-                    // Generate it
-                    closure.create.append(`model[${JSON.stringify(ni.template.bind)}] = ${ni.name};`);
-                    continue;
-                }
 
                 if (key == "id")
                 {
@@ -420,6 +417,7 @@ export function compileTemplateCode(rootTemplate)
                     format_dynamic(ni.template[key], (codeBlock, valueExpr) => {
                         codeBlock.append(`helpers.setNodeStyle(${ni.name}, ${JSON.stringify(styleName)}, ${valueExpr});`);
                     });
+                    continue;
                 }
 
                 if (key == "show")
@@ -436,6 +434,7 @@ export function compileTemplateCode(rootTemplate)
                         if (!ni.template.show)
                             closure.create.append(`${ni.name}.style.display = 'none';`);
                     }
+                    continue;
                 }
 
                 if (key.startsWith("attr_"))
@@ -445,6 +444,7 @@ export function compileTemplateCode(rootTemplate)
                     format_dynamic(ni.template[key], (codeBlock, valueExpr) => {
                         codeBlock.append(`${ni.name}.setAttribute(${JSON.stringify(attrName)}, ${valueExpr});`);
                     });
+                    continue;
                 }
 
                 if (key == "text")
@@ -463,25 +463,11 @@ export function compileTemplateCode(rootTemplate)
                     {
                         closure.create.append(`${ni.name}.innerText = ${JSON.stringify(ni.template.text)};`);
                     }
+                    continue;
                 }
 
-                if (key.startsWith("on_"))
-                {
-                    let eventName = key.substring(3);
-                    if (!(ni.template[key] instanceof Function))
-                        throw new Error(`event handler for '${key}' is not a function`);
 
-                    // create a variable name for the listener
-                    if (!ni.listeners)
-                        ni.listenerCount = 0;
-                    ni.listenerCount++;
-                    let listener_name = `${ni.name}_ev${ni.listenerCount}`;
-                    closure.addLocal(listener_name);
-
-                    // Add listener
-                    closure.create.append(`${listener_name} = helpers.addEventListener(model, ${ni.name}, ${JSON.stringify(eventName)}, ctx.objrefs[${objrefs.length}]);`);
-                    objrefs.push(ni.template[key]);
-                }
+                throw new Error(`Unknown template object key: ${key}`);
             }
         }
 
@@ -506,6 +492,78 @@ export function compileTemplateCode(rootTemplate)
         }
 
         return true;
+
+        function process_common_property(key)
+        {
+            if (is_known_property(key))
+                return true;
+
+            if (key == "export")
+            {
+                if (!closure.exports)
+                    throw new Error("'export' can't be used inside 'foreach'");
+                if (typeof(ni.template.export) !== 'string')
+                    throw new Error("'export' must be a string");
+                if (closure.exports.has(ni.template.export))
+                    throw new Error(`duplicate export name '${ni.template.export}'`);
+                closure.exports.set(ni.template.export, ni.name);
+                return true;
+            }
+
+            if (key == "bind")
+            {
+                if (!closure.bindings)
+                    throw new Error("'bind' can't be used inside 'foreach'");
+                if (typeof(ni.template.bind) !== 'string')
+                    throw new Error("'bind' must be a string");
+                if (closure.bindings.has(ni.template.export))
+                    throw new Error(`duplicate bind name '${ni.template.bind}'`);
+
+                // Remember binding
+                closure.bindings.set(ni.template.bind, true);
+
+                // Generate it
+                closure.create.append(`model[${JSON.stringify(ni.template.bind)}] = ${ni.name};`);
+                return true;
+            }
+
+            if (key.startsWith("on_"))
+            {
+                let eventName = key.substring(3);
+                if (!(ni.template[key] instanceof Function))
+                    throw new Error(`event handler for '${key}' is not a function`);
+
+                // create a variable name for the listener
+                if (!ni.listeners)
+                    ni.listenerCount = 0;
+                ni.listenerCount++;
+                let listener_name = `${ni.name}_ev${ni.listenerCount}`;
+                closure.addLocal(listener_name);
+
+                // Add listener
+                closure.create.append(`${listener_name} = helpers.addEventListener(model, ${ni.name}, ${JSON.stringify(eventName)}, ctx.objrefs[${objrefs.length}]);`);
+                objrefs.push(ni.template[key]);
+                return true;
+            }
+
+            return false;
+        }
+
+        function is_known_property(key)
+        {
+            if (key == "type" || key == "childNodes" || key == "if" || key == "elseif" || key == "else" || key == "foreach")
+                return true;
+            if (ni.isItemNode)
+            {
+                if (key == "index_sensitive")
+                    return true;
+                if (key == "array_sensitive")
+                    return true;
+                if (key == "item_sensitive")
+                    return true;
+            }
+            return false;
+        }
 
         function format_callback(index)
         {
@@ -659,8 +717,7 @@ export function compileTemplateCode(rootTemplate)
             closure.create.append(`  model: model,`);
             if (closure.outer)
                 closure.create.append(`  outer: ${closure.outer},`);
-            if (ni_item.isMultiRoot)
-                closure.create.append(`  multi_root_items: true,`);
+            closure.create.append(`  multi_root_items: ${!!ni_item.isMultiRoot},`);
             closure.create.append(`  array_sensitive: ${ni.template.array_sensitive !== false},`);
             closure.create.append(`  index_sensitive: ${ni.template.index_sensitive !== false},`);
             closure.create.append(`  item_sensitive: ${ni.template.item_sensitive !== false},`);
@@ -705,8 +762,14 @@ export function compileTemplate(rootTemplate)
     let templateFunction = new Function("ctx", "helpers", "model", code.code);
 
     // Wrap it in a constructor function
-    return function(model)
+    let templateConstructor = function(model)
     {
         return templateFunction(code.ctx, TemplateHelpers, model);
     }
+
+    // Store meta data about the component on the function since we need this before 
+    // construction
+    templateConstructor.isMultiRoot = code.isMultiRoot;
+
+    return templateConstructor;
 }

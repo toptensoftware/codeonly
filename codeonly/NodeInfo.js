@@ -1,4 +1,5 @@
 import { HtmlString } from "./HtmlString.js";
+import { is_constructor } from "./Utils.js";
 
 // Manages information about a node in a template
 export class NodeInfo
@@ -22,7 +23,7 @@ export class NodeInfo
     // (fragments and foreach nodes are multi-root, all others are single root)
     get isMultiRoot()
     {
-        return this.isFragment || this.isForEach;
+        return this.isFragment || this.isForEach || (this.isComponent && this.template.type.isMultiRoot);
     }
 
     // Check if this is a fragment node
@@ -47,6 +48,12 @@ export class NodeInfo
         // Template must have "foreach" and this not be the item node associated
         // with that foreach loop
         return !!this.template.foreach && !this.isItemNode;
+    }
+
+    // Is this a component?
+    get isComponent()
+    {
+        return is_constructor(this.template.type) && !this.isForEach;
     }
 
     // Recursively get all the local node variables associated with this node and it's
@@ -124,6 +131,8 @@ export class NodeInfo
 
                 if (multiRoot)
                     str += `[${Array.from(br.enumAllNodes(true)).join(", ")}]`;
+                else if (br.isComponent)
+                    str += `${br.name}.rootNode`
                 else
                     str += `${br.name}`
 
@@ -145,7 +154,17 @@ export class NodeInfo
             return;
         }
 
-        yield this.name;
+        if (this.isComponent)
+        {
+            if (this.isMultiRoot)
+                yield `...${this.name}.rootNodes`;
+            else
+                yield `${this.name}.rootNode`;
+        }
+        else
+        {
+            yield this.name;
+        }
     }
 
     renderDestroy()
@@ -156,6 +175,13 @@ export class NodeInfo
             lines.push(
                 `${this.name}_manager?.destroy();`,
                 `${this.name}_manager = null;`
+                );
+        }
+        else if (this.isComponent)
+        {
+            lines.push(
+                `${this.name}?.destroy();`,
+                `${this.name} = null;`
                 );
         }
         else
