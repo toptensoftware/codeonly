@@ -223,16 +223,28 @@ export function diff(oldArray, newArray, compareEqual)
 
     // Already exact match
     if (trimStart == maxLength)
-        return [];
+        return [
+        {
+            op: "keep",
+            index: 0,
+            count: maxLength,
+        }];
 
     // Simple Append?
     if (trimStart == oldArray.length)
     {
-        return [{ 
+        return [
+        {
+            op: "keep", 
+            index: 0,
+            count: oldArray.length
+        },
+        { 
             op: "insert", 
             index: oldArray.length,
-            count:newArray.length - oldArray.length
-        }];
+            count: newArray.length - oldArray.length
+        }
+        ];
     }
 
     // Work out how many matching keys at the end
@@ -246,31 +258,62 @@ export function diff(oldArray, newArray, compareEqual)
     // Simple prepend
     if (trimEnd == oldArray.length)
     {
-        return [{ 
+        return [
+        { 
             op: "insert", 
             index: 0,
             count: newArray.length - oldArray.length
-        }];
+        },
+        {
+            op: "keep",
+            index:  newArray.length - oldArray.length,
+            count: oldArray.length,
+        }
+        ];
     }
 
     // Simple insert?
     if (trimStart + trimEnd == oldArray.length)
     {
-        return [{ 
+        return [
+        {
+            op: "keep",
+            index: 0,
+            count: trimStart,
+        },
+        { 
             op: "insert", 
             index: trimStart,
             count: newArray.length - oldArray.length
-        }];
+        },
+        {
+            op: "keep",
+            index: trimStart + newArray.length - oldArray.length,
+            count: trimEnd,
+        }
+        ];
     }
 
     // Simple delete?
     if (trimStart + trimEnd == newArray.length)
     {
-        return [{ 
+        return [
+        {
+            op: "keep",
+            index: 0,
+            count: trimStart,
+        },
+        { 
             op: "delete", 
             index: trimStart,
             count: oldArray.length - newArray.length
-        }];
+        },
+        {
+            op: "keep",
+            index: trimStart,
+            count: trimEnd,
+        },
+        ];
     }
 
     // Untrimmed?
@@ -291,6 +334,25 @@ export function diff(oldArray, newArray, compareEqual)
     {
         o.index += trimStart;
     }
+
+    // Insert keep ops for trimmed start/end
+    if (trimStart != 0)
+    {
+        ops.unshift({
+            op: "keep",
+            index: 0,
+            count: trimStart,
+        });
+    }
+    if (trimEnd != 0)
+    {
+        ops.push({
+            op: "keep",
+            index: newArray.length - trimEnd,
+            count: trimEnd,
+        });
+    }
+
     return ops;
     
 }
