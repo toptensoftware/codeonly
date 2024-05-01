@@ -118,7 +118,13 @@ export class ForEachManager
         let self = this;
 
         // Run diff
-        diff(this.items, newKeys, (this.options.multi_root_items ? multi_root_diff_handler : single_root_diff_handler).bind(this), (a, b) => a.itemCtx.key == b );
+        let ops = diff(this.items, newKeys, (a, b) => a.itemCtx.key == b );
+
+        let diff_op_handler = (this.options.multi_root_items ? multi_root_diff_handler : single_root_diff_handler).bind(this);
+        for (let o of ops)
+        {
+            diff_op_handler(o.op, o.index, o.count);
+        }
 
         patch_existing(this.items.length);
 
@@ -191,7 +197,7 @@ export class ForEachManager
                 }
                 insertBefore.before(...newNodes);
             }
-            else
+            else if (op == 'delete')
             {
                 // Destroy the items
                 for (let i=0; i<count; i++)
@@ -252,7 +258,7 @@ export class ForEachManager
                 }
                 insertBefore.before(...newNodes);
             }
-            else
+            else if (op == 'delete')
             {
                 // Destroy the items
                 for (let i=0; i<count; i++)

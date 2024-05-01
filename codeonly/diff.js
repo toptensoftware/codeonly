@@ -1,3 +1,5 @@
+import { strict as assert } from "node:assert";
+
 /*
 Based on this:
     https://github.com/kpdecker/jsdiff/blob/master/src/diff/base.js
@@ -7,8 +9,8 @@ But modified for working directly with arrays, no timeout, no max edit length
 */
 
 
-// callback(op, index, count) where op = "insert" or "delete"
-function diff_core(oldArray, newArray, callback, compareEqual)
+// Returns an array of edits [ { op, index, count } ]
+function diff_core(oldArray, newArray, compareEqual)
 {
     let newLen = newArray.length, oldLen = oldArray.length;
     let editLength = 1;
@@ -21,8 +23,7 @@ function diff_core(oldArray, newArray, callback, compareEqual)
     if (bestPath[0].oldPos + 1 >= oldLen && newPos + 1 >= newLen)
     {
         // Identity per the equality and tokenizer
-        buildOps(bestPath[0].lastComponent);
-        return true;
+        return buildOps(bestPath[0].lastComponent);
     }
 
     // Once we hit the right edge of the edit graph on some diagonal k, we can
@@ -94,8 +95,7 @@ function diff_core(oldArray, newArray, callback, compareEqual)
             if (basePath.oldPos + 1 >= oldLen && newPos + 1 >= newLen)
             {
                 // If we have hit the end of both strings, then we are done
-                buildOps(basePath.lastComponent);
-                return true;
+                return buildOps(basePath.lastComponent);
             } else
             {
                 bestPath[diagonalPath] = basePath;
@@ -183,35 +183,20 @@ function diff_core(oldArray, newArray, callback, compareEqual)
             lastComponent = nextComponent;
         }
 
-        let componentPos = 0,
-            componentLen = components.length,
-            newPos = 0,
-            oldPos = 0;
-
-        for (; componentPos < componentLen; componentPos++)
+        for (let i=0, newPos = 0; i < components.length; i++)
         {
-            let component = components[componentPos];
-            if (component.op != "delete")
+            let component = components[i];
+            component.index = newPos;
+            switch (component.op)
             {
-                component.index = newPos;
-                //component.value = newArray.slice(newPos, newPos + component.count);
-                newPos += component.count;
+                case "keep":
+                    newPos += component.count;
+                    break;
 
-                // Common case
-                if (component.op != "insert")
-                {
-                    oldPos += component.count;
-                }
-                else
-                {
-                    callback("insert", component.index, component.count);
-                }
-            } else
-            {
-                component.index = newPos;
-                //component.value = oldArray.slice(oldPos, oldPos + component.count);
-                oldPos += component.count;
-                callback("delete", newPos, component.count);
+                case "insert":
+                    component.index = newPos;
+                    newPos += component.count;
+                    break;
             }
         }
 
@@ -220,7 +205,7 @@ function diff_core(oldArray, newArray, callback, compareEqual)
 
 }
 
-export function diff(oldArray, newArray, callback, compareEqual)
+export function diff(oldArray, newArray, compareEqual)
 {
     if (!compareEqual)
         compareEqual = function(a,b) { return a == b; }
@@ -238,13 +223,16 @@ export function diff(oldArray, newArray, callback, compareEqual)
 
     // Already exact match
     if (trimStart == maxLength)
-        return;
+        return [];
 
     // Simple Append?
     if (trimStart == oldArray.length)
     {
-        callback('insert', oldArray.length, newArray.length - oldArray.length);
-        return;
+        return [{ 
+            op: "insert", 
+            index: oldArray.length,
+            count:newArray.length - oldArray.length
+        }];
     }
 
     // Work out how many matching keys at the end
@@ -258,39 +246,74 @@ export function diff(oldArray, newArray, callback, compareEqual)
     // Simple prepend
     if (trimEnd == oldArray.length)
     {
-        callback('insert', 0, newArray.length - oldArray.length);
-        return;
+        return [{ 
+            op: "insert", 
+            index: 0,
+            count: newArray.length - oldArray.length
+        }];
     }
 
     // Simple insert?
     if (trimStart + trimEnd == oldArray.length)
     {
-        callback('insert', trimStart, newArray.length - oldArray.length);
-        return;
+        return [{ 
+            op: "insert", 
+            index: trimStart,
+            count: newArray.length - oldArray.length
+        }];
     }
 
     // Simple delete?
     if (trimStart + trimEnd == newArray.length)
     {
-        callback('delete', trimStart, oldArray.length - newArray.length);
-        return;
+        return [{ 
+            op: "delete", 
+            index: trimStart,
+            count: oldArray.length - newArray.length
+        }];
     }
 
-    console.log("-- using diff_core --");
     // Untrimmed?
     if (trimStart == 0 && trimEnd == 0)
     {
-        return diff_core(oldArray, newArray, callback, compareEqual);
+        return diff_core(oldArray, newArray, compareEqual);
     }
 
     // Trimmed diff
-    return diff_core(
-        oldArray.slice(trimStart, -trimEnd),
-        newArray.slice(trimStart, -trimEnd),
-        (op, index, count) => callback(op, index + trimStart, count),
+    let ops = diff_core(
+        oldArray.slice(trimStart, oldArray.length-trimEnd),
+        newArray.slice(trimStart, newArray.length-trimEnd),
         compareEqual
         );
+
+    // Adjust ops
+    for (let o of ops)
+    {
+        o.index += trimStart;
+    }
+    return ops;
     
 }
 
+/*
 
+let a = [1,2,3,4,5];
+let b = [1,4,3,2,5];
+let r = [...a];
+let ops = diff(a, b);
+for (let o of ops)
+{
+    console.log(o);
+    if (o.op == 'insert')
+    {
+        r.splice(o.index, 0, ...b.slice(o.index, o.index + o.count));
+    }
+    else if (o.op == 'delete')
+    {
+        r.splice(o.index, o.count);
+    }
+};
+assert.deepStrictEqual(r, b);
+
+console.log("OK");
+*/
