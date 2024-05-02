@@ -1,21 +1,27 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { diff_keys } from "../codeonly/diff_keys.js";
-import { extract_array, split_range } from "../codeonly/Utils.js";
+import { diff } from "../codeonly/diff.js";
+import { MoveTracker, KeyIndexMap, diff_keys } from "../codeonly/diff_keys.js";
 
-function run_diff(oldKeys, newKeys)
+function run_str_diff(oldKeys, newKeys)
 {
     oldKeys = oldKeys.split("");
     newKeys = newKeys.split("");
+    return run_diff(oldKeys, newKeys);
+}
+
+function run_diff(oldKeys, newKeys)
+{
     let r = [...oldKeys];
     let pos = 0;
     let store = [];
     let ops = diff_keys(oldKeys,newKeys);
-    console.log("OLD:", oldKeys);
-    console.log("NEW:", newKeys);
+    console.log("OLD:", oldKeys.join(","));
+    console.log("NEW:", newKeys.join(","));
+
     for (let o of ops)
     {
-        console.log(r.join(""));
+        console.log(r.join(","));
         console.log(o);
         assert(o.index == pos);
         if (o.op == 'insert')
@@ -60,8 +66,13 @@ function run_diff(oldKeys, newKeys)
     assert.deepStrictEqual(r, newKeys);
 }
 
+
+
+
+
+
 test("Simple Move Up", () => {
-    run_diff(
+    run_str_diff(
         "abcDe",
         "aDbce"
     );
@@ -69,110 +80,126 @@ test("Simple Move Up", () => {
 
 
 test("Simple Down", () => {
-    run_diff(
+    run_str_diff(
         "aDbce",
         "abcDe",
     );
 });
 
 test("Move Up and Down", () => {
-    run_diff(
+    run_str_diff(
         "abcDefghIjklm",
         "aDbcefghjkIlm",
+    );
+});
+
+test("Move Up and Down Multiple", () => {
+    run_str_diff(
+        "abcDEfghIJklm",
+        "aDEbcfghkIJlm",
     );
 });
 
 test("Move Down and Up", () => {
-    run_diff(
+    run_str_diff(
         "aDbcefghjkIlm",
         "abcDefghIjklm",
     );
 });
 
 
+test("Stress Test", () => {
 
-test("Extract array", () => {
-
-    let input = [1,2,3,4,5,6,7,8];
-    let output = extract_array(input, x => x % 2 == 0);
-
-    assert.deepStrictEqual(input, [1,3,5,7]);
-    assert.deepStrictEqual(output, [2,4,6,8]);
+    run_diff(
+        [10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29],
+        [10,22,23,25,11,12,13,24,30,31,32,33,34,35,14,15,16,17,18,19,20,21,26,27,28,29]
+    );
 });
 
+/*
+function random(seed) {
+  const m = 2 ** 35 - 31;
+  const a = 185852;
+  let s = seed % m;
 
-test("Split Range (start)", () => {
+  return function () {
+    s = (s * a) % m;
+    return s / m;
+  };
+}
 
-    let ranges = split_range(10, 10, [10]);
-    assert.deepStrictEqual(ranges, [
-        { index: 11, count: 9 },
-    ]);
-});
+test("Stress Test", () => {
 
-test("Split Range (multiple at start)", () => {
+    let rF = random(7);
+    let r = () => parseInt(rF() * 10000);
 
-    let ranges = split_range(10, 10, [10, 11, 12]);
-    assert.deepStrictEqual(ranges, [
-        { index: 13, count: 7 },
-    ]);
-});
+    let arr = [];
+    let nextKey = 10;
+    for (let i=0; i<20; i++)
+    {
+        arr.push(nextKey++);
+    }
 
+    function make_random_edit()
+    {
+        switch (r() % 3)
+        {
+            case 0:
+            {
+                // Insert
+                let count = r() % 10;
+                let index = arr.length == 0 ? 0 : (r() % arr.length);
+                for (let i=0; i<count; i++)
+                {
+                    arr.splice(index + i, 0, nextKey++);
+                }
+                break;
+            }
 
-test("Split Range (end)", () => {
+            case 1:
+            {
+                // Delete
+                let count = r() % 10;
+                let index = 0;
+                if (count > arr.length)
+                {
+                    count = arr.length;
+                }
+                else
+                {
+                    index = r() % (arr.length - count);
+                }
+                arr.splice(index, count);
+            }
 
-    let ranges = split_range(10, 10, [19]);
-    assert.deepStrictEqual(ranges, [
-        { index: 10, count: 9 },
-    ]);
-});
+            case 2:
+                let count = r() % 10;
+                let index = 0;
+                if (count > arr.length)
+                {
+                    count = arr.length;
+                }
+                else
+                {
+                    index = r() % (arr.length - count);
+                }
+                let save = arr.slice(index, index + count);
+                arr.splice(index, count);
+                index = arr.length == 0 ? 0 : r() % arr.length;
+                arr.splice(index, 0, ...save);
+                break;
+        }
+    }
 
-test("Split Range (multiple at end)", () => {
+    for (let i=0; i<100; i++)
+    {
+        let original = [...arr];
+        let edits = r() % 5;
+        for (let e=0; e < edits; e++)
+        {
+            make_random_edit();
+        }
+        run_diff(original, arr);
+    }
 
-    let ranges = split_range(10, 10, [17, 18, 19]);
-    assert.deepStrictEqual(ranges, [
-        { index: 10, count: 7 },
-    ]);
-});
-
-
-test("Split Range (middle)", () => {
-
-    let ranges = split_range(10, 10, [15]);
-    assert.deepStrictEqual(ranges, [
-        { index: 10, count: 5 },
-        { index: 16, count: 4 },
-    ]);
-});
-
-
-test("Split Range (multiple in middle)", () => {
-
-    let ranges = split_range(10, 10, [15, 16, 17]);
-    assert.deepStrictEqual(ranges, [
-        { index: 10, count: 5 },
-        { index: 18, count: 2 },
-    ]);
-});
-
-
-test("Split Range (multiple internal)", () => {
-
-    let ranges = split_range(10, 10, [12, 15, 18]);
-    assert.deepStrictEqual(ranges, [
-        { index: 10, count: 2 },
-        { index: 13, count: 2 },
-        { index: 16, count: 2 },
-        { index: 19, count: 1 },
-    ]);
-});
-
-
-test("Split Range (start, middle, end)", () => {
-
-    let ranges = split_range(10, 10, [10, 15, 19]);
-    assert.deepStrictEqual(ranges, [
-        { index: 11, count: 4 },
-        { index: 16, count: 3 },
-    ]);
-});
-
+});*/
