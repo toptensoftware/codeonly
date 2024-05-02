@@ -10,6 +10,7 @@ But modified for working directly with arrays, no timeout, no max edit length
 
 
 // Returns an array of edits [ { op, index, count } ]
+// where op = "insert", "delete" or "keep".
 function diff_core(oldArray, newArray, compareEqual)
 {
     let newLen = newArray.length, oldLen = oldArray.length;

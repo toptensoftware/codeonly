@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
 import { diff } from "../codeonly/diff.js";
-
+    
 function run_diff(a, b)
 {
     let r = [...a];
