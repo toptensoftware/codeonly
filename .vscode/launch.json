@@ -2,7 +2,7 @@
     "configurations": [
     {
         "name": "Launch Program",
-        "program": "${workspaceFolder}/test/sandbox.js",
+        "program": "${workspaceFolder}/codeonly/diff.js",
         "request": "launch",
         "skipFiles": [
             "<node_internals>/**"
