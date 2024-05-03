@@ -22,20 +22,22 @@ export class KeyIndexMap
         }
     }
 
-    delete(key, index)
+    delete(key, index, indexFieldName)
     {
         let list = this.map.get(key);
         if (list === undefined)
             throw new Error("delete key not found");
         if (Array.isArray(list))
         {
-            let pos = list.indexOf(index);
+            let pos = list.findIndex(x => x[indexFieldName] == index);
             if (pos < 0)
                 throw new Error("delete index not found");
             list.splice(pos, 1);
         }
         else
         {
+            if (list[indexFieldName] != index)
+                throw new Error("index field mismatch");
             this.map.delete(key);
         }
     }

@@ -7,19 +7,19 @@ test("Move Tracker", () => {
 
     let mt = new MoveTracker();
     
-    mt.insert(2);
+    mt.insert(5,2);
     assert.equal(mt.convert(10), 12);
 
-    mt.delete(2);
+    mt.delete(7,2);
     assert.equal(mt.convert(10), 10);
 
     mt = new MoveTracker();
-    mt.trackMove({ from: 3, to: 10, count: 2});
+    mt.move(3, 10, 2);
     assert.equal(mt.convert(5), 3);
     assert.equal(mt.convert(13), 13);
 
     mt = new MoveTracker();
-    mt.trackMove({ from: 8, to: 5, count: 2});
+    mt.move(8, 5, 2);
     assert.equal(mt.convert(7), 9);
     assert.equal(mt.convert(10), 10);
 

@@ -23,7 +23,7 @@ function run_diff(oldKeys, newKeys)
     {
         console.log("MOD:", r.join(","));
         console.log(o);
-        assert(o.index == pos);
+
         if (o.op == 'insert')
         {
             r.splice(o.index, 0, ...newKeys.slice(o.index, o.index + o.count));
@@ -46,21 +46,12 @@ function run_diff(oldKeys, newKeys)
             r.splice(o.index, o.count);
             r.splice(o.to, 0, ...sourceKeys);
         }
-        else if (o.op == "skip")
-        {
-            pos += o.count;
-        }
-        else if (o.op == 'keep')
-        {
-            pos += o.count;
-        }
         else
         {
             throw new Error("unknown diff operation");
         }
     };
-    console.log(r);
-    assert.equal(pos, r.length);
+    console.log("FIN:", r.join(","));
     assert.deepStrictEqual(r, newKeys);
 }
 
@@ -106,24 +97,34 @@ test("Move Left and Right Multiple", () => {
 });
 
 
-test("Stress Test", () => {
-
+test("XXX", () => {
+    
     run_diff(
-        [10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29],
-        [10,22,23,25,11,12,13,24,30,31,32,33,34,35,14,15,16,17,18,19,20,21,26,27,28,29]
+        /*
+        [10,22,23,25,11,16,17,12,13,34,35,14,15,18,19,20,24,30,31,32,33,21,26,27,28,29],
+        [10,11,44,45,46,47,48,49,16,17,12,13,34,35,14,22,23,25,15,36,37,38,39,40,41,42,43,18,19,20]
+        */
+
+        /*
+        [10,11,44,53,54,16,17,14,22,55,56,57,58,45,46,47,48,49,42,43,18,19,20,29],
+        [10,11,44,45,46,47,48,49,16,17,12,13,34,35,14,22,23,25,15,36,37,38,39,40,41,42,43,18,19,20,29]
+        */
+        [10,11,44,45,46,47,48,49,16,17,12,13,34,35,14,22,23,25,15,36,37,38,39,40,41,42,43,18,19,20,29],
+        [10,11,44,53,54,16,17,14,22,55,56,57,58,45,46,47,48,49,42,43,18,19,20,29]
+        
+
     );
 });
-
-/*
+    
 function random(seed) {
-  const m = 2 ** 35 - 31;
-  const a = 185852;
-  let s = seed % m;
+    const m = 2 ** 35 - 31;
+    const a = 185852;
+    let s = seed % m;
 
-  return function () {
-    s = (s * a) % m;
-    return s / m;
-  };
+    return function () {
+        s = (s * a) % m;
+        return s / m;
+    };
 }
 
 test("Stress Test", () => {
@@ -200,4 +201,4 @@ test("Stress Test", () => {
         run_diff(original, arr);
     }
 
-});*/
+});
