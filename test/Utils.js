@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { separate_array, subtract_ranges } from "../codeonly/Utils.js";
+import { separate_array, split_range } from "../codeonly/Utils.js";
 
 test("Extract array", () => {
 
@@ -12,83 +12,63 @@ test("Extract array", () => {
 });
 
 
-test("Subtract Ranges (start)", () => {
+test("Split Range (start)", () => {
 
-    let ranges = subtract_ranges(10, 10, [
-        {index: 10, count: 2},
-    ]);
-
+    let ranges = split_range(10, 10, [10]);
     assert.deepStrictEqual(ranges, [
-        { index: 12, count: 8 },
+        { index: 11, count: 9 },
     ]);
 });
 
-test("Subtract Ranges (multiple at start)", () => {
+test("Split Range (multiple at start)", () => {
 
-    let ranges = subtract_ranges(10, 10, [
-        {index: 10, count: 1},
-        {index: 11, count: 1},
-    ]);
+    let ranges = split_range(10, 10, [10, 11, 12]);
     assert.deepStrictEqual(ranges, [
-        { index: 12, count: 8 },
+        { index: 13, count: 7 },
     ]);
 });
 
 
-test("Subtract Ranges (end)", () => {
+test("Split Range (end)", () => {
 
-    let ranges = subtract_ranges(10, 10, [
-        { index: 18, count: 2}
-    ]);
+    let ranges = split_range(10, 10, [19]);
     assert.deepStrictEqual(ranges, [
-        { index: 10, count: 8 },
+        { index: 10, count: 9 },
     ]);
 });
 
-test("Subtract Ranges (multiple at end)", () => {
+test("Split Range (multiple at end)", () => {
 
-    let ranges = subtract_ranges(10, 10, [
-        { index: 18, count: 1},
-        { index: 19, count: 1}
-    ]);
+    let ranges = split_range(10, 10, [17, 18, 19]);
     assert.deepStrictEqual(ranges, [
-        { index: 10, count: 8 },
+        { index: 10, count: 7 },
     ]);
 });
 
 
-test("Subtract Ranges (middle)", () => {
+test("Split Range (middle)", () => {
 
-    let ranges = subtract_ranges(10, 10, [
-        { index: 15, count: 2},
-    ]);
+    let ranges = split_range(10, 10, [15]);
     assert.deepStrictEqual(ranges, [
         { index: 10, count: 5 },
-        { index: 17, count: 3 },
+        { index: 16, count: 4 },
     ]);
 });
 
 
-test("Subtract Ranges (multiple in middle)", () => {
+test("Split Range (multiple in middle)", () => {
 
-    let ranges = subtract_ranges(10, 10, [
-        { index: 15, count: 1 },
-        { index: 16, count: 1 },
-    ]);
+    let ranges = split_range(10, 10, [15, 16, 17]);
     assert.deepStrictEqual(ranges, [
         { index: 10, count: 5 },
-        { index: 17, count: 3 },
+        { index: 18, count: 2 },
     ]);
 });
 
 
-test("Subtract Ranges (multiple internal)", () => {
+test("Split Range (multiple internal)", () => {
 
-    let ranges = subtract_ranges(10, 10, [
-        { index: 12, count: 1 },
-        { index: 15, count: 1 },
-        { index: 18, count: 1 },
-    ]);
+    let ranges = split_range(10, 10, [12, 15, 18]);
     assert.deepStrictEqual(ranges, [
         { index: 10, count: 2 },
         { index: 13, count: 2 },
@@ -98,13 +78,9 @@ test("Subtract Ranges (multiple internal)", () => {
 });
 
 
-test("Subtract Ranges (start, middle, end)", () => {
+test("Split Range (start, middle, end)", () => {
 
-    let ranges = subtract_ranges(10, 10, [
-        { index: 10, count: 1 },
-        { index: 15, count: 1 },
-        { index: 19,count: 1 },
-    ]);
+    let ranges = split_range(10, 10, [10, 15, 19]);
     assert.deepStrictEqual(ranges, [
         { index: 11, count: 4 },
         { index: 16, count: 3 },

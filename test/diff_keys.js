@@ -15,8 +15,6 @@ function run_diff(oldKeys, newKeys)
     console.log("NEW:", newKeys.join(","));
 
     let r = [...oldKeys];
-    let pos = 0;
-    let store = [];
     let ops = diff_keys(oldKeys,newKeys);
 
     for (let o of ops)
@@ -27,28 +25,20 @@ function run_diff(oldKeys, newKeys)
         if (o.op == 'insert')
         {
             r.splice(o.index, 0, ...newKeys.slice(o.index, o.index + o.count));
-            pos += o.count;
         }
         else if (o.op == 'delete')
         {
             r.splice(o.index, o.count);
         }
-        else if (o.op == 'move-left')
+        else if (o.op == 'move')
         {
             let sourceKeys = r.slice(o.from, o.from + o.count);
             r.splice(o.from, o.count);
-            r.splice(o.index, 0, ...sourceKeys);
-            pos += o.count;
-        }
-        else if (o.op == 'move-right')
-        {
-            let sourceKeys = r.slice(o.index, o.index + o.count);
-            r.splice(o.index, o.count);
             r.splice(o.to, 0, ...sourceKeys);
         }
         else
         {
-            throw new Error("unknown diff operation");
+            throw new Error(`unknown diff operation - ${o.op}`);
         }
     };
     console.log("FIN:", r.join(","));
