@@ -1,7 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { diff } from "../codeonly/diff.js";
-import { MoveTracker, KeyIndexMap, diff_keys } from "../codeonly/diff_keys.js";
+import { diff_keys } from "../codeonly/diff_keys.js";
 
 function run_str_diff(oldKeys, newKeys)
 {
@@ -12,16 +11,17 @@ function run_str_diff(oldKeys, newKeys)
 
 function run_diff(oldKeys, newKeys)
 {
+    console.log("OLD:", oldKeys.join(","));
+    console.log("NEW:", newKeys.join(","));
+
     let r = [...oldKeys];
     let pos = 0;
     let store = [];
     let ops = diff_keys(oldKeys,newKeys);
-    console.log("OLD:", oldKeys.join(","));
-    console.log("NEW:", newKeys.join(","));
 
     for (let o of ops)
     {
-        console.log(r.join(","));
+        console.log("MOD:", r.join(","));
         console.log(o);
         assert(o.index == pos);
         if (o.op == 'insert')
@@ -33,23 +33,21 @@ function run_diff(oldKeys, newKeys)
         {
             r.splice(o.index, o.count);
         }
-        else if (o.op == 'move')
+        else if (o.op == 'move-left')
         {
-            assert(o.fromIndex > o.index);
-            let sourceKeys = r.slice(o.fromIndex, o.fromIndex + o.count);
-            r.splice(o.fromIndex, o.count);
+            let sourceKeys = r.slice(o.from, o.from + o.count);
+            r.splice(o.from, o.count);
             r.splice(o.index, 0, ...sourceKeys);
             pos += o.count;
         }
-        else if (o.op == 'store')
+        else if (o.op == 'move-right')
         {
-            assert(o.storeIndex == store.length);
-            store.push(...r.slice(o.index, o.index + o.count));
+            let sourceKeys = r.slice(o.index, o.index + o.count);
             r.splice(o.index, o.count);
+            r.splice(o.to, 0, ...sourceKeys);
         }
-        else if (o.op == 'restore')
+        else if (o.op == "skip")
         {
-            r.splice(o.index, 0, ...store.slice(o.storeIndex, o.storeIndex + o.count));
             pos += o.count;
         }
         else if (o.op == 'keep')
@@ -71,39 +69,39 @@ function run_diff(oldKeys, newKeys)
 
 
 
-test("Simple Move Up", () => {
+test("Simple Move Left", () => {
     run_str_diff(
-        "abcDe",
-        "aDbce"
+        "abc*e",
+        "a*bce"
     );
 });
 
 
-test("Simple Down", () => {
+test("Simple Move Right", () => {
     run_str_diff(
-        "aDbce",
-        "abcDe",
+        "a*bce",
+        "abc*e",
     );
 });
 
-test("Move Up and Down", () => {
+test("Move Left and Right", () => {
     run_str_diff(
-        "abcDefghIjklm",
-        "aDbcefghjkIlm",
+        "abcd*efgh.ijklm",
+        "a*bcdefghijkl.m",
     );
 });
 
-test("Move Up and Down Multiple", () => {
+test("Move Right and Left", () => {
     run_str_diff(
-        "abcDEfghIJklm",
-        "aDEbcfghkIJlm",
+        "a*bcdefghijkl.m",
+        "abcd*efgh.ijklm",
     );
 });
 
-test("Move Down and Up", () => {
+test("Move Left and Right Multiple", () => {
     run_str_diff(
-        "aDbcefghjkIlm",
-        "abcDefghIjklm",
+        "abcd*#efgh.,ijklm",
+        "a*#bcdefghijkl.,m",
     );
 });
 
