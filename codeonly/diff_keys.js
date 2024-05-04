@@ -97,7 +97,7 @@ export function diff_keys(oldKeys, newKeys)
             // Find the first pending right move in this range
             let pending_index = -1;
             let pending = pending_right_moves.reduce((prev, x, index) => {
-                if (x.index >= op.index && x.index < op.index + op.count && 
+                if (x.originalIndex >= op.originalIndex && x.originalIndex < op.originalIndex + op.count && 
                     (prev == null || x.index < prev.index))
                 {
                     pending_index = index;
@@ -109,20 +109,24 @@ export function diff_keys(oldKeys, newKeys)
 
             if (pending)
             {
-                if (pending.index > op.index)
+                if (pending.originalIndex > op.originalIndex)
                 {
-                    // Insert insert op
-                    let count = pending.index - op.index;
-                    new_edits.push({
-                        op: op.op,
+                    // Split this op
+                    let count = pending.originalIndex - op.originalIndex;
+
+                    // Create a new op starting where the pending move is 
+                    let newOp = {
+                        op: "insert",
                         index: op.index,
-                        originalIndex: op.originalIndex,
-                        count,
-                    });
+                        originalIndex: op.originalIndex + count,
+                        count: op.count - count,
+                    }
+                    edits.splice(opIndex + 1, 0, newOp);
 
                     // Update this op
-                    op.count -= count;
-                    op.originalIndex += count;
+                    op.count -= newOp.count;
+                    opIndex--;
+                    continue;
                 }
 
                 // Update this op
@@ -231,17 +235,19 @@ export function diff_keys(oldKeys, newKeys)
                 {
                     // Insert delete op
                     let count = pending.index - op.index;
-                    new_edits.push({
-                        op: op.op,
-                        index: op.index,
-                        originalIndex: op.originalIndex,
-                        count,
-                    });
 
+                    let newOp = {
+                        op: "delete",
+                        index: op.index + count,
+                        originalIndex: op.originalIndex + count,
+                        count: op.count - count,
+                    }
+                    edits.splice(opIndex + 1, 0, newOp);
+                    
                     // Update this op
-                    op.count -= count;
-                    op.index += count;
-                    op.originalIndex += count;
+                    op.count -= newOp.count;
+                    opIndex--;
+                    continue;
                 }
 
                 // Update this op
@@ -314,7 +320,7 @@ export function diff_keys(oldKeys, newKeys)
                     new_edits.push(move_op);
 
                     pending_right_moves.push({
-                        index: insFrom.index,
+                        originalIndex: insFrom.originalIndex,
                         count: move_op.count,
                         ref: move_op,
                     });
@@ -336,7 +342,6 @@ export function diff_keys(oldKeys, newKeys)
 
     console.log("---- pre-process ----");
     new_edits.forEach(x => console.log(x));
-    console.log("-------------------");
 
     // Post process
     // - convert indicies from pre-edit indicies to in-flight edit indicies
@@ -359,22 +364,19 @@ export function diff_keys(oldKeys, newKeys)
 
             case "delete":
                 op.index += adjust;
-                adjust -= op.count;
-//                if (op.originalIndex != op.index)
-//                    throw new Error("delete index changed");
-                delete op.originalIndex;
+                adjust -= op.count;delete op.originalIndex;
                 break;
 
             case "move-left":
-                op.op = "move";
-                op.to += adjust;
-                op.from = future_index(op.from);
-                adjust += op.count;
                 futureMoves.push({
                     op,
                     index: op.from,
                     adjust: -op.count,
                 });
+                op.op = "move";
+                op.to += adjust;
+                op.from = future_index(op.from + adjust);
+                adjust += op.count;
                 break;
 
             case "move-left-sentinal":
@@ -385,15 +387,15 @@ export function diff_keys(oldKeys, newKeys)
                 break;
 
             case "move-right":
-                op.op = "move";
-                op.from += adjust;
-                op.to = future_index(op.to) - op.count;
-                adjust -= op.count;
                 futureMoves.push({
                     op,
                     index: op.to,
                     adjust: op.count,
                 });
+                op.op = "move";
+                op.from += adjust;
+                op.to = future_index(op.to + adjust) - op.count;
+                adjust -= op.count;
                 break;
 
             case "move-right-sentinal":
@@ -417,8 +419,12 @@ export function diff_keys(oldKeys, newKeys)
             if (futureMoves[i].index < index)
                 index += futureMoves[i].adjust;
         }
-        return index + adjust;
+        return index;
     }
+
+    console.log("---- final edit list ----");
+    new_edits.forEach(x => console.log(x));
+    console.log("-------------------");
 
     return new_edits;
     
