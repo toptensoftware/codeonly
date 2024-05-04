@@ -1,5 +1,5 @@
 import { diff } from "./diff.js"
-import { separate_array, split_range, subtract_ranges } from "./Utils.js"
+import { inplace_filter_array } from "./Utils.js"
 import { KeyIndexMap } from "./KeyIndexMap.js"
 
 
@@ -17,8 +17,6 @@ export function diff_keys(oldKeys, newKeys)
 
     edits = edits.filter(x => x.op != 'keep');
 
-
-/*
     // If there are only inserts or only deletes
     // then there can be no move operations so just 
     // return the raw edits
@@ -35,7 +33,6 @@ export function diff_keys(oldKeys, newKeys)
     }
     if (!inserts || !deletes)
         return edits;
-*/
 
     // Make a map of all keys being inserted and all keys being deleted
     //  - insertMap is a map of keys to indices in the newKeys collection
@@ -55,9 +52,10 @@ export function diff_keys(oldKeys, newKeys)
             for (let i=0; i<op.count; i++)
             {
                 insertMap.add(newKeys[op.originalIndex + i], {
-                    op: op,
                     offset: i,
-                    index: op.originalIndex + i,
+                    count: op.count,
+                    index: op.index,
+                    originalIndex: op.originalIndex + i,
                 });
             }
         }
@@ -69,8 +67,8 @@ export function diff_keys(oldKeys, newKeys)
             for (let i=0; i<op.count; i++)
             {
                 deleteMap.add(oldKeys[op.index + i], {
-                    op: op,
                     offset: i,
+                    count: op.count,
                     index: op.index + i,
                 });
             }
@@ -96,38 +94,59 @@ export function diff_keys(oldKeys, newKeys)
         let op = edits[opIndex];
         if (op.op == 'insert')
         {
-            // Slice out any part of this range that has already been handled
-            // by a previous right move.
-            let right_moves = separate_array(pending_right_moves, x => {
-                return x.index >= op.index && x.index < op.index + op.count;
-            });
-            if (right_moves.length)
+            // Find the first pending right move in this range
+            let pending_index = -1;
+            let pending = pending_right_moves.reduce((prev, x, index) => {
+                if (x.index >= op.index && x.index < op.index + op.count && 
+                    (prev == null || x.index < prev.index))
+                {
+                    pending_index = index;
+                    return x;
+                }
+                else
+                    return prev;
+            }, null);
+
+            if (pending)
             {
-                // Split this op into sub-inserts and right move sentinals
-                let newRanges = subtract_ranges(op.index, op.count, right_moves);
-                new_edits.push(...newRanges.map(x => {
-                    return {
-                        op: "move-right-sentinal",
-                        ref: x.ref,
-                    }
-                }));
-                edits.splice(opIndex, 1, ...newRanges.map(x => {
-                    return {
-                        op: "insert",
-                        index: x.index,
-                        count: x.count,
-                        originalIndex: x.index + op.index - op.originalIndex,
-                    }
-                }));
+                if (pending.index > op.index)
+                {
+                    // Insert insert op
+                    let count = pending.index - op.index;
+                    new_edits.push({
+                        op: op.op,
+                        index: op.index,
+                        originalIndex: op.originalIndex,
+                        count,
+                    });
+
+                    // Update this op
+                    op.count -= count;
+                    op.originalIndex += count;
+                }
+
+                // Update this op
+                op.count -= pending.count;
+                op.originalIndex += pending.count;
+
+                // Insert sentinal
+                new_edits.push({
+                    op: "move-right-sentinal",
+                    ref: pending.ref,
+                });
+
+                // Remove the pending left move
+                pending_right_moves.splice(pending_index, 1);
+
+                // Start again in case there's another pending op
                 opIndex--;
                 continue;
             }
 
-
             for (let i=0; i<op.count; i++)
             {
                 // Get the key
-                let key = newKeys[op.index + i];
+                let key = newKeys[op.originalIndex + i];
 
                 // If we're going to be deleting it later then convert to a move operation
                 let delFrom = deleteMap.get(key);
@@ -142,7 +161,6 @@ export function diff_keys(oldKeys, newKeys)
                             originalIndex: op.originalIndex,
                             count: i,
                         });
-                        op.index += i;
                         op.originalIndex += i;
                         op.count -= i;
                         i = 0;
@@ -151,11 +169,12 @@ export function diff_keys(oldKeys, newKeys)
                     // Consume all consecutive matching items
                     let count = 0;
                     while (count < op.count &&
-                            delFrom.offset + count < delFrom.op.count &&
-                            newKeys[op.index + count] == oldKeys[delFrom.index + count])
+                            delFrom.offset + count < delFrom.count &&
+                            newKeys[op.originalIndex + count] == oldKeys[delFrom.index + count])
                     {
-                        deleteMap.delete(newKeys[op.index + count], delFrom.index + count);
-                        insertMap.delete(newKeys[op.index + count], op.index + count);
+                        let itemkey = newKeys[op.originalIndex + count];
+                        deleteMap.delete(itemkey, x => x.index == delFrom.index + count);
+                        insertMap.delete(itemkey, x => x.originalIndex == op.originalIndex + count);
                         count++;
                     }
 
@@ -180,7 +199,6 @@ export function diff_keys(oldKeys, newKeys)
                     });
 
                     // Truncate this op
-                    op.index += count;
                     op.originalIndex += count;
                     op.count -= count;
                     i--;
@@ -195,29 +213,52 @@ export function diff_keys(oldKeys, newKeys)
         }
         else if (op.op == 'delete')
         {
-            // Slice out any part of this range that has already been handled
-            // by a previous left move.
-            let left_moves = separate_array(pending_left_moves, x => {
-                return x.index >= op.index && x.index < op.index + op.count;
-            });
-            if (left_moves.length)
+            // Find the first pending left move in this range
+            let pending_index = -1;
+            let pending = pending_left_moves.reduce((prev, x, index) => {
+                if (x.index >= op.index && x.index < op.index + op.count && (prev == null || x.index < prev.index))
+                {
+                    pending_index = index;
+                    return x;
+                }
+                else
+                    return prev;
+            }, null);
+
+            if (pending)
             {
-                // Split this operation into sub-deletes and left move sentinals
-                let newRanges = subtract_ranges(op.index, op.count, left_moves);
-                new_edits.push(...newRanges.map(x => {
-                    return {
-                        op: "move-left-sentinal",
-                        ref: x.ref,
-                    };
-                }));
-                edits.splice(opIndex, 1, ...newRanges.map(x => {
-                    return {
-                        op: "delete",
-                        index: x.index,
-                        originalIndex: x.index + op.originalIndex - op.index,
-                        count: x.count,
-                    };
-                }));
+                if (pending.index > op.index)
+                {
+                    // Insert delete op
+                    let count = pending.index - op.index;
+                    new_edits.push({
+                        op: op.op,
+                        index: op.index,
+                        originalIndex: op.originalIndex,
+                        count,
+                    });
+
+                    // Update this op
+                    op.count -= count;
+                    op.index += count;
+                    op.originalIndex += count;
+                }
+
+                // Update this op
+                op.count -= pending.count;
+                op.index += pending.count;
+                op.originalIndex += pending.count;
+
+                // Insert sentinal
+                new_edits.push({
+                    op: "move-left-sentinal",
+                    ref: pending.ref,
+                });
+
+                // Remove the pending left move
+                pending_left_moves.splice(pending_index, 1);
+
+                // Start again in case there's another pending op
                 opIndex--;
                 continue;
             }
@@ -249,11 +290,12 @@ export function diff_keys(oldKeys, newKeys)
                     // Consume all consecutive matching items
                     let count = 0;
                     while (count < op.count &&
-                            insFrom.offset + count < insFrom.op.count &&
-                            newKeys[insFrom.index + count] == oldKeys[op.index + count])
+                            insFrom.offset + count < insFrom.count &&
+                            newKeys[insFrom.originalIndex + count] == oldKeys[op.index + count])
                     {
-                        insertMap.delete(newKeys[insFrom.index + count], insFrom.index + count);
-                        deleteMap.delete(newKeys[insFrom.index + count], op.index + count);
+                        let itemkey = newKeys[insFrom.originalIndex + count];
+                        insertMap.delete(itemkey, x => x.originalIndex == insFrom.originalIndex + count);
+                        deleteMap.delete(itemkey, x => x.index == op.index + count);
                         count++;
                     }
 
@@ -292,11 +334,16 @@ export function diff_keys(oldKeys, newKeys)
         }
     }
 
+    console.log("---- pre-process ----");
+    new_edits.forEach(x => console.log(x));
+    console.log("-------------------");
+
     // Post process
     // - convert indicies from pre-edit indicies to in-flight edit indicies
     // - convert move-right sentinals to "skip" operations
     // - remove move-left sentinals
     adjust = 0;
+    let futureMoves = [];
     for (let opIndex = 0; opIndex<new_edits.length; opIndex++)
     {
         let op = new_edits[opIndex];
@@ -313,18 +360,25 @@ export function diff_keys(oldKeys, newKeys)
             case "delete":
                 op.index += adjust;
                 adjust -= op.count;
-                if (op.originalIndex != op.index)
-                    throw new Error("delete index changed");
+//                if (op.originalIndex != op.index)
+//                    throw new Error("delete index changed");
+                delete op.originalIndex;
                 break;
 
             case "move-left":
                 op.op = "move";
                 op.to += adjust;
+                op.from = future_index(op.from);
                 adjust += op.count;
+                futureMoves.push({
+                    op,
+                    index: op.from,
+                    adjust: -op.count,
+                });
                 break;
 
             case "move-left-sentinal":
-                op.ref.from += adjust;
+                futureMoves.splice(futureMoves.findIndex(x => x.op == op.ref), 1);
                 adjust -= op.ref.count;
                 new_edits.splice(opIndex, 1);
                 opIndex--;
@@ -333,21 +387,37 @@ export function diff_keys(oldKeys, newKeys)
             case "move-right":
                 op.op = "move";
                 op.from += adjust;
+                op.to = future_index(op.to) - op.count;
                 adjust -= op.count;
+                futureMoves.push({
+                    op,
+                    index: op.to,
+                    adjust: op.count,
+                });
                 break;
 
             case "move-right-sentinal":
-                op.ref.to += adjust;
+                futureMoves.splice(futureMoves.findIndex(x => x.op == op.ref), 1);
                 op.op = "skip";
-                op.index = op.ref.to;
+                op.index = op.ref.to + adjust;
                 op.count = op.ref.count;
-                delete op.ref;
                 adjust += op.count;
+                delete op.ref;
                 break;
 
             default:
                 throw new Error("Unexpected op type");
         }
+    }
+
+    function future_index(index)
+    {
+        for (let i=0; i<futureMoves.length; i++)
+        {
+            if (futureMoves[i].index < index)
+                index += futureMoves[i].adjust;
+        }
+        return index + adjust;
     }
 
     return new_edits;

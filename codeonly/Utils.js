@@ -1,3 +1,15 @@
+export function inplace_filter_array(arr, cb)
+{
+    for (let i=0; i<arr.length; i++)
+    {
+        if (!cb(arr[i], i))
+        {
+            arr.splice(i, 1);
+            i--;
+        }
+    }
+}
+
 // Convert a camelCaseName to a dashed-name
 export function camel_to_dash(name)
 {
