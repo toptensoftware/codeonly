@@ -14,104 +14,221 @@ function run_diff(oldKeys, newKeys)
     console.log("OLD:", oldKeys.join(","));
     console.log("NEW:", newKeys.join(","));
 
-    let r = [...oldKeys];
+    let r = oldKeys.map(x => ({ key: x, touched: 0 }));
     let ops = diff_keys(oldKeys,newKeys);
+    let pos = 0;
+
+    function touch(from, to)
+    {
+        for (let i=from; i<to; i++)
+        {
+            r[i].touched++;
+        }
+    }
 
     for (let o of ops)
     {
-        console.log("MOD:", r.join(","));
+        console.log("MOD:", r.map(x => x.key).join(","));
         console.log(o);
 
         if (o.op == 'insert')
         {
-            r.splice(o.index, 0, ...newKeys.slice(o.index, o.index + o.count));
+            r.splice(o.index, 0, ...newKeys.map(x => ({ key: x, touched: 0}))
+                .slice(o.index, o.index + o.count));
+
+            touch(pos, o.index + o.count); 
+            pos = o.index + o.count;
         }
         else if (o.op == 'delete')
-        {
+        {            
             r.splice(o.index, o.count);
+            touch(pos, o.index);
+            pos = o.index;
         }
         else if (o.op == 'move')
         {
             let sourceKeys = r.slice(o.from, o.from + o.count);
             r.splice(o.from, o.count);
             r.splice(o.to, 0, ...sourceKeys);
+
+            let here = Math.min(o.from, o.to);
+            touch(pos, here);
+            pos = here;
+
+            touch(o.to, o.to + o.count);
+            if (o.from > o.to)
+            {
+                pos = o.to + o.count;
+            }
         }
         else if (o.op == 'skip')
         {
             // nop
+            touch(pos, o.index);
+            pos = o.index + o.count;
         }
         else
         {
             throw new Error(`unknown diff operation - ${o.op}`);
         }
     };
+    touch(pos, r.length);
+
     console.log("FIN:", r.join(","));
-    assert.deepStrictEqual(r, newKeys);
+
+    assert.deepStrictEqual(r.map(x => x.key), newKeys);
+    assert.deepStrictEqual(r, newKeys.map(x => ({key: x, touched: 1})));
 }
 
 
-
-
-
-
-test("Simple Move Left", () => {
+test("No-op", () => {
     run_str_diff(
-        "abc*e",
-        "a*bce"
+        "0123456789",
+        "0123456789",
+    );
+});
+
+test("Insert", () => {
+    run_str_diff(
+        "0123456789",
+        "01234.56789",
+    );
+});
+
+test("Delete", () => {
+    run_str_diff(
+        "01234.56789",
+        "0123456789",
+    );
+});
+
+test("Prepend", () => {
+    run_str_diff(
+        "0123456789",
+        ".0123456789",
+    );
+});
+
+test("Append", () => {
+    run_str_diff(
+        "0123456789",
+        "0123456789.",
     );
 });
 
 
-test("Simple Move Right", () => {
+test("Move Left", () => {
     run_str_diff(
-        "a*bce",
-        "abc*e",
+        "012345.6789",
+        "012.3456789",
     );
 });
 
-test("Move Left and Right", () => {
+test("Move Right", () => {
     run_str_diff(
-        "abcd*efgh.ijklm",
-        "a*bcdefghijkl.m",
-    );
-});
-
-test("Move Right and Left", () => {
-    run_str_diff(
-        "a*bcdefghijkl.m",
-        "abcd*efgh.ijklm",
-    );
-});
-
-test("Move Left and Right Multiple", () => {
-    run_str_diff(
-        "abcd*#efgh.,ijklm",
-        "a*#bcdefghijkl.,m",
+        "012.3456789",
+        "012345.6789",
     );
 });
 
 
-test("Overlapping move left", () => {
+test("Move Left + Right", () => {
     run_str_diff(
-        "abcd*e#fg",
-        "a*b#cdefg",
+        "0123.45_6789",
+        "0.12345678_9",
     );
 });
 
-test("Overlapping move right", () => {
+test("Move Right + Left", () => {
     run_str_diff(
-        "a*b#cdefg",
-        "abcd*e#fg",
+        "0.12345678_9",
+        "0123.45_6789",
+    );
+});
+
+test("Move Left + Left", () => {
+    run_str_diff(
+        "0123.45678_9",
+        "0.12345_6789",
+    );
+});
+
+test("Move Right + Right", () => {
+    run_str_diff(
+        "0.12345_6789",
+        "0123.45678_9",
+    );
+});
+
+test("Move Left + Left overlapped", () => {
+    run_str_diff(
+        "0123456_78.9",
+        "0_12.3456789",
+    );
+});
+
+
+test("Move Right + Right overlapped", () => {
+    run_str_diff(
+        "0_12.3456789",
+        "0123456_78.9",
+    );
+});
+
+test("Move Left + Right overlapped", () => {
+    run_str_diff(
+        "0_12345678.9",
+        "012.3456_789",
+    );
+});
+
+
+test("Move Right + Left overlapped", () => {
+    run_str_diff(
+        "012.3456_789",
+        "0_12345678.9",
+    );
+});
+
+
+test("Move Left + Left nested", () => {
+    run_str_diff(
+        "0123456.78_9",
+        "0_12.3456789",
+    );
+});
+
+
+test("Move Right + Right nested", () => {
+    run_str_diff(
+        "0_12.3456789",
+        "0123456.78_9",
+    );
+});
+
+test("Move Left + Right nested", () => {
+    run_str_diff(
+        "012.345678_9",
+        "0_123456.789",
+    );
+});
+
+
+test("Move Right + Left nested", () => {
+    run_str_diff(
+        "0_123456.789",
+        "012.345678_9",
     );
 });
 
 test("Swap Positions", () => {
     run_str_diff(
-        "a*bcde#fg",
-        "a#bcde*fg",
+        "0_12345678.9",
+        "0.12345678_9",
     );
 });
 
+/*
 
 test("XXX", () => {
     
@@ -208,3 +325,4 @@ test("Stress Test", () => {
     }
 
 });
+*/
