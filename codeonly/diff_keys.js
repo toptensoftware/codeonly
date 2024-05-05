@@ -80,11 +80,11 @@ export function diff_keys(oldKeys, newKeys)
     console.log(insertMap);
     console.log("---- delete map ----");
     console.log(deleteMap);
-    */
     console.log("---- raw edits ----");
     edits.forEach(x => console.log(x));
     console.log("-------------------");
-
+    */
+    
     // Now enumerate the edits and any ops generate move/store/restore ops
     let new_edits = [];
     let pending_left_moves = [];
@@ -341,8 +341,10 @@ export function diff_keys(oldKeys, newKeys)
         }
     }
 
+    /*
     console.log("---- pre-process ----");
     new_edits.forEach(x => console.log(x));
+    */
 
     // Post process
     // - convert indicies from pre-edit indicies to in-flight edit indicies
@@ -439,9 +441,11 @@ export function diff_keys(oldKeys, newKeys)
         return index + adj;
     }
 
+    /*
     console.log("---- final edit list ----");
     new_edits.forEach(x => console.log(x));
     console.log("-------------------");
+    */
 
     return new_edits;
     

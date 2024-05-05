@@ -48,7 +48,7 @@ function random(seed) {
 }
 
 let rF = random(7);
-let r = () => parseInt(rF() * 10000);
+let r = () => parseInt(Math.random() * 10000);
 
 let arr = [];
 let nextKey = 10;
@@ -90,6 +90,7 @@ function make_random_edit()
         }
 
         case 2:
+            // Move
             let count = r() % 10;
             let index = 0;
             if (count > arr.length)
@@ -108,14 +109,29 @@ function make_random_edit()
     }
 }
 
-for (let i=0; i<1000; i++)
+let iter = 0;
+while (true)
 {
     let original = [...arr];
-    let edits = r() % 5;
+    let edits = r() % 20;
     for (let e=0; e < edits; e++)
     {
         make_random_edit();
     }
-    run_diff(original, arr);
+
+    process.stdout.write(`\rIteration: ${iter++}`);
+
+    try
+    {
+        run_diff(original, arr);
+    }
+    catch (err)
+    {
+        console.log(err);
+        console.log(`OLD: ${original.join(",")}`);
+        console.log(`NEW: ${arr.join(",")}`);
+        break;
+    }
+
 }
 
