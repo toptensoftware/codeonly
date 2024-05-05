@@ -5,14 +5,11 @@ import { diff } from "../codeonly/diff.js";
 function run_diff(a, b)
 {
     let r = [...a];
-    let pos = 0;
     for (let o of diff(a,b))
     {
-        assert(o.index == pos);
         if (o.op == 'insert')
         {
             r.splice(o.index, 0, ...b.slice(o.index, o.index + o.count));
-            pos += o.count;
         }
         else if (o.op == 'delete')
         {
@@ -20,10 +17,9 @@ function run_diff(a, b)
         }
         else
         {
-            pos += o.count;
+            assert(false);
         }
     };
-    assert.equal(pos, r.length);
     assert.deepStrictEqual(r, b);
 }
 

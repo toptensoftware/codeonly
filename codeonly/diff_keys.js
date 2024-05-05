@@ -3,19 +3,33 @@ import { inplace_filter_array } from "./Utils.js"
 import { KeyIndexMap } from "./KeyIndexMap.js"
 
 
-// Returns an array of edits [ { op, index, count } ]
-// where op = "insert", "delete", move"
-//  - insert - insert .count keys from newKeys[.index] to oldkeys[.index]
-//  - delete - delete .count keys from oldKeys[.index]
-//  - move - move .count keys from oldKeys[.from] to oldKeys[.to].  
-//             index also matches newKeys.  For move-right ops, the to
-//             index is already adjusted for the from keys being removed
-export function diff_keys(oldKeys, newKeys)
+// Returns an array of edits to apply to an array of items
+// to make it match another array
+// Returns array of operation objects has 'op' field describing each edit 
+// operation: "insert", "delete", "move", "skip", or "keep"
+//  - insert
+//         index - position to insert to/from
+//         count - number of items to insert
+//  - delete
+//         index - position in old array to delete from
+//         count - the number of items to delete
+//  - move
+//         from - index to move from
+//         to - index to move to        // For right moves, already adjusted for items deleted as from
+//         index - the smaller of from/to (ie: the index of the LHS of the move operation)
+//         count - number of items to move
+//  - skip (used to skip over items previously moved from the left to this position)
+//         index - index of previously moved items
+//         count - number of items to skip
+//  - keep 
+//         index - index of items in old collection being keps
+//         count - number of items being kept
+// 
+//  "keep" and "skip" operations only supplied when 'covered' parameter is true
+export function diff_keys(oldKeys, newKeys, covered)
 {
     // Build a list of raw edits
     let edits = diff(oldKeys, newKeys);
-
-    edits = edits.filter(x => x.op != 'keep');
 
     // If there are only inserts or only deletes
     // then there can be no move operations so just 
@@ -32,7 +46,11 @@ export function diff_keys(oldKeys, newKeys)
             break;
     }
     if (!inserts || !deletes)
+    {
+        if (covered)
+            insert_keeps(edits, newKeys.length);
         return edits;
+    }
 
     // Make a map of all keys being inserted and all keys being deleted
     //  - insertMap is a map of keys to indices in the newKeys collection
@@ -75,17 +93,7 @@ export function diff_keys(oldKeys, newKeys)
         }
     }
 
-    /*
-    console.log("---- insert map ----");
-    console.log(insertMap);
-    console.log("---- delete map ----");
-    console.log(deleteMap);
-    console.log("---- raw edits ----");
-    edits.forEach(x => console.log(x));
-    console.log("-------------------");
-    */
-    
-    // Now enumerate the edits and any ops generate move/store/restore ops
+    // Convert insert/delete operations to move operations where possible
     let new_edits = [];
     let pending_left_moves = [];
     let pending_right_moves = [];
@@ -94,6 +102,9 @@ export function diff_keys(oldKeys, newKeys)
         let op = edits[opIndex];
         if (op.op == 'insert')
         {
+            // Check if this insert operation is the RHS of a move right operation
+            // started by a previous delete operation on matching keys
+
             // Find the first pending right move in this range
             let pending_index = -1;
             let pending = pending_right_moves.reduce((prev, x, index) => {
@@ -139,7 +150,7 @@ export function diff_keys(oldKeys, newKeys)
                     ref: pending.ref,
                 });
 
-                // Remove the pending left move
+                // Remove the pending right move
                 pending_right_moves.splice(pending_index, 1);
 
                 // Start again in case there's another pending op
@@ -147,6 +158,9 @@ export function diff_keys(oldKeys, newKeys)
                 continue;
             }
 
+            // See if the keys being inserted correspond with the same
+            // keys being deleted later.  If so, convert this to a move-left
+            
             for (let i=0; i<op.count; i++)
             {
                 // Get the key
@@ -196,6 +210,9 @@ export function diff_keys(oldKeys, newKeys)
 
                     // Store it
                     new_edits.push(move_op);
+
+                    // Also store pending left move info so
+                    // the associated delete operation can be sliced
                     pending_left_moves.push({
                         index: delFrom.index,
                         count: count,
@@ -210,6 +227,7 @@ export function diff_keys(oldKeys, newKeys)
                 }
             }
 
+            // Any remain part gets passed through as a regular insert
             if (op.count)
             {
                 new_edits.push(op);
@@ -217,6 +235,9 @@ export function diff_keys(oldKeys, newKeys)
         }
         else if (op.op == 'delete')
         {
+            // Check if this delete operation is the RHS of a move left operation
+            // started by a previous insert operation on matching keys
+
             // Find the first pending left move in this range
             let pending_index = -1;
             let pending = pending_left_moves.reduce((prev, x, index) => {
@@ -269,6 +290,9 @@ export function diff_keys(oldKeys, newKeys)
                 continue;
             }
 
+            // See if the keys being deleted correspond with the same
+            // keys being inserted later.  If so, convert this to a move-right.
+
             for (let i=0; i<op.count; i++)
             {
                 // Get the key
@@ -318,8 +342,11 @@ export function diff_keys(oldKeys, newKeys)
                         count,
                     };
 
+                    // Add op
                     new_edits.push(move_op);
 
+                    // Also store pending right move info so
+                    // the associated insert operation can be sliced
                     pending_right_moves.push({
                         originalIndex: insFrom.originalIndex,
                         count: move_op.count,
@@ -341,14 +368,9 @@ export function diff_keys(oldKeys, newKeys)
         }
     }
 
-    /*
-    console.log("---- pre-process ----");
-    new_edits.forEach(x => console.log(x));
-    */
-
     // Post process
     // - convert indicies from pre-edit indicies to in-flight edit indicies
-    // - convert move-right sentinals to "skip" operations
+    // - convert move-right sentinals to "skip" operations (or remove if not covered)
     // - remove move-left sentinals
     adjust = 0;
     let futureMoves = [];
@@ -360,63 +382,110 @@ export function diff_keys(oldKeys, newKeys)
             case "insert":
                 op.index += adjust;
                 adjust += op.count;
-                if (op.originalIndex != op.index)
-                    throw new Error("insert index changed");
                 delete op.originalIndex;
                 break;
 
             case "delete":
                 op.index += adjust;
-                adjust -= op.count;delete op.originalIndex;
+                adjust -= op.count;
+                delete op.originalIndex;
                 break;
 
             case "move-left":
             {
+                // Track this operation in the future moves list
+                // (create entry before modifying op, but don't
+                // put it in the list until after we've calculated
+                // our future index)
                 let fm = {
                     op,
                     index: op.from,
                     adjust: -op.count,
                     order: 0,
                 };
+                
+                // Convert to a regular move operation
                 op.op = "move";
                 op.to += adjust;
+                op.index = op.to;
                 op.from = future_index(op.from, 0) + adjust;
                 adjust += op.count;
+
+                // Add future move
                 futureMoves.push(fm);
                 break;
             }
 
             case "move-left-sentinal":
+                // Remove associated future move
                 futureMoves.splice(futureMoves.findIndex(x => x.op == op.ref), 1);
+
+                // Update adjustment
                 adjust -= op.ref.count;
+
+                // Remove this operation as client doesn't need it
                 new_edits.splice(opIndex, 1);
                 opIndex--;
                 break;
 
             case "move-right":
             {
+                // Track this operation in the future moves list
+                // (create entry before modifying op, but don't
+                // put it in the list until after we've calculated
+                // our future index)
+                // Note that for right moves we need to track the order
+                // of the right hand side index. When there are multiple 
+                // right  moves to the same index in the old keys array, 
+                // we need to make sure they end up in the correct order.  
+                // The order value tracks this and is just the original 
+                // index of the key in the newKeys array.
                 let fm = {
                     op,
                     index: op.to,
                     adjust: op.count,
                     order: op.order,
                 };
+
+                // Convert to a regular move operation
                 op.op = "move";
                 op.from += adjust;
                 op.toOriginal = op.to - op.count;
+                op.index = op.from;
                 op.to = future_index(op.to, op.order) + adjust - op.count;
                 adjust -= op.count;
+
+                // Add future move
                 futureMoves.push(fm);
                 break;
             }
 
             case "move-right-sentinal":
+                // Remove from future moves collection
                 futureMoves.splice(futureMoves.findIndex(x => x.op == op.ref), 1);
+
+                // Update adjustment
                 adjust += op.ref.count;
-                op.op = "skip";
-                op.index = op.ref.toOriginal + adjust;
-                op.count = op.ref.count;
+
+                // For covered edit lists, convert this to a 'skip' operations,
+                // otherwise delete it
+                if (covered)
+                {
+                    op.op = "skip";
+                    op.index = op.ref.toOriginal + adjust;
+                    op.count = op.ref.count;
+                }
+                else
+                {
+                    new_edits.splice(opIndex, 1);
+                    opIndex--;
+                }
+
+                // Clean up working members
+                delete op.ref.order;
+                delete op.ref.toOriginal;
                 delete op.ref;
+
                 break;
 
             default:
@@ -424,6 +493,11 @@ export function diff_keys(oldKeys, newKeys)
         }
     }
 
+    // If covered, insert "keep" operations
+    if (covered)
+        insert_keeps(new_edits, newKeys.length);
+
+    // Calculate the index of the RHS of a move operation
     function future_index(index, order)
     {
         let adj = 0;
@@ -441,12 +515,45 @@ export function diff_keys(oldKeys, newKeys)
         return index + adj;
     }
 
-    /*
-    console.log("---- final edit list ----");
-    new_edits.forEach(x => console.log(x));
-    console.log("-------------------");
-    */
-
+    // Done (Phew!)
     return new_edits;
-    
 }
+
+// Helper to insert "keep" operations between main set of actual edits
+function insert_keeps(ops, length)
+{
+    let pos = 0;
+    for (let i=0; i<ops.length; i++)
+    {
+        let op = ops[i];
+
+        // Insert keep op if needed
+        if (op.index > pos)
+        {
+            ops.splice(i, 0, {
+                op: 'keep',
+                index: pos,
+                count: op.index - pos,
+            });
+            i++;
+        }
+
+        // Update position (deletes and right moves, don't affect position)
+        if (op.op != 'delete' && !(op.op == 'move' && op.to > op.from))
+            pos = op.index + op.count;
+        else
+            pos = op.index;
+    }
+
+    // Tailing keep op
+    if (pos < length)
+    {
+        ops.push({
+            op: 'keep',
+            index: pos,
+            count: length - pos,
+        });
+    }
+
+}
+

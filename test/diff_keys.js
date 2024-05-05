@@ -9,14 +9,64 @@ function run_str_diff(oldKeys, newKeys)
     return run_diff(oldKeys, newKeys);
 }
 
+function check_keys(obj, allowed)
+{
+    for (let k of Object.keys(obj))
+    {
+        if (allowed.indexOf(k) < 0)
+            throw new Error(`Unexpected key: ${k}`);
+    }
+}
+
 function run_diff(oldKeys, newKeys)
+{
+    run_diff_covered([...oldKeys], [...newKeys]);
+    run_diff_uncovered([...oldKeys], [...newKeys]);
+}
+
+function run_diff_covered(oldKeys, newKeys)
+{
+    let r = [...oldKeys];
+    let ops = diff_keys(oldKeys,newKeys, false);
+
+    for (let o of ops)
+    {
+        if (o.op == 'insert')
+        {
+            check_keys(o, ['op', 'index', 'count']);
+            r.splice(o.index, 0, ...newKeys.slice(o.index, o.index + o.count));
+        }
+        else if (o.op == 'delete')
+        {            
+            check_keys(o, ['op', 'index', 'count']);
+            r.splice(o.index, o.count);
+        }
+        else if (o.op == 'move')
+        {
+            check_keys(o, ['op', 'from', 'to', 'index', 'count']);
+
+            assert(o.index == Math.min(o.from, o.to));
+
+            let sourceKeys = r.slice(o.from, o.from + o.count);
+            r.splice(o.from, o.count);
+            r.splice(o.to, 0, ...sourceKeys);
+        }
+        else
+        {
+            throw new Error(`unknown diff operation - ${o.op}`);
+        }
+    };
+    assert.deepStrictEqual(r, newKeys);
+}
+
+
+function run_diff_uncovered(oldKeys, newKeys)
 {
     console.log("OLD:", oldKeys.join(","));
     console.log("NEW:", newKeys.join(","));
 
     let r = oldKeys.map(x => ({ key: x, touched: 0 }));
-    let ops = diff_keys(oldKeys,newKeys);
-    let pos = 0;
+    let ops = diff_keys(oldKeys,newKeys, true);
 
     function touch(from, to)
     {
@@ -33,46 +83,43 @@ function run_diff(oldKeys, newKeys)
 
         if (o.op == 'insert')
         {
+            check_keys(o, ['op', 'index', 'count']);
             r.splice(o.index, 0, ...newKeys.map(x => ({ key: x, touched: 0}))
                 .slice(o.index, o.index + o.count));
 
-            touch(pos, o.index + o.count); 
-            pos = o.index + o.count;
+            touch(o.index, o.index + o.count); 
         }
         else if (o.op == 'delete')
         {            
+            check_keys(o, ['op', 'index', 'count']);
             r.splice(o.index, o.count);
-            touch(pos, o.index);
-            pos = o.index;
         }
         else if (o.op == 'move')
         {
+            check_keys(o, ['op', 'from', 'to', 'index', 'count']);
+
+            assert(o.index == Math.min(o.from, o.to));
+
             let sourceKeys = r.slice(o.from, o.from + o.count);
             r.splice(o.from, o.count);
             r.splice(o.to, 0, ...sourceKeys);
 
-            let here = Math.min(o.from, o.to);
-            touch(pos, here);
-            pos = here;
-
             touch(o.to, o.to + o.count);
-            if (o.from > o.to)
-            {
-                pos = o.to + o.count;
-            }
         }
         else if (o.op == 'skip')
         {
-            // nop
-            touch(pos, o.index);
-            pos = o.index + o.count;
+            check_keys(o, ['op', 'index', 'count']);
+        }
+        else if (o.op == 'keep')
+        {
+            check_keys(o, ['op', 'index', 'count']);
+            touch(o.index, o.index + o.count);
         }
         else
         {
             throw new Error(`unknown diff operation - ${o.op}`);
         }
     };
-    touch(pos, r.length);
 
     console.log("FIN:", r.map(x => x.key).join(","));
 
@@ -293,14 +340,6 @@ test("Move Left complex", () => {
 });
 
 
-test("Swap Positions", () => {
-    run_str_diff(
-        "0_12345678.9",
-        "0.12345678_9",
-    );
-});
-
-
 test("Complex Move Left", () => {
     run_str_diff(
         "012345678_,.9",
@@ -315,100 +354,21 @@ test("Complex Move Right", () => {
     );
 });
 
+test("Swap Positions", () => {
+    run_str_diff(
+        "0_12345678.9",
+        "0.12345678_9",
+    );
+});
 
-test("XXX", { skip: true }, () => {
-    
-    
+
+
+
+/*
+test("Sandbox", () => {
     run_diff(
         [ 1,100,200,300,2,3,9 ],
         [ 1,2,3,100,300,200,9 ],
     );
-});
-    
-function random(seed) {
-    const m = 2 ** 35 - 31;
-    const a = 185852;
-    let s = seed % m;
-
-    return function () {
-        s = (s * a) % m;
-        return s / m;
-    };
-}
-
-
-test("Stress Test", { skip: false }, () => {
-
-    let rF = random(7);
-    let r = () => parseInt(rF() * 10000);
-
-    let arr = [];
-    let nextKey = 10;
-    for (let i=0; i<20; i++)
-    {
-        arr.push(nextKey++);
-    }
-
-    function make_random_edit()
-    {
-        switch (r() % 3)
-        {
-            case 0:
-            {
-                // Insert
-                let count = r() % 10;
-                let index = arr.length == 0 ? 0 : (r() % arr.length);
-                for (let i=0; i<count; i++)
-                {
-                    arr.splice(index + i, 0, nextKey++);
-                }
-                break;
-            }
-
-            case 1:
-            {
-                // Delete
-                let count = r() % 10;
-                let index = 0;
-                if (count > arr.length)
-                {
-                    count = arr.length;
-                }
-                else
-                {
-                    index = r() % (arr.length - count);
-                }
-                arr.splice(index, count);
-            }
-
-            case 2:
-                let count = r() % 10;
-                let index = 0;
-                if (count > arr.length)
-                {
-                    count = arr.length;
-                }
-                else
-                {
-                    index = r() % (arr.length - count);
-                }
-                let save = arr.slice(index, index + count);
-                arr.splice(index, count);
-                index = arr.length == 0 ? 0 : r() % arr.length;
-                arr.splice(index, 0, ...save);
-                break;
-        }
-    }
-
-    for (let i=0; i<1000; i++)
-    {
-        let original = [...arr];
-        let edits = r() % 5;
-        for (let e=0; e < edits; e++)
-        {
-            make_random_edit();
-        }
-        run_diff(original, arr);
-    }
-
-});
+});    
+*/
