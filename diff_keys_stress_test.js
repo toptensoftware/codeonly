@@ -18,8 +18,7 @@ function run_diff(oldKeys, newKeys)
         }
         else if (o.op == 'move')
         {
-            let sourceKeys = r.slice(o.from, o.from + o.count);
-            r.splice(o.from, o.count);
+            let sourceKeys = r.splice(o.from, o.count);
             r.splice(o.to, 0, ...sourceKeys);
         }
         else if (o.op == 'skip')
@@ -103,8 +102,7 @@ function make_random_edit()
             {
                 index = r() % (arr.length - count);
             }
-            let save = arr.slice(index, index + count);
-            arr.splice(index, count);
+            let save = arr.splice(index, count);
             index = arr.length == 0 ? 0 : r() % arr.length;
             arr.splice(index, 0, ...save);
             break;

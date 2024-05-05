@@ -72,9 +72,23 @@ function assert_foreach_content(r, items, actual, expected)
     assert.deepStrictEqual(actual(), expected());
 
     // Insert again
-    items.push("J", "K", "L");
+    items.push("J", "K", "L", "M", "N", "O", "P", "Q");
     r.update();
     assert.deepStrictEqual(actual(), expected());
+
+    // Move right
+    let temp = items.splice(0, 3);
+    items.push(...temp);
+    r.update();
+    assert.deepEqual(actual(), expected());
+
+    // Move left
+    /*
+    temp = items.splice(-3, 3);
+    items.unshift(...temp);
+    r.update();
+    assert.deepEqual(actual(), expected());
+    */
 }
 
 test("ForEach Dynamic", () => {

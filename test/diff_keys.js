@@ -47,8 +47,7 @@ function run_diff_covered(oldKeys, newKeys)
 
             assert(o.index == Math.min(o.from, o.to));
 
-            let sourceKeys = r.slice(o.from, o.from + o.count);
-            r.splice(o.from, o.count);
+            let sourceKeys = r.splice(o.from, o.count);
             r.splice(o.to, 0, ...sourceKeys);
         }
         else

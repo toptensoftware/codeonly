@@ -2,7 +2,7 @@
     "configurations": [
     {
         "name": "Launch Program",
-        "program": "${workspaceFolder}/codeonly/diff.js",
+        "program": "${workspaceFolder}/diff_keys_stress_test.js",
         "request": "launch",
         "skipFiles": [
             "<node_internals>/**"
