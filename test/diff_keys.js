@@ -74,7 +74,7 @@ function run_diff(oldKeys, newKeys)
     };
     touch(pos, r.length);
 
-    console.log("FIN:", r.join(","));
+    console.log("FIN:", r.map(x => x.key).join(","));
 
     assert.deepStrictEqual(r.map(x => x.key), newKeys);
     assert.deepStrictEqual(r, newKeys.map(x => ({key: x, touched: 1})));
@@ -221,6 +221,78 @@ test("Move Right + Left nested", () => {
     );
 });
 
+test("Move Right over delete", () => {
+    run_str_diff(
+        "0_123.456789",
+        "012345678_9",
+    );
+});
+
+test("Move Left over delete", () => {
+    run_str_diff(
+        "01234.5678_9",
+        "0_123456789",
+    );
+});
+
+test("Move Right over insert", () => {
+    run_str_diff(
+        "0_123456789",
+        "01234.5678_9",
+    );
+});
+
+test("Move Left over insert", () => {
+    run_str_diff(
+        "012345678_9",
+        "0_123.456789",
+    );
+});
+
+test("Move Lefts and join", () => {
+    run_str_diff(
+        "0123456_78.9",
+        "0_.123456789",
+    );
+});
+
+test("Move Lefts and join swapped", () => {
+    run_str_diff(
+        "0123456_78.9",
+        "0._123456789",
+    );
+});
+
+test("Move Rights and join", () => {
+    run_str_diff(
+        "0_1.23456789",
+        "01234567_.89",
+    );
+});
+
+test("Move Rights and join swapped", () => {
+    run_str_diff(
+        "0_1.23456789",
+        "01234567._89",
+    );
+});
+
+
+test("Move Right complex", () => {
+    run_str_diff(
+        "0123456789",
+        "0123456789",
+    );
+});
+
+test("Move Left complex", () => {
+    run_str_diff(
+        "0123456_7.8,9",
+        "0._,123456789",
+    );
+});
+
+
 test("Swap Positions", () => {
     run_str_diff(
         "0_12345678.9",
@@ -228,14 +300,28 @@ test("Swap Positions", () => {
     );
 });
 
-/*
 
-test("XXX", () => {
+test("Complex Move Left", () => {
+    run_str_diff(
+        "012345678_,.9",
+        "0_.,123456789",
+    );
+});
+
+test("Complex Move Right", () => {
+    run_str_diff(
+        "0_.,123456789",
+        "012345678_,.9",
+    );
+});
+
+
+test("XXX", { skip: true }, () => {
     
     
     run_diff(
-    [ 159,166,167,168,169,160,161,170,171,162,163,164,165 ],
-    [ 162,163,164,166,167,159,170,171,168,169,160,161,165 ],
+        [ 1,100,200,300,2,3,9 ],
+        [ 1,2,3,100,300,200,9 ],
     );
 });
     
@@ -250,7 +336,8 @@ function random(seed) {
     };
 }
 
-test("Stress Test", () => {
+
+test("Stress Test", { skip: false }, () => {
 
     let rF = random(7);
     let r = () => parseInt(rF() * 10000);
@@ -325,4 +412,3 @@ test("Stress Test", () => {
     }
 
 });
-*/

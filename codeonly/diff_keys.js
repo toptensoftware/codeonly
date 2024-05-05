@@ -98,7 +98,7 @@ export function diff_keys(oldKeys, newKeys)
             let pending_index = -1;
             let pending = pending_right_moves.reduce((prev, x, index) => {
                 if (x.originalIndex >= op.originalIndex && x.originalIndex < op.originalIndex + op.count && 
-                    (prev == null || x.index < prev.index))
+                    (prev == null || x.originalIndex < prev.originalIndex))
                 {
                     pending_index = index;
                     return x;
@@ -314,6 +314,7 @@ export function diff_keys(oldKeys, newKeys)
                         op: "move-right",
                         from: op.index,
                         to: insFrom.index,
+                        order: insFrom.originalIndex,
                         count,
                     };
 
@@ -368,16 +369,20 @@ export function diff_keys(oldKeys, newKeys)
                 break;
 
             case "move-left":
-                futureMoves.push({
+            {
+                let fm = {
                     op,
                     index: op.from,
                     adjust: -op.count,
-                });
+                    order: 0,
+                };
                 op.op = "move";
                 op.to += adjust;
-                op.from = future_index(op.from + adjust);
+                op.from = future_index(op.from, 0) + adjust;
                 adjust += op.count;
+                futureMoves.push(fm);
                 break;
+            }
 
             case "move-left-sentinal":
                 futureMoves.splice(futureMoves.findIndex(x => x.op == op.ref), 1);
@@ -387,23 +392,28 @@ export function diff_keys(oldKeys, newKeys)
                 break;
 
             case "move-right":
-                futureMoves.push({
+            {
+                let fm = {
                     op,
                     index: op.to,
                     adjust: op.count,
-                });
+                    order: op.order,
+                };
                 op.op = "move";
                 op.from += adjust;
-                op.to = future_index(op.to + adjust) - op.count;
+                op.toOriginal = op.to - op.count;
+                op.to = future_index(op.to, op.order) + adjust - op.count;
                 adjust -= op.count;
+                futureMoves.push(fm);
                 break;
+            }
 
             case "move-right-sentinal":
                 futureMoves.splice(futureMoves.findIndex(x => x.op == op.ref), 1);
+                adjust += op.ref.count;
                 op.op = "skip";
-                op.index = op.ref.to + adjust;
+                op.index = op.ref.toOriginal + adjust;
                 op.count = op.ref.count;
-                adjust += op.count;
                 delete op.ref;
                 break;
 
@@ -412,14 +422,21 @@ export function diff_keys(oldKeys, newKeys)
         }
     }
 
-    function future_index(index)
+    function future_index(index, order)
     {
+        let adj = 0;
         for (let i=0; i<futureMoves.length; i++)
         {
-            if (futureMoves[i].index < index)
-                index += futureMoves[i].adjust;
+            let fm = futureMoves[i];
+            if (fm.index == index)
+            {
+                if (fm.order <= order)
+                    adj += fm.adjust;
+            }
+            else if (fm.index < index)
+                adj += fm.adjust;
         }
-        return index;
+        return index + adj;
     }
 
     console.log("---- final edit list ----");
