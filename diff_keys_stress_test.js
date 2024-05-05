@@ -32,6 +32,8 @@ function run_diff(oldKeys, newKeys)
         }
     };
     assert.deepStrictEqual(r, newKeys);
+
+    return ops.length;
 }
 
 
@@ -110,6 +112,7 @@ function make_random_edit()
 }
 
 let iter = 0;
+let opCount = 0;
 while (true)
 {
     let original = [...arr];
@@ -119,11 +122,11 @@ while (true)
         make_random_edit();
     }
 
-    process.stdout.write(`\rIteration: ${iter++}`);
+    process.stdout.write(`\rIteration: ${iter++} Len: ${arr.length} Ops: ${opCount}              `);
 
     try
     {
-        run_diff(original, arr);
+        opCount = run_diff(original, arr);
     }
     catch (err)
     {
