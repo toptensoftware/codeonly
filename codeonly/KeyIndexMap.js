@@ -22,6 +22,32 @@ export class KeyIndexMap
         }
     }
 
+    try_delete(key, selector, cont)
+    {
+        let list = this.map.get(key);
+        if (list === undefined)
+            return false;
+        if (Array.isArray(list))
+        {
+            let pos = list.findIndex(selector);
+            if (pos < 0)
+                return false;
+            if (cont && !cont())
+                return false;
+            list.splice(pos, 1);
+            return true;
+        }
+        else
+        {
+            if (!selector(list))
+                return false;
+            if (cont && !cont())
+                return false;
+            this.map.delete(key);
+            return true;
+        }
+    }
+
     delete(key, selector)
     {
         let list = this.map.get(key);
