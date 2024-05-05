@@ -1,4 +1,4 @@
-import { diff } from "./diff.js";
+import { diff_keys } from "./diff_keys.js";
 
 export class ForEachManager
 {
@@ -114,39 +114,188 @@ export class ForEachManager
             return this.options.item_key.call(this.options.model, item, tempCtx);
         }) : newItems;
 
-        let patchedTo = 0;
-        let self = this;
+        // Do we need to update existing items?
+        let needCoverage = this.options.item_sensitive || this.options.index_sensitive;
 
         // Run diff
-        let ops = diff(this.items, newKeys, (a, b) => a.itemCtx.key == b );
+        let ops = diff_keys(this.items.map(x => x.itemCtx.key), newKeys, needCoverage);
+        if (ops.length == 0)
+            return;
 
-        let diff_op_handler = (this.options.multi_root_items ? multi_root_diff_handler : single_root_diff_handler).bind(this);
-        for (let o of ops)
+        // Single or multi-root handlers
+        let handlers;
+        if (this.options.multi_root_items)
         {
-            diff_op_handler(o.op, o.index, o.count);
+            handlers = {
+                insert: multi_root_insert,
+                delete: multi_root_delete,
+                move: multi_root_move,
+                skip: () => {},
+                keep: patch_existing,
+            }
+        }
+        else
+        {
+            handlers = {
+                insert: single_root_insert,
+                delete: single_root_delete,
+                move: single_root_move,
+                skip: () => {},
+                keep: patch_existing,
+            }
         }
 
-        patch_existing(this.items.length);
-
-        // Patch existing items (ie: update item index)
-        function patch_existing(to)
+        // Dispatch to handlers
+        for (let o of ops)
         {
-            if (self.options.item_sensitive)
+            handlers[o.op].call(this, o);
+        }
+
+        function multi_root_insert(op)
+        {
+            let index = op.index;
+            let count = op.count;
+            let newNodes = [];
+            for (let i=0; i<count; i++)
+            {
+                // Setup item context
+                let itemCtx = {
+                    item: newItems[index + i],
+                    outer: this.options.outer,
+                    key: newKeys[index + i],
+                    index: index + i,
+                };
+
+                // Construct the item
+                let item_closure = this.options.item_constructor(itemCtx);
+
+                // Add to item collection
+                this.items.splice(index + i, 0, item_closure);
+
+                // Build list of nodes to be inserted
+                newNodes.push(...item_closure.rootNodes);
+            }
+
+            // Insert the nodes
+            let insertBefore;
+            if (index + count < this.items.length)
+            {
+                insertBefore = this.items[index + count].rootNodes[0];
+            }
+            else
+            {
+                insertBefore = this.tailSentinal;
+            }
+            insertBefore.before(...newNodes);
+        }
+
+        function multi_root_delete(op)
+        {
+            let index = op.index;
+            let count = op.count;
+
+            // Destroy the items
+            for (let i=0; i<count; i++)
+            {
+                // Remove child nodes
+                let children = this.items[index + i].rootNodes;
+                for (let j = 0; j<children.length; j++)
+                {
+                    children[j].remove();
+                }
+
+                // Destroy the item
+                this.items[index + i].destroy();
+            }
+
+            // Splice arrays
+            this.items.splice(index, count);
+        }
+
+        function multi_root_move(op)
+        {
+            throw new Error("single root move not implemented");
+        }
+
+        function single_root_insert(op)
+        {
+            let index = op.index;
+            let count = op.count;
+            let newNodes = [];
+            for (let i=0; i<count; i++)
+            {
+                // Setup item context
+                let itemCtx = {
+                    item: newItems[index + i],
+                    outer: this.options.outer,
+                    key: newKeys[index + i],
+                    index: index + i,
+                };
+
+                // Construct the item
+                let item_closure = this.options.item_constructor(itemCtx);
+
+                // Add to item collection
+                this.items.splice(index + i, 0, item_closure);
+
+                // Build list of nodes to be inserted
+                newNodes.push(item_closure.rootNode);
+            }
+
+            // Insert the nodes
+            let insertBefore;
+            if (index + count < this.items.length)
+            {
+                insertBefore = this.items[index + count].rootNode;
+            }
+            else
+            {
+                insertBefore = this.tailSentinal;
+            }
+            insertBefore.before(...newNodes);
+        }
+
+        function single_root_delete(op)
+        {
+            let index = op.index;
+            let count = op.count;
+            // Destroy the items
+            for (let i=0; i<count; i++)
+            {
+                // Remove child nodes
+                this.items[index + i].rootNode.remove();
+
+                // Destroy the item
+                this.items[index + i].destroy();
+            }
+
+            // Splice arrays
+            this.items.splice(index, count);
+        }
+
+        function single_root_move(op)
+        {
+            throw new Error("single root move not implemented");
+        }
+
+        function patch_existing(op)
+        {
+            if (this.options.item_sensitive)
             {
                 // If item sensitive, always update index and item
-                for (let i=patchedTo; i<to; i++)
+                for (let i=op.index, end = op.index + op.count; i<end; i++)
                 {
-                    let item = self.items[i];
+                    let item = this.items[i];
                     item.itemCtx.index = i;
                     item.update();
                 }
             }
-            else if (self.options.index_sensitive)
+            else if (this.options.index_sensitive)
             {
                 // If index sensitive, only update when index changes
-                for (let i=patchedTo; i<to; i++)
+                for (let i=op.index, end = op.index + op.count; i<end; i++)
                 {
-                    let item = self.items[i];
+                    let item = this.items[i];
                     if (item.itemCtx.index != i)
                     {
                         item.itemCtx.index = i;
@@ -154,125 +303,7 @@ export class ForEachManager
                     }
                 }
             }
-            patchedTo = to;
         }
 
-        // Diff handler for when item's might have multiple roots
-        function multi_root_diff_handler(op, index, count)
-        {
-            patch_existing(index);
-
-            if (op == 'insert')
-            {
-                let newNodes = [];
-                for (let i=0; i<count; i++)
-                {
-                    // Setup item context
-                    let itemCtx = {
-                        item: newItems[index + i],
-                        outer: this.options.outer,
-                        key: newKeys[index + i],
-                        index: index + i,
-                    };
-
-                    // Construct the item
-                    let item_closure = this.options.item_constructor(itemCtx);
-
-                    // Add to item collection
-                    this.items.splice(index + i, 0, item_closure);
-
-                    // Build list of nodes to be inserted
-                    newNodes.push(...item_closure.rootNodes);
-                }
-
-                // Insert the nodes
-                let insertBefore;
-                if (index + count < this.items.length)
-                {
-                    insertBefore = this.items[index + count].rootNodes[0];
-                }
-                else
-                {
-                    insertBefore = this.tailSentinal;
-                }
-                insertBefore.before(...newNodes);
-            }
-            else if (op == 'delete')
-            {
-                // Destroy the items
-                for (let i=0; i<count; i++)
-                {
-                    // Remove child nodes
-                    let children = this.items[index + i].rootNodes;
-                    for (let j = 0; j<children.length; j++)
-                    {
-                        children[j].remove();
-                    }
-
-                    // Destroy the item
-                    this.items[index + i].destroy();
-                }
-
-                // Splice arrays
-                this.items.splice(index, count);
-            }
-        }
-
-        // Diff handler when the items are known to be single root
-        function single_root_diff_handler(op, index, count)
-        {
-            patch_existing(index);
-
-            if (op == 'insert')
-            {
-                let newNodes = [];
-                for (let i=0; i<count; i++)
-                {
-                    // Setup item context
-                    let itemCtx = {
-                        item: newItems[index + i],
-                        outer: this.options.outer,
-                        key: newKeys[index + i],
-                        index: index + i,
-                    };
-
-                    // Construct the item
-                    let item_closure = this.options.item_constructor(itemCtx);
-
-                    // Add to item collection
-                    this.items.splice(index + i, 0, item_closure);
-
-                    // Build list of nodes to be inserted
-                    newNodes.push(item_closure.rootNode);
-                }
-
-                // Insert the nodes
-                let insertBefore;
-                if (index + count < this.items.length)
-                {
-                    insertBefore = this.items[index + count].rootNode;
-                }
-                else
-                {
-                    insertBefore = this.tailSentinal;
-                }
-                insertBefore.before(...newNodes);
-            }
-            else if (op == 'delete')
-            {
-                // Destroy the items
-                for (let i=0; i<count; i++)
-                {
-                    // Remove child nodes
-                    this.items[index + i].rootNode.remove();
-
-                    // Destroy the item
-                    this.items[index + i].destroy();
-                }
-
-                // Splice arrays
-                this.items.splice(index, count);
-            }
-        }
     }
 }
