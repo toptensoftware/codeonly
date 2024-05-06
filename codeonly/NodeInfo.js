@@ -79,7 +79,7 @@ export class NodeInfo
 
     // Returns a string describing all the child DOM nodes
     // as a sequence of spread variables.
-    spreadChildDomNodes()
+    spreadChildDomNodes(initOnCreate)
     {
         return Array.from(enumChildNodes(this)).filter(x => x.length > 0).join(", ");
 
@@ -87,7 +87,10 @@ export class NodeInfo
         {
             for (let i=0; i<n.childNodes.length; i++)
             {
-                yield n.childNodes[i].spreadDomNodes(false);
+                if (!initOnCreate && n.childNodes[i].conditionGroup)
+                    yield `${n.childNodes[i].name}_placeholder`;
+                else
+                    yield n.childNodes[i].spreadDomNodes(false);
             }
         }
     

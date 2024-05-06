@@ -7,8 +7,10 @@ import { TemplateHelpers } from "./TemplateHelpers.js";
 import { NodeInfo } from "./NodeInfo.js";
 
 
-export function compileTemplateCode(rootTemplate)
+export function compileTemplateCode(rootTemplate, options)
 {
+    let initOnCreate = options?.initOnCreate ?? true;
+
     // Every node in the template will get an id, starting at 1.
     let nodeId = 1;
 
@@ -297,7 +299,10 @@ export function compileTemplateCode(rootTemplate)
         if (ni.template instanceof Function)
         {
             closure.addLocal(ni.name);
-            closure.create.append(`${ni.name} = helpers.createTextNode(${format_callback(objrefs.length)});`);
+            if (initOnCreate)
+                closure.create.append(`${ni.name} = helpers.createTextNode(${format_callback(objrefs.length)});`);
+            else
+                closure.create.append(`${ni.name} = helpers.createTextNode("");`);
             closure.update.append(`${ni.name} = helpers.setNodeText(${ni.name}, ${format_callback(objrefs.length)});`);
             objrefs.push(ni.template);
             return true;
@@ -324,7 +329,10 @@ export function compileTemplateCode(rootTemplate)
 
             if (ni.template.text instanceof Function)
             {
-                closure.create.append(`${ni.name} = document.createComment(${format_callback(objrefs.length)});`);
+                if (initOnCreate)
+                    closure.create.append(`${ni.name} = document.createComment(${format_callback(objrefs.length)});`);
+                else
+                    closure.create.append(`${ni.name} = document.createComment("");`);
                 closure.update.append(`${ni.name} = ${ni.name}.nodeValue = ${format_callback(objrefs.length)};`);
                 objrefs.push(ni.template.text);
             }
@@ -360,7 +368,8 @@ export function compileTemplateCode(rootTemplate)
                 {
                     // Dynamic property
                     let callback_index = objrefs.length;
-                    closure.create.append(`${ni.name}[${JSON.stringify(key)}] = ${format_callback(callback_index)};`);
+                    if (initOnCreate)
+                        closure.create.append(`${ni.name}[${JSON.stringify(key)}] = ${format_callback(callback_index)};`);
                     closure.update.append(`${ni.name}[${JSON.stringify(key)}] = ${format_callback(callback_index)};`);
                     objrefs.push(ni.template[key]);
                 }
@@ -503,7 +512,7 @@ export function compileTemplateCode(rootTemplate)
             // Add all the child nodes to this node
             if (ni.childNodes.length && !ni.isFragment)
             {
-                closure.create.append(`${ni.name}.append(${ni.spreadChildDomNodes()});`);
+                closure.create.append(`${ni.name}.append(${ni.spreadChildDomNodes(initOnCreate)});`);
             }
         }
 
@@ -600,7 +609,8 @@ export function compileTemplateCode(rootTemplate)
 
                 // Append the code to both the main code block (to set initial value) and to 
                 // the update function.
-                closure.create.append(codeBlock);
+                if (initOnCreate)
+                    closure.create.append(codeBlock);
                 closure.update.append(codeBlock);
 
                 // Store the callback in the context callback array
@@ -620,8 +630,16 @@ export function compileTemplateCode(rootTemplate)
 
             // Generate code to create initially selected branch
             closure.addLocal(`${ni.name}_branch`);
-            closure.create.append(`${ni.name}_branch = ${ni.name}_resolve();`);
-            closure.create.append(`${ni.name}_branches[${ni.name}_branch].create();`);
+            if (initOnCreate)
+            {
+                closure.create.append(`${ni.name}_branch = ${ni.name}_resolve();`);
+                closure.create.append(`${ni.name}_branches[${ni.name}_branch].create();`);
+            }
+            else
+            {
+                closure.addLocal(`${ni.name}_placeholder`);
+                closure.create.append(`${ni.name}_placeholder = document.createComment(" if place holder");`);
+            }
 
             // Generate a function to resolve the selected branch
             let fnResolve = closure.addFunction(`${ni.name}_resolve`);
@@ -646,6 +664,20 @@ export function compileTemplateCode(rootTemplate)
             // Generate function to switch branches
             let multiRoot = ni.conditionGroup.some(x => x.isMultiRoot);
             let fn = closure.addFunction(`${ni.name}_select`, ['branch']);
+            if (!initOnCreate)
+            {
+                fn.code.append(`if (${ni.name}_placeholder)`);
+                fn.code.append(`{`);
+                fn.code.append(`  ${ni.name}_branch = branch;`);
+                fn.code.append(`  ${ni.name}_branches[branch].create();`);
+                if (multiRoot)
+                    fn.code.append(`  ${ni.name}_placeholder.replaceWith(...[${ni.spreadDomNodes(false)}]);`);
+                else
+                    fn.code.append(`  ${ni.name}_placeholder.replaceWith(${ni.spreadDomNodes(false)});`);
+                fn.code.append(`  ${ni.name}_placeholder = null;`);
+                fn.code.append(`  return;`);
+                fn.code.append(`}`);
+            }
             fn.code.append(`if (${ni.name}_branch == branch)`);
             fn.code.append(`  return;`);
             fn.code.append(`let old_branch = ${ni.name}_branch;`);
@@ -723,7 +755,10 @@ export function compileTemplateCode(rootTemplate)
             let itemClosure = new ClosureBuilder();
             itemClosure.callback_args = "model, itemCtx.item, itemCtx";
             itemClosure.outer = "itemCtx";
+            let saveInitOnCreate = initOnCreate;
+            initOnCreate = true;
             compileNodeToClosure(itemClosure, ni_item);
+            initOnCreate = saveInitOnCreate;
             itemClosure.appendTo(itemClosureFn.code);
 
             // Create the "foreach" manager
@@ -759,7 +794,10 @@ export function compileTemplateCode(rootTemplate)
             }
             else
             {
-                closure.create.append(`${ni.name}_manager.loadItems(${format_callback(objref_index)});`);
+                if (initOnCreate)
+                    closure.create.append(`${ni.name}_manager.loadItems(${format_callback(objref_index)});`);
+                else
+                    closure.create.append(`${ni.name}_manager.loadItems([]]);`);
                 closure.update.append(`${ni.name}_manager.updateItems(${format_callback(objref_index)});`);
             }
         }
