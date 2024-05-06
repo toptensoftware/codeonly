@@ -36,7 +36,7 @@ export function compileTemplateCode(rootTemplate, options)
     buildNodeGraph(rootNodeInfo);
     
     let rootClosure = new ClosureBuilder();
-    rootClosure.callback_args = "model";
+    rootClosure.callback_args = "model, model";
     compileNodeToClosure(rootClosure, rootNodeInfo);
 
     // Return the code and context

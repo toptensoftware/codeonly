@@ -50,18 +50,19 @@ export class ForEachManager
 
             // Setup item context
             let itemCtx = {
-                item,
+                model: this.options.model,
                 outer: this.options.outer,
+                item,
             };
 
             // Test condition
-            if (this.options.condition && !this.options.condition.call(this.options.model, item, item.itemCtx))
+            if (this.options.condition && !this.options.condition.call(this.options.model, item, itemCtx))
                 continue;
 
             // Setup key
             if (this.options.key)
             {
-                itemCtx.key = this.options.item_key.call(this.options.model, item, item.itemCtx);
+                itemCtx.key = this.options.item_key.call(this.options.model, item, itemCtx);
             }
             else
             {
@@ -97,7 +98,10 @@ export class ForEachManager
         }
 
         // Get keys for all items
-        let tempCtx = { outer: this.options.outer };
+        let tempCtx = { 
+            model: this.options.model,
+            outer: this.options.outer 
+        };
 
         // Filter out conditional items
         if (this.options.condition)
@@ -160,8 +164,9 @@ export class ForEachManager
             {
                 // Setup item context
                 let itemCtx = {
-                    item: newItems[index + i],
+                    model: this.options.model,
                     outer: this.options.outer,
+                    item: newItems[index + i],
                     key: newKeys[index + i],
                     index: index + i,
                 };
@@ -214,7 +219,34 @@ export class ForEachManager
 
         function multi_root_move(op)
         {
-            throw new Error("single root move not implemented");
+            // Collect and remove DOM nodes
+            let nodes = [];
+            for (let i=0; i<op.count; i++)
+            {
+                nodes.push(...this.items[op.from + i].rootNodes);
+            }
+            for (let i=0; i<nodes.length; i++)
+            {
+                nodes[i].remove();
+            }
+
+            // Remove items
+            let items = this.items.splice(op.from, op.count);
+
+            // Insert the nodes
+            let insertBefore;
+            if (op.to + op.count < this.items.length)
+            {
+                insertBefore = this.items[op.to + op.count].rootNodes[0];
+            }
+            else
+            {
+                insertBefore = this.tailSentinal;
+            }
+            insertBefore.before(...nodes);
+
+            // Re-insert items
+            this.items.splice(op.to, 0, items);
         }
 
         function single_root_insert(op)
@@ -226,8 +258,9 @@ export class ForEachManager
             {
                 // Setup item context
                 let itemCtx = {
-                    item: newItems[index + i],
+                    model: this.options.model,
                     outer: this.options.outer,
+                    item: newItems[index + i],
                     key: newKeys[index + i],
                     index: index + i,
                 };
@@ -275,7 +308,34 @@ export class ForEachManager
 
         function single_root_move(op)
         {
-            throw new Error("single root move not implemented");
+            // Collect and remove DOM nodes
+            let nodes = [];
+            for (let i=0; i<op.count; i++)
+            {
+                nodes.push(this.items[op.from + i].rootNode);
+            }
+            for (let i=0; i<nodes.length; i++)
+            {
+                nodes[i].remove();
+            }
+
+            // Remove items
+            let items = this.items.splice(op.from, op.count);
+
+            // Insert the nodes
+            let insertBefore;
+            if (op.to + op.count < this.items.length)
+            {
+                insertBefore = this.items[op.to + op.count].rootNodes[0];
+            }
+            else
+            {
+                insertBefore = this.tailSentinal;
+            }
+            insertBefore.before(...nodes);
+
+            // Re-insert items
+            this.items.splice(op.to, 0, items);
         }
 
         function patch_existing(op)

@@ -191,8 +191,9 @@ export function diff_keys(oldKeys, newKeys, covered)
                             newKeys[op.originalIndex + count] == oldKeys[delFrom.index + count])
                     {
                         let itemkey = newKeys[op.originalIndex + count];
-                        deleteMap.delete(itemkey, x => x.index == delFrom.index + count);
-                        insertMap.delete(itemkey, x => x.originalIndex == op.originalIndex + count);
+                        if (!deleteMap.try_delete(itemkey, x => x.index == delFrom.index + count, () =>     
+                             insertMap.try_delete(itemkey, x => x.originalIndex == op.originalIndex + count)))
+                            break;
                         count++;
                     }
 
@@ -324,8 +325,9 @@ export function diff_keys(oldKeys, newKeys, covered)
                             newKeys[insFrom.originalIndex + count] == oldKeys[op.index + count])
                     {
                         let itemkey = newKeys[insFrom.originalIndex + count];
-                        insertMap.delete(itemkey, x => x.originalIndex == insFrom.originalIndex + count);
-                        deleteMap.delete(itemkey, x => x.index == op.index + count);
+                        if (!insertMap.try_delete(itemkey, x => x.originalIndex == insFrom.originalIndex + count, () => 
+                             deleteMap.try_delete(itemkey, x => x.index == op.index + count)))
+                            break;
                         count++;
                     }
 
