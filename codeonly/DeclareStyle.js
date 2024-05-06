@@ -1,11 +1,12 @@
 import { nextFrame } from "./NextFrame.js";
+import { processStyles } from "./ProcessStyles.js";
 
 let pendingStyles = [];
 let styleNode = null;
 
-export function registerStyles(css)
+export function declareStyle(css)
 {
-    pendingStyles.push(css);
+    pendingStyles.push(processStyles(css));
     nextFrame(mountStyles);
 }
 

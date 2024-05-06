@@ -50,18 +50,19 @@ export class ForEachManager
 
             // Setup item context
             let itemCtx = {
-                item,
+                model: this.options.model,
                 outer: this.options.outer,
+                item,
             };
 
             // Test condition
-            if (this.options.condition && !this.options.condition.call(this.options.model, item, item.itemCtx))
+            if (this.options.condition && !this.options.condition.call(this.options.model, item, itemCtx))
                 continue;
 
             // Setup key
             if (this.options.key)
             {
-                itemCtx.key = this.options.item_key.call(this.options.model, item, item.itemCtx);
+                itemCtx.key = this.options.item_key.call(this.options.model, item, itemCtx);
             }
             else
             {
@@ -97,7 +98,10 @@ export class ForEachManager
         }
 
         // Get keys for all items
-        let tempCtx = { outer: this.options.outer };
+        let tempCtx = { 
+            model: this.options.model,
+            outer: this.options.outer 
+        };
 
         // Filter out conditional items
         if (this.options.condition)
@@ -160,8 +164,9 @@ export class ForEachManager
             {
                 // Setup item context
                 let itemCtx = {
-                    item: newItems[index + i],
+                    model: this.options.model,
                     outer: this.options.outer,
+                    item: newItems[index + i],
                     key: newKeys[index + i],
                     index: index + i,
                 };
@@ -253,8 +258,9 @@ export class ForEachManager
             {
                 // Setup item context
                 let itemCtx = {
-                    item: newItems[index + i],
+                    model: this.options.model,
                     outer: this.options.outer,
+                    item: newItems[index + i],
                     key: newKeys[index + i],
                     index: index + i,
                 };
