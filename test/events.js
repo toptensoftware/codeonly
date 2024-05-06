@@ -11,12 +11,12 @@ test("Event", () => {
 
     let r = compileTemplate({
         type: "BUTTON",
-        on_click: (ev) => {
+        on_click: (evModel, ev) => {
             // Note triggered
             triggered = true;
 
             // Make sure model has been attached to the event
-            assert.equal(ev.model, model);
+            assert.equal(model, evModel);
         },
         export: "button",
     })(model);

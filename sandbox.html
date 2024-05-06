@@ -1,0 +1,49 @@
+<html>
+<head>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="icon" href="/favicon.ico" />
+</head>
+<body>
+    <h1>CodeOnly Sandbox</h1>
+    <div>
+        <button type="button" id="testButton1">Test</button>
+        <button type="button" id="testButton2">Test</button>
+    </div>
+    <div id="main">
+
+    </div>
+
+    <script type="module">
+        let elMain = document.getElementById("main");
+        let divs = [];
+        for (let i=0; i<3000; i++)
+        {
+            let elDiv = document.createElement("DIV");
+            elDiv.innerText = `Item ${i}`;
+            elDiv.classList.add("myClass");
+            elMain.appendChild(elDiv);
+            divs.push(elDiv);
+        }
+
+        document.getElementById("testButton1").addEventListener("click", () => {
+            for (let i=0; i<divs.length; i++)
+            {
+                let newText = `Item ${i}`;
+                if (divs[i].innerText != newText)
+                    divs[i].innerText = newText;
+            }
+        });
+
+        let iter = 0;
+        document.getElementById("testButton2").addEventListener("click", () => {
+            for (let i=0; i<divs.length; i++)
+            {
+                divs[i].innerText = `Item ${i} (${iter})`;
+            }
+            iter++;
+        });
+    </script>
+
+</body>
+</html>

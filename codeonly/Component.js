@@ -4,11 +4,8 @@ export class Component
 {
     constructor()
     {
-    }
-
-    initialize()
-    {
-        this.dom = this.template(this)
+        this.dom = this.template(this);
+        this.invalidate();
     }
 
     get rootNode() 
@@ -28,9 +25,22 @@ export class Component
         return this.dom.isMultiRoot; 
     }
 
+    invalidate()
+    {
+        if (this.invalid)
+            return;
+
+        this.invalid = true;
+        requestAnimationFrame(() => this.update());
+    }
+
     update()
     {
-        this.dom.update();
+        if (this.invalid)
+        {
+            this.invalid = false;
+            this.dom.update();
+        }
     }
 
     destroy()
@@ -38,11 +48,17 @@ export class Component
         this.dom.destroy();
     }
 
+    mount(el)
+    {
+        if (typeof(el) === 'string')
+        {
+            el = document.querySelector(el);
+        }
+        el.append(...this.rootNodes);
+        return this;
+    }
+
 }
 
 
 
-export function declareTemplate(componentClass, template)
-{
-    componentClass.prototype.template = compileTemplate(template);
-}

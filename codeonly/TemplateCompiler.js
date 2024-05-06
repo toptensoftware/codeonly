@@ -14,6 +14,10 @@ export function compileTemplateCode(rootTemplate, options)
     // Every node in the template will get an id, starting at 1.
     let nodeId = 1;
 
+    // Every dynamic property gets a variable named pNNN where n increments
+    // using this variable
+    let prevId = 1;
+
     // Any callbacks, arrays etc... referenced directly by the template
     // will be stored here and passed back to the compile code via ctx.objrefs
     let objrefs = [];
@@ -38,6 +42,8 @@ export function compileTemplateCode(rootTemplate, options)
     let rootClosure = new ClosureBuilder();
     rootClosure.callback_args = "model, model";
     compileNodeToClosure(rootClosure, rootNodeInfo);
+
+    rootClosure.addLocal("temp");
 
     // Return the code and context
     return { 
@@ -246,6 +252,8 @@ export function compileTemplateCode(rootTemplate, options)
             closure.destroy.append(ln.renderDestroy());
         }
 
+        closure.update.append(`temp = null;`);
+
         // Return interface to the closure
         if (ni.isItemNode)
         {
@@ -299,11 +307,15 @@ export function compileTemplateCode(rootTemplate, options)
         if (ni.template instanceof Function)
         {
             closure.addLocal(ni.name);
+            let prevName = `p${prevId++}`;
+            closure.addLocal(prevName);
             if (initOnCreate)
-                closure.create.append(`${ni.name} = helpers.createTextNode(${format_callback(objrefs.length)});`);
+                closure.create.append(`${ni.name} = helpers.createTextNode(${prevName} = ${format_callback(objrefs.length)});`);
             else
                 closure.create.append(`${ni.name} = helpers.createTextNode("");`);
-            closure.update.append(`${ni.name} = helpers.setNodeText(${ni.name}, ${format_callback(objrefs.length)});`);
+            closure.update.append(`temp = ${format_callback(objrefs.length)};`);
+            closure.update.append(`if (temp !== ${prevName})`)
+            closure.update.append(`  ${ni.name} = helpers.setNodeText(${ni.name}, ${prevName} = ${format_callback(objrefs.length)});`);
             objrefs.push(ni.template);
             return true;
         }
@@ -329,11 +341,15 @@ export function compileTemplateCode(rootTemplate, options)
 
             if (ni.template.text instanceof Function)
             {
+                let prevName = `p${prevId++}`;
+                closure.addLocal(prevName);
                 if (initOnCreate)
-                    closure.create.append(`${ni.name} = document.createComment(${format_callback(objrefs.length)});`);
+                    closure.create.append(`${ni.name} = document.createComment(${prevName} = ${format_callback(objrefs.length)});`);
                 else
                     closure.create.append(`${ni.name} = document.createComment("");`);
-                closure.update.append(`${ni.name} = ${ni.name}.nodeValue = ${format_callback(objrefs.length)};`);
+                closure.update.append(`temp = ${format_callback(objrefs.length)};`);
+                closure.update.append(`if (temp !== ${prevName})`);
+                closure.update.append(`  ${ni.name}.nodeValue = ${prevName} = temp;`);
                 objrefs.push(ni.template.text);
             }
             else
@@ -367,10 +383,14 @@ export function compileTemplateCode(rootTemplate, options)
                 else if (propType === 'function')
                 {
                     // Dynamic property
+                    let prevName = `p${prevId++}`;
+                    closure.addLocal(prevName);
                     let callback_index = objrefs.length;
                     if (initOnCreate)
-                        closure.create.append(`${ni.name}[${JSON.stringify(key)}] = ${format_callback(callback_index)};`);
-                    closure.update.append(`${ni.name}[${JSON.stringify(key)}] = ${format_callback(callback_index)};`);
+                        closure.create.append(`${ni.name}[${JSON.stringify(key)}] = ${prevName} = ${format_callback(callback_index)};`);
+                    closure.update.append(`temp = ${format_callback(callback_index)};`);
+                    closure.update.append(`if (temp !== ${prevName})`);
+                    closure.update.append(`  ${ni.name}[${JSON.stringify(key)}] = ${prevName} = temp;`);
                     objrefs.push(ni.template[key]);
                 }
                 else
@@ -404,17 +424,13 @@ export function compileTemplateCode(rootTemplate, options)
 
                 if (key == "id")
                 {
-                    format_dynamic(ni.template.id, (codeBlock, valueExpr) => {
-                        codeBlock.append(`${ni.name}.setAttribute("id", ${valueExpr});`);
-                    });
+                    format_dynamic(ni.template.id, (valueExpr) => `${ni.name}.setAttribute("id", ${valueExpr})`);
                     continue;
                 }
 
                 if (key == "class")
                 {
-                    format_dynamic(ni.template.class, (codeBlock, valueExpr) => {
-                        codeBlock.append(`${ni.name}.setAttribute("class", ${valueExpr});`);
-                    });
+                    format_dynamic(ni.template.class, (valueExpr) => `${ni.name}.setAttribute("class", ${valueExpr})`);
                     continue;
                 }
 
@@ -422,26 +438,20 @@ export function compileTemplateCode(rootTemplate, options)
                 {
                     let className = camel_to_dash(key.substring(6));
 
-                    format_dynamic(ni.template[key], (codeBlock, valueExpr) => {
-                        codeBlock.append(`helpers.setNodeClass(${ni.name}, ${JSON.stringify(className)}, ${valueExpr});`);
-                    });
+                    format_dynamic(ni.template[key], (valueExpr) => `helpers.setNodeClass(${ni.name}, ${JSON.stringify(className)}, ${valueExpr})`);
                     continue;
                 }
 
                 if (key == "style")
                 {
-                    format_dynamic(ni.template.style, (codeBlock, valueExpr) => {
-                        codeBlock.append(`${ni.name}.setAttribute("style", ${valueExpr});`);
-                    });
+                    format_dynamic(ni.template.style, (valueExpr) => `${ni.name}.setAttribute("style", ${valueExpr})`);
                     continue;
                 }
 
                 if (key.startsWith("style_"))
                 {
                     let styleName = camel_to_dash(key.substring(6));
-                    format_dynamic(ni.template[key], (codeBlock, valueExpr) => {
-                        codeBlock.append(`helpers.setNodeStyle(${ni.name}, ${JSON.stringify(styleName)}, ${valueExpr});`);
-                    });
+                    format_dynamic(ni.template[key], (valueExpr) => `helpers.setNodeStyle(${ni.name}, ${JSON.stringify(styleName)}, ${valueExpr})`);
                     continue;
                 }
 
@@ -450,9 +460,7 @@ export function compileTemplateCode(rootTemplate, options)
                     if (ni.template.show instanceof Function)
                     {
                         closure.addLocal(`${ni.name}_prev_display`);
-                        format_dynamic(ni.template[key], (codeBlock, valueExpr) => {
-                            codeBlock.append(`${ni.name}_prev_display = helpers.setNodeDisplay(${ni.name}, ${valueExpr}, ${ni.name}_prev_display);`);
-                        });
+                        format_dynamic(ni.template[key], (valueExpr) => `${ni.name}_prev_display = helpers.setNodeDisplay(${ni.name}, ${valueExpr}, ${ni.name}_prev_display)`);
                     }
                     else
                     {
@@ -466,9 +474,7 @@ export function compileTemplateCode(rootTemplate, options)
                 {
                     let attrName = camel_to_dash(key.substring(5));
 
-                    format_dynamic(ni.template[key], (codeBlock, valueExpr) => {
-                        codeBlock.append(`${ni.name}.setAttribute(${JSON.stringify(attrName)}, ${valueExpr});`);
-                    });
+                    format_dynamic(ni.template[key], (valueExpr) => `${ni.name}.setAttribute(${JSON.stringify(attrName)}, ${valueExpr})`);
                     continue;
                 }
 
@@ -476,9 +482,7 @@ export function compileTemplateCode(rootTemplate, options)
                 {
                     if (ni.template.text instanceof Function)
                     {
-                        format_dynamic(ni.template.text, (codeBlock, valueExpr) => {
-                            codeBlock.append(`helpers.setElementText(${ni.name}, ${valueExpr});`);
-                        });
+                        format_dynamic(ni.template.text, (valueExpr) => `helpers.setElementText(${ni.name}, ${valueExpr})`);
                     }
                     else if (ni.template.text instanceof HtmlString)
                     {
@@ -600,18 +604,23 @@ export function compileTemplateCode(rootTemplate, options)
         {
             if (value instanceof Function)
             {
-                // It's a dynamic value.  Render the code to update the
-                // value into a code block
-                let codeBlock = CodeBuilder();
-        
+                let prevName = `p${prevId++}`;
+                closure.addLocal(prevName);
+                
                 // Render the update code
-                formatter(codeBlock, format_callback(objrefs.length));
+                let code = formatter();
 
                 // Append the code to both the main code block (to set initial value) and to 
                 // the update function.
                 if (initOnCreate)
-                    closure.create.append(codeBlock);
-                closure.update.append(codeBlock);
+                {
+                    closure.create.append(`${prevName} = ${format_callback(objrefs.length)};`);
+                    closure.create.append(`${formatter(prevName)};`);
+                }
+
+                closure.update.append(`temp = ${format_callback(objrefs.length)};`);
+                closure.update.append(`if (temp !== ${prevName})`);
+                closure.update.append(`  ${formatter(prevName + " = temp")};`);
 
                 // Store the callback in the context callback array
                 objrefs.push(value);
@@ -619,7 +628,7 @@ export function compileTemplateCode(rootTemplate, options)
             else
             {
                 // Static value, just output it directly
-                formatter(closure.create, JSON.stringify(value));
+                closure.create.append(formatter(JSON.stringify(value)));
             }
         }
 
@@ -806,11 +815,11 @@ export function compileTemplateCode(rootTemplate, options)
 
 
 
-export function compileTemplate(rootTemplate)
+export function compileTemplate(rootTemplate, options)
 {
     // Compile code
-    let code = compileTemplateCode(rootTemplate);
-    console.log(code.code);
+    let code = compileTemplateCode(rootTemplate, options);
+    //console.log(code.code);
 
     // Put it in a function
     let templateFunction = new Function("ctx", "helpers", "model", code.code);

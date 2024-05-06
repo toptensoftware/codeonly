@@ -17,6 +17,7 @@ export class NodeInfo
         this.template = template;
         this.childNodes = [];
         this.isItemNode = isItemNode;
+        this.nextPreviousValueIndex = 1;
     }
 
     // Checks if this node is a single or multi-root node

@@ -1,16 +1,18 @@
-import { nextFrame } from "./NextFrame.js";
-import { processStyles } from "./ProcessStyles.js";
+import { processStyles } from "./processStyles.js";
 
 let pendingStyles = [];
 let styleNode = null;
 
-export function declareStyle(css)
+export class Style
 {
-    pendingStyles.push(processStyles(css));
-    nextFrame(mountStyles);
+    static declare(css)
+    {
+        pendingStyles.push(processStyles(css));
+        requestAnimationFrame(mountStyles);
+    }
 }
 
-export function mountStyles()
+function mountStyles()
 {
     // Quit if nothing to do
     if (pendingStyles.length == 0)

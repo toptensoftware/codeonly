@@ -1,5 +1,3 @@
-import { strict as assert } from "node:assert";
-
 /*
 Based on this:
     https://github.com/kpdecker/jsdiff/blob/master/src/diff/base.js

@@ -22,9 +22,14 @@ test("Dynamic Comment", () => {
 
     assert.equal(r.rootNode.nodeType, 8);
     assert.equal(r.rootNode.nodeValue, "foo");
-    val = "bar";
 
-    assert.equal(r.rootNode.nodeValue, "foo");
+    val = "bar";
+    r.update();
+    assert.equal(r.rootNode.nodeValue, "bar");
+
+    val = "baz";
+    r.update();
+    assert.equal(r.rootNode.nodeValue, "baz");
 });
 
 test("Single Node", () => {

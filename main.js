@@ -1,58 +1,44 @@
-import { compileTemplate, html, styles } from "./codeonly/codeonly.js";
+import { Component, Template, Style } from "./codeonly/codeonly.js";
 
-styles(`
-div
+class MainComponent extends Component
 {
-    &.main-div
+    constructor()
     {
-        background-color:yellow;
+        super();
+        this.title = "Hello World";
     }
-    &.myclass
-    {
-        background-color: orange;
-        &:hover
+
+    get title() { return this._title; }
+    set title(value) { this._title = value; this.invalidate(); }
+}
+
+Template.declare(MainComponent, {
+    childNodes: [
         {
-            background-color:blue;
-        }
+            type: "button",
+            text: "Click Me",
+            on_click: c => c.title = "Clicked",
+        },
+        {
+            type: "div",
+            text: c => c.title,
+            class_clicked: c => c.title == "Clicked",
+        },
+    ]
+});
+
+Style.declare(`
+#main
+{
+    .clicked
+    {
+        background-color: red;
+        color: white;
     }
 }
-.odd
-{
-    color:white;
-    background-color:red;
-}
-`
-);
-
+`)
 
 export function main()
 {
-    let count = 0;
-
-    let template = compileTemplate({
-        type: "div",
-        childNodes: [
-            () => `${count}: `,
-            {
-                if: () => count % 2 == 0,
-                childNodes: [
-                    "Divisible by 2",
-                    {
-                        if: () => count % 3 == 0,
-                        childNodes: [
-                            " and 3",
-                        ]
-                    }
-                ]
-            }
-        ]
-    });
-
-    let inst = template(null);
-    document.getElementById("main").append(inst.rootNode);
-
-    document.getElementById("testButton").addEventListener("click", () => {
-        count++;
-        inst.update();
-    });
+    new MainComponent().mount("#main");
 }

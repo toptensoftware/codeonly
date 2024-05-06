@@ -125,10 +125,7 @@ export let TemplateHelpers = {
     {
         function wrapped_handler(ev)
         {
-            ev.model = model;
-            let retv = handler(ev);
-            delete ev.model;
-            return retv;
+            return handler(model, ev);
         }
 
         el.addEventListener(eventName, wrapped_handler);

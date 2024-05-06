@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Component, declareTemplate } from "../codeonly/codeonly.js";
+import { Component } from "../codeonly/codeonly.js";
 import "./mockdom.js";
 
 class TestComponent extends Component
@@ -9,11 +9,11 @@ class TestComponent extends Component
     {
         super();
         this.value = "Hello World";
-        this.initialize();
+        this.update();
     }
 }
 
-declareTemplate(TestComponent, {
+Component.declareTemplate(TestComponent, {
     type:  "DIV",
     childNodes: [
         {

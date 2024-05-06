@@ -267,5 +267,8 @@ test("Component properties", () => {
     r.update();
     assert.equal(r.instance.dynamicProperty, "bar");
 
+    r.update();
+    assert.equal(r.instance.dynamicProperty, "bar");
+
 });
 
