@@ -1,12 +1,12 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { compileTemplate, html } from "../codeonly/codeonly.js";
+import { Template, html } from "../codeonly/codeonly.js";
 import "./mockdom.js";
 
 
 test("Child Nodes", () => {
 
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes: [
             { type: "SPAN", text: "foo" },
@@ -22,7 +22,7 @@ test("Child Nodes", () => {
 test("Child Nodes with Dynamic", () => {
 
     let val = "foo";
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes: [
             { type: "SPAN", text: () => val },

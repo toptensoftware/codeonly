@@ -364,7 +364,7 @@ export function compileTemplateCode(rootTemplate, options)
         {
             // Create component
             closure.addLocal(ni.name);
-            closure.create.append(`${ni.name} = ctx.objrefs[${objrefs.length}]();`);
+            closure.create.append(`${ni.name} = new ctx.objrefs[${objrefs.length}]();`);
             objrefs.push(ni.template.type);
 
             for (let key of Object.keys(ni.template))

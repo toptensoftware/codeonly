@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { compileTemplate, html } from "../codeonly/codeonly.js";
+import { Template, html } from "../codeonly/codeonly.js";
 import "./mockdom.js";
 
 
@@ -9,7 +9,7 @@ test("Event", () => {
     let triggered = false;
     let model = {};
 
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "BUTTON",
         on_click: (evModel, ev) => {
             // Note triggered

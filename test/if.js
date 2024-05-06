@@ -1,12 +1,12 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { compileTemplate, html } from "../codeonly/codeonly.js";
+import { Template, html } from "../codeonly/codeonly.js";
 import "./mockdom.js";
 
 
 test("If (true)", () => {
 
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes: [
             { 
@@ -23,7 +23,7 @@ test("If (true)", () => {
 
 test("If (false)", () => {
 
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes: [
             { type: "SPAN", text: "foo", if: false },
@@ -37,7 +37,7 @@ test("If (false)", () => {
 test("If", () => {
 
     let val = false;
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes: 
         [
@@ -62,7 +62,7 @@ test("If", () => {
 test("If-Else", () => {
 
     let val = true;
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes: [
             { 
@@ -91,7 +91,7 @@ test("If-Else", () => {
 test("If-ElseIf", () => {
 
     let val = 1;
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes: [
             { 
@@ -126,7 +126,7 @@ test("If-ElseIf", () => {
 test("If-ElseIf-Else", () => {
 
     let val = 1;
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes: [
             { 
@@ -166,7 +166,7 @@ test("If-ElseIf-Else", () => {
 test("If Foreach Fragment", () => {
 
     let val = true;
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes: [
             {
@@ -199,7 +199,7 @@ test("If Foreach Fragment", () => {
 test("If at root", () => {
 
     let val = true;
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         if: () => val,
     })();
@@ -223,7 +223,7 @@ test("If at root", () => {
 
 test("If at root (true)", () => {
 
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         if: true,
     })();
@@ -236,7 +236,7 @@ test("If at root (true)", () => {
 
 test("If at root (false)", () => {
 
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         if: false,
     })();
@@ -251,7 +251,7 @@ test("If at root (false)", () => {
 test("If on fragment at root", () => {
 
     let val = true;
-    let r = compileTemplate({
+    let r = Template.compile({
         if: () => val,
         childNodes: 
         [

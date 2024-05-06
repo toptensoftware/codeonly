@@ -1,9 +1,9 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { compileTemplate, html } from "../codeonly/codeonly.js";
+import { Template, html } from "../codeonly/codeonly.js";
 import "./mockdom.js";
 test("Fragment", () => {
-    let r = compileTemplate({
+    let r = Template.compile({
         childNodes: [
             { type: "SPAN", text: "foo" },
             { type: "SPAN", text: "bar" },
@@ -14,7 +14,7 @@ test("Fragment", () => {
 
 test("Fragment (with conditional)", () => {
     let val = false;
-    let r = compileTemplate({
+    let r = Template.compile({
         childNodes: [
             { type: "SPAN", text: "foo", if: () => val },
             { type: "SPAN", text: "bar" },
@@ -42,7 +42,7 @@ test("Fragment (with conditional)", () => {
 });
 
 test("Nested Fragment", () => {
-    let r = compileTemplate({
+    let r = Template.compile({
         childNodes: [
             { type: "SPAN", text: "foo" },
             { 
@@ -54,7 +54,7 @@ test("Nested Fragment", () => {
 });
 
 test("Double Nested Fragment", () => {
-    let r = compileTemplate({
+    let r = Template.compile({
         childNodes: [
             { 
                 childNodes: [
@@ -74,7 +74,7 @@ test("Double Nested Fragment", () => {
 test("Double Nested Fragment (with conditional)", () => {
     let val1 = true;
     let val2 = true;
-    let r = compileTemplate({
+    let r = Template.compile({
         childNodes: [
             { 
                 if: () => val1,

@@ -1,11 +1,11 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { compileTemplate, html } from "../codeonly/codeonly.js";
+import { Template, html } from "../codeonly/codeonly.js";
 import "./mockdom.js";
 
 
 test("ForEach Static", () => {
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes: [
             {
@@ -95,7 +95,7 @@ test("ForEach Dynamic", () => {
 
     let items = [ "A", "B", "C" ];
 
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes: [
             {
@@ -125,7 +125,7 @@ test("ForEach Dynamic Fragment", () => {
 
     let items = [ "A", "B", "C" ];
 
-    let r = compileTemplate({
+    let r = Template.compile({
         childNodes: [
             {
                 foreach: () => items,
@@ -172,7 +172,7 @@ test("ForEach with Conditional Items", () => {
         return item.charCodeAt(0) % mod == modEq;
     }
 
-    let r = compileTemplate({
+    let r = Template.compile({
         childNodes: [
             {
                 type: "DIV",
@@ -204,7 +204,7 @@ test("ForEach Array Inensitive", () => {
 
     let items = [ "A", "B", "C" ];
 
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes: [
             {
@@ -228,7 +228,7 @@ test("ForEach Index Sensitive", () => {
 
     let items = [ "A", "B", "C" ];
 
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes: [
             {
@@ -258,7 +258,7 @@ test("ForEach Index Inensitive", () => {
 
     let items = [ "A", "B", "C" ];
 
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes: [
             {
@@ -291,7 +291,7 @@ test("ForEach Nested", () => {
         { name: "B", subItems: [ "3", "4"], },
     ];
 
-    let r = compileTemplate(
+    let r = Template.compile(
     {
         type: "DIV",
         childNodes: 

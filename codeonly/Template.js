@@ -1,9 +1,10 @@
 import { compileTemplate } from "./TemplateCompiler.js";
 
+
 export class Template
 {
-    static declare(componentClass, template)
+    static compile()
     {
-        componentClass.prototype.template = compileTemplate(template, { initOnCreate: false });
+        return compileTemplate(...arguments);
     }
 }

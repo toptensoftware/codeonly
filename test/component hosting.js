@@ -1,17 +1,17 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { compileTemplate, cloak } from "../codeonly/codeonly.js";
+import { Template, cloak } from "../codeonly/codeonly.js";
 import "./mockdom.js";
 
 
 test("Single root component at root level", () => {
 
-    let component = compileTemplate({
+    let component = Template.compile({
         type: "DIV",
         text: "foo",
     });
 
-    let r = compileTemplate({
+    let r = Template.compile({
         type: component,
     })();
 
@@ -23,12 +23,12 @@ test("Single root component at root level", () => {
 
 test("Single root component as child", () => {
 
-    let component = compileTemplate({
+    let component = Template.compile({
         type: "DIV",
         text: "foo",
     });
 
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes:
         [
@@ -45,7 +45,7 @@ test("Single root component as child", () => {
 
 test("Multi-root component at root level", () => {
 
-    let component = compileTemplate({
+    let component = Template.compile({
         childNodes:
         [
             "foo", 
@@ -53,7 +53,7 @@ test("Multi-root component at root level", () => {
         ]
     });
 
-    let r = compileTemplate({
+    let r = Template.compile({
         type: component,
     })();
 
@@ -66,7 +66,7 @@ test("Multi-root component at root level", () => {
 
 test("Multi-root component as child", () => {
 
-    let component = compileTemplate({
+    let component = Template.compile({
         childNodes:
         [
             "foo", 
@@ -74,7 +74,7 @@ test("Multi-root component as child", () => {
         ]
     });
 
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes:
         [
@@ -92,7 +92,7 @@ test("Multi-root component as child", () => {
 
 test("Conditional single-root component", () => {
 
-    let component = compileTemplate({
+    let component = Template.compile({
         type: "DIV",
         childNodes:
         [
@@ -102,7 +102,7 @@ test("Conditional single-root component", () => {
     });
 
     let value = true;
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes:
         [
@@ -129,7 +129,7 @@ test("Conditional single-root component", () => {
 
 test("Conditional multi-root component", () => {
 
-    let component = compileTemplate({
+    let component = Template.compile({
         childNodes:
         [
             "foo", 
@@ -138,7 +138,7 @@ test("Conditional multi-root component", () => {
     });
 
     let value = true;
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes:
         [
@@ -167,7 +167,7 @@ test("Conditional multi-root component", () => {
 
 test("Foreach single-root component", () => {
 
-    let component = compileTemplate({
+    let component = Template.compile({
         type: "DIV",
         childNodes:
         [
@@ -177,7 +177,7 @@ test("Foreach single-root component", () => {
     });
 
     let value = ["apples", "pears", "bananas"];
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes:
         [
@@ -200,7 +200,7 @@ test("Foreach single-root component", () => {
 
 test("Foreach multi-root component", () => {
 
-    let component = compileTemplate({
+    let component = Template.compile({
         childNodes:
         [
             "foo", 
@@ -209,7 +209,7 @@ test("Foreach multi-root component", () => {
     });
 
     let value = ["apples", "pears", "bananas"];
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes:
         [
@@ -232,13 +232,13 @@ test("Foreach multi-root component", () => {
 
 test("Component properties", () => {
 
-    let component = compileTemplate({
+    let component = Template.compile({
         type: "DIV",
         text: "foo",
     });
 
     let val = "foo";
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes:
         [

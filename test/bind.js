@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { compileTemplate, html } from "../codeonly/codeonly.js";
+import { Template, html } from "../codeonly/codeonly.js";
 import "./mockdom.js";
 
 
@@ -11,7 +11,7 @@ test("Root Bind", () => {
         set mydiv(value) { this._mydiv = value; },
     };
 
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         bind: "mydiv",
     })(model);
@@ -23,7 +23,7 @@ test("Non-root Bind", () => {
 
     let model = {};
 
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes:
         [
@@ -46,7 +46,7 @@ test("Bind conditional", () => {
     };
 
     let val = true;
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes:
         [

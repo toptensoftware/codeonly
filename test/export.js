@@ -1,12 +1,12 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { compileTemplate, html } from "../codeonly/codeonly.js";
+import { Template, html } from "../codeonly/codeonly.js";
 import "./mockdom.js";
 
 
 test("Root Export", () => {
 
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         export: "mydiv",
     })();
@@ -16,7 +16,7 @@ test("Root Export", () => {
 
 test("Non-root Export", () => {
 
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes:
         [
@@ -34,7 +34,7 @@ test("Non-root Export", () => {
 test("Export conditional", () => {
 
     let val = true;
-    let r = compileTemplate({
+    let r = Template.compile({
         type: "DIV",
         childNodes:
         [

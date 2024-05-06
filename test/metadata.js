@@ -1,12 +1,12 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { compileTemplate, html } from "../codeonly/codeonly.js";
+import { Template, html } from "../codeonly/codeonly.js";
 import "./mockdom.js";
 
 
 test("Single-root", () => {
 
-    let component = compileTemplate({
+    let component = Template.compile({
         type: "DIV",
         text: "foo",
     });
@@ -17,7 +17,7 @@ test("Single-root", () => {
 
 test("Multi-root", () => {
 
-    let component = compileTemplate({
+    let component = Template.compile({
         text: "foo",
     });
 
