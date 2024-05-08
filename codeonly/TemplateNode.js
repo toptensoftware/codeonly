@@ -1,5 +1,6 @@
 import { HtmlString } from "./HtmlString.js";
 import { is_constructor } from "./Utils.js";
+import { IfBlock } from "./IfBlock.js";
 
 // Manages information about a node in a template
 export class TemplateNode
@@ -9,6 +10,9 @@ export class TemplateNode
     // - template: the user supplied template object this node is derived from
     constructor(template)
     {
+        // Apply automatic transforms
+        template = IfBlock.transform(template);
+
         // Setup
         this.template = template;
 
@@ -40,11 +44,19 @@ export class TemplateNode
         }
 
         // Recurse child nodes
-        if (template.childNodes)
+        if (this.kind == 'element' || this.kind == 'fragment')
         {
-            if (this.kind != 'element' && this.kind != 'fragment')
-                throw new Error("childNodes only supported on element and fragment nodes");
-            this.childNodes = this.template.childNodes.map(x => new TemplateNode(x));
+            if (template.childNodes)
+            {
+                IfBlock.transformGroup(template.childNodes);
+                this.childNodes = this.template.childNodes.map(x => new TemplateNode(x));
+            }
+            else
+                this.childNodes = [];
+        }
+        else if (template.childNodes)
+        {
+            throw new Error("childNodes only supported on element and fragment nodes");
         }
     }
 
@@ -81,8 +93,7 @@ export class TemplateNode
     }
 
     // Recursively get all the local node variables associated with this node and it's
-    // children, but excluding foreach items since they're managed in a separate 
-    // closure.   This function is used to get all the variables that need to
+    // children. This function is used to get all the variables that need to
     // be reset to null when this item is conditionally removed from the DOM
     *enumLocalNodes()
     {
@@ -108,7 +119,7 @@ export class TemplateNode
         {
             for (let i=0; i<n.childNodes.length; i++)
             {
-                yield n.childNodes[i].spreadDomNodes(false);
+                yield n.childNodes[i].spreadDomNodes();
             }
         }
     
@@ -116,13 +127,9 @@ export class TemplateNode
 
     // Returns a string descibing all the DOM nodes of this node
     // with conditionally included nodes correctly included/excluded
-    // When excludeConditional is true, the returned expression will
-    // always assume that this node is included.  This is used to 
-    // generate the correct set of nodes after an item has been excluded
-    // but before it's been removed from the DOM.
-    spreadDomNodes(excludeConditional)
+    spreadDomNodes()
     {
-        let nodes = Array.from(this.enumAllNodes(excludeConditional));
+        let nodes = Array.from(this.enumAllNodes());
         return nodes.join(", ");
     }
 
@@ -174,6 +181,7 @@ export class TemplateNode
                 lines.push(`${this.name}_ev${i+1} = null;`);
             }
         }
+        lines.push(`${this.name} = null;`);
 
         return lines;
     }

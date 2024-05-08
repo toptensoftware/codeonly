@@ -4,7 +4,7 @@ export class Component
 {
     constructor()
     {
-        this.dom = this.template(this);
+        this.dom = this.template({ model: this });
         this.invalidate();
     }
 

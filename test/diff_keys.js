@@ -61,8 +61,8 @@ function run_diff_covered(oldKeys, newKeys)
 
 function run_diff_uncovered(oldKeys, newKeys)
 {
-    console.log("OLD:", oldKeys.join(","));
-    console.log("NEW:", newKeys.join(","));
+    //console.log("OLD:", oldKeys.join(","));
+    //console.log("NEW:", newKeys.join(","));
 
     let r = oldKeys.map(x => ({ key: x, touched: 0 }));
     let ops = diff_keys(oldKeys,newKeys, true);
@@ -77,8 +77,8 @@ function run_diff_uncovered(oldKeys, newKeys)
 
     for (let o of ops)
     {
-        console.log("MOD:", r.map(x => x.key).join(","));
-        console.log(o);
+        //console.log("MOD:", r.map(x => x.key).join(","));
+        //console.log(o);
 
         if (o.op == 'insert')
         {

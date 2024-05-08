@@ -65,6 +65,86 @@ export class IfBlock
         };
     }
 
+    static transform(template)
+    {
+        if (template.if === undefined)
+            return template;
+
+        let newTemplate = {
+            type: IfBlock,
+            branches: [
+                {
+                    template: template,
+                    condition: template.if,
+                }
+            ]
+        }
+
+        delete template.if;
+
+        return newTemplate;
+    }
+
+    static transformGroup(templates)
+    {
+        let ifBlock = null;
+        for (let i=0; i<templates.length; i++)
+        {
+            let t = templates[i];
+            if (t.if)
+            {
+                ifBlock = {
+                    type: IfBlock,
+                    branches: [
+                        {
+                            condition: t.if,
+                            template: t,
+                        }
+                    ]
+                };
+                delete t.if;
+                templates.splice(i, 1, ifBlock);
+            }
+            else if (t.elseif)
+            {
+                if (!ifBlock)
+                    throw new Error("template has 'elseif' without a preceeding condition");
+
+                ifBlock.branches.push({
+                    condition: t.elseif,
+                    template: t,
+                });
+                delete t.elseif;
+
+                // Remove branch
+                templates.splice(i, 1);
+                i--;
+            }
+            else if (t.else)
+            {
+                if (!ifBlock)
+                    throw new Error("template has 'else' without a preceeding condition");
+
+                ifBlock.branches.push({
+                    condition: t.else,
+                    template: t,
+                });
+                delete t.else;
+
+                // End of group
+                ifBlock = null;
+
+                // Remove branch
+                templates.splice(i, 1);
+                i--;
+            }
+            else
+            {
+                ifBlock = null;
+            }
+        }
+    }
+
     constructor(options)
     {
         this.branches = options.data;
@@ -111,7 +191,7 @@ export class IfBlock
             let oldActiveBranch = this.activeBranch;
             this.activeBranchIndex = newActiveBranchIndex;
             this.activeBranch = this.branches[newActiveBranchIndex].create();
-            TemplateHelpers.replaceMany(this.rootNodes, this.activeBranch.rootNodes);
+            TemplateHelpers.replaceMany(oldActiveBranch.rootNodes, this.activeBranch.rootNodes);
             oldActiveBranch.destroy();
         }
 

@@ -14,7 +14,7 @@ test("Root Bind", () => {
     let r = Template.compile({
         type: "DIV",
         bind: "mydiv",
-    })(model);
+    })({ model });
 
     assert.equal(r.rootNode, model.mydiv);
 });
@@ -33,7 +33,7 @@ test("Non-root Bind", () => {
                 text: "foo",
             }
         ]
-    })(model);
+    })({ model });
 
     assert.equal(model.myPara.innerText, "foo");
 });
@@ -57,7 +57,7 @@ test("Bind conditional", () => {
                 text: "foo",
             }
         ]
-    })(model);
+    })({ model });
 
     assert.equal(model.myPara.innerText, "foo");
     assert.equal(model.myPara, model._p);

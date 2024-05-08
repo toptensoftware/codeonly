@@ -15,10 +15,25 @@ test("Single-root", () => {
 });
 
 
-test("Multi-root", () => {
+test("Single-root fragment", () => {
 
     let component = Template.compile({
-        text: "foo",
+        childNodes: [
+            "apples",
+        ]
+    });
+
+    assert.equal(component.isSingleRoot, true);
+});
+
+test("Multi-root fragment", () => {
+
+    let component = Template.compile({
+        childNodes: [
+            "apples",
+            "pears",
+            "bananas",
+        ]
     });
 
     assert.equal(component.isSingleRoot, false);

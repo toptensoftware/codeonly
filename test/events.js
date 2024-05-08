@@ -19,7 +19,7 @@ test("Event", () => {
             assert.equal(model, evModel);
         },
         export: "button",
-    })(model);
+    })({ model });
 
     // Simulate click and check we got the event
     r.button.fireEvent("click", { });
