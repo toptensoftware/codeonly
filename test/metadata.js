@@ -11,7 +11,7 @@ test("Single-root", () => {
         text: "foo",
     });
 
-    assert.equal(component.isMultiRoot, false);
+    assert.equal(component.isSingleRoot, true);
 });
 
 
@@ -21,5 +21,5 @@ test("Multi-root", () => {
         text: "foo",
     });
 
-    assert.equal(component.isMultiRoot, true);
+    assert.equal(component.isSingleRoot, false);
 });

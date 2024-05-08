@@ -15,7 +15,7 @@ test("Single root component at root level", () => {
         type: component,
     })();
 
-    assert.equal(r.isMultiRoot, false);
+    assert.equal(r.isSingleRoot, true);
     assert.equal(r.rootNode.innerText, "foo");
 
 });
@@ -38,7 +38,7 @@ test("Single root component as child", () => {
         ]
     })();
 
-    assert.equal(r.isMultiRoot, false);
+    assert.equal(r.isSingleRoot, true);
     assert.equal(r.rootNode.childNodes[0].innerText, "foo");
 });
 
@@ -57,7 +57,7 @@ test("Multi-root component at root level", () => {
         type: component,
     })();
 
-    assert.equal(r.isMultiRoot, true);
+    assert.equal(r.isSingleRoot, false);
     assert.equal(r.rootNodes[0].nodeValue, "foo");
     assert.equal(r.rootNodes[1].nodeValue, "bar");
 
@@ -84,7 +84,7 @@ test("Multi-root component as child", () => {
         ]
     })();
 
-    assert.equal(r.isMultiRoot, false);
+    assert.equal(r.isSingleRoot, true);
     assert.equal(r.rootNode.childNodes[0].nodeValue, "foo");
     assert.equal(r.rootNode.childNodes[1].nodeValue, "bar");
 });
@@ -113,7 +113,7 @@ test("Conditional single-root component", () => {
         ]
     })();
 
-    assert.equal(r.isMultiRoot, false);
+    assert.equal(r.isSingleRoot, true);
     assert.equal(r.rootNode.childNodes[0].childNodes[0].nodeValue, "foo");
     assert.equal(r.rootNode.childNodes[0].childNodes[1].nodeValue, "bar");
 
@@ -149,7 +149,7 @@ test("Conditional multi-root component", () => {
         ]
     })();
 
-    assert.equal(r.isMultiRoot, false);
+    assert.equal(r.isSingleRoot, true);
     assert.equal(r.rootNode.childNodes[0].nodeValue, "foo");
     assert.equal(r.rootNode.childNodes[1].nodeValue, "bar");
 
@@ -188,7 +188,7 @@ test("Foreach single-root component", () => {
         ]
     })();
 
-    assert.equal(r.isMultiRoot, false);
+    assert.equal(r.isSingleRoot, true);
     assert.equal(r.rootNode.childNodes.length, 5);
 
     value.unshift("foo", "bar");
@@ -220,7 +220,7 @@ test("Foreach multi-root component", () => {
         ]
     })();
 
-    assert.equal(r.isMultiRoot, false);
+    assert.equal(r.isSingleRoot, true);
     assert.equal(r.rootNode.childNodes.length, 8);
 
     value.unshift("foo", "bar");
@@ -255,7 +255,7 @@ test("Component properties", () => {
         ]
     })();
 
-    assert.equal(r.isMultiRoot, false);
+    assert.equal(r.isSingleRoot, true);
     assert.equal(r.instance.stringProperty, "Hello World");
     assert.equal(r.instance.boolProperty, true);
     assert.equal(r.instance.numberProperty, 23);

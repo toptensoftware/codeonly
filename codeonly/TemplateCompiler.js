@@ -4,7 +4,7 @@ import { CloakedValue} from "./CloakedValue.js";
 import { CodeBuilder } from "./CodeBuilder.js";
 import { ClosureBuilder } from "./ClosureBuilder.js";
 import { TemplateHelpers } from "./TemplateHelpers.js";
-import { NodeInfo } from "./NodeInfo.js";
+import { TemplateNode } from "./TemplateNode.js";
 
 
 export function compileTemplateCode(rootTemplate, options)
@@ -23,32 +23,32 @@ export function compileTemplateCode(rootTemplate, options)
     let objrefs = [];
 
     // Create root node info        
-    let rootNodeInfo = new NodeInfo(null, `n${nodeId++}`, rootTemplate, false);
+    let rootTemplateNode = new TemplateNode(null, `n${nodeId++}`, rootTemplate, false);
 
     // Create condition group for root 'if' block
     if (rootTemplate.if !== undefined && rootTemplate.foreach === undefined)
     {
-        rootNodeInfo.conditionGroup = [ rootNodeInfo ];
-        rootNodeInfo.condition = rootTemplate.if;
-        rootNodeInfo.clause = 'if';
-        finalizeConditionGroup(rootNodeInfo.conditionGroup);
-        if (rootNodeInfo.conditionGroup)
-            rootNodeInfo = rootNodeInfo.conditionGroup[0];
+        rootTemplateNode.conditionGroup = [ rootTemplateNode ];
+        rootTemplateNode.condition = rootTemplate.if;
+        rootTemplateNode.clause = 'if';
+        finalizeConditionGroup(rootTemplateNode.conditionGroup);
+        if (rootTemplateNode.conditionGroup)
+            rootTemplateNode = rootTemplateNode.conditionGroup[0];
     }
 
     // Build the node graph
-    buildNodeGraph(rootNodeInfo);
+    buildNodeGraph(rootTemplateNode);
     
     let rootClosure = new ClosureBuilder();
     rootClosure.callback_args = "model, model";
-    compileNodeToClosure(rootClosure, rootNodeInfo);
+    compileNodeToClosure(rootClosure, rootTemplateNode);
 
     rootClosure.addLocal("temp");
 
     // Return the code and context
     return { 
         code: rootClosure.toString(), 
-        isMultiRoot: rootNodeInfo.isMultiRoot,
+        isSingleRoot: rootTemplateNode.isSingleRoot,
         ctx: {
             objrefs,
         }
@@ -59,7 +59,7 @@ export function compileTemplateCode(rootTemplate, options)
         // ForEach items have a second node info for the item itself.
         if (ni.isForEach)
         {
-            ni.item = new NodeInfo(ni, `i${ni.name}`, ni.template, true);
+            ni.item = new TemplateNode(ni, `i${ni.name}`, ni.template, true);
             buildNodeGraph(ni.item);
             return;
         }
@@ -72,7 +72,7 @@ export function compileTemplateCode(rootTemplate, options)
         let conditionGroup = null;
         for (let i=0; i<ni.template.childNodes.length; i++)
         {
-            let child = new NodeInfo(ni, `n${nodeId++}`, ni.template.childNodes[i], false);
+            let child = new TemplateNode(ni, `n${nodeId++}`, ni.template.childNodes[i], false);
             buildNodeGraph(child);
 
             // 'if' conditions on foreach blocks handled by the foreach manager
@@ -186,7 +186,7 @@ export function compileTemplateCode(rootTemplate, options)
                     if (conditionGroup.length == 1)
                     {
                         // Replace with a comment
-                        conditionGroup[0] = new NodeInfo(conditionGroup[0].parent, `n${nodeId++}`, {
+                        conditionGroup[0] = new TemplateNode(conditionGroup[0].parent, `n${nodeId++}`, {
                             type: "comment",
                             text: " !if ",
                         }, false);
@@ -211,7 +211,7 @@ export function compileTemplateCode(rootTemplate, options)
         // If there's no trailing else block, then add one
         if (conditionGroup[conditionGroup.length-1].clause != 'else')
         {
-            let ni = new NodeInfo(conditionGroup[0].parent, `n${nodeId++}`, {
+            let ni = new TemplateNode(conditionGroup[0].parent, `n${nodeId++}`, {
                 clause: "else",
                 condition: true,
                 type: "comment",
@@ -259,7 +259,8 @@ export function compileTemplateCode(rootTemplate, options)
         {
             closure.code.append([
                 `return { `,
-                ni.isMultiRoot ? null : `  get rootNode() { return ${ni.spreadDomNodes()}; },`,
+                `  isSingleRoot: ${ni.isSingleRoot},`,
+                ni.isSingleRoot ? `  get rootNode() { return ${ni.spreadDomNodes()}; },` : null,
                 `  get rootNodes() { return [${ni.spreadDomNodes()}]; },`,
                 `  itemCtx,`,
                 `  update,`,
@@ -273,9 +274,9 @@ export function compileTemplateCode(rootTemplate, options)
 
             closure.code.append([
                 `return { `,
-                ni.isMultiRoot ? null : `  get rootNode() { return ${ni.spreadDomNodes()}; },`,
+                `  isSingleRoot: ${ni.isSingleRoot},`,
+                ni.isSingleRoot ? `  get rootNode() { return ${ni.spreadDomNodes()}; },` : null,
                 `  get rootNodes() { return [${ni.spreadDomNodes()}]; },`,
-                `  isMultiRoot: ${ni.isMultiRoot},`,
                 `  update,`,
                 `  destroy,`,
                 ...exports,
@@ -671,7 +672,7 @@ export function compileTemplateCode(rootTemplate, options)
             }
 
             // Generate function to switch branches
-            let multiRoot = ni.conditionGroup.some(x => x.isMultiRoot);
+            let multiRoot = ni.conditionGroup.some(x => !x.isSingleRoot);
             let fn = closure.addFunction(`${ni.name}_select`, ['branch']);
             if (!initOnCreate)
             {
@@ -777,7 +778,7 @@ export function compileTemplateCode(rootTemplate, options)
             closure.create.append(`  model: model,`);
             if (closure.outer)
                 closure.create.append(`  outer: ${closure.outer},`);
-            closure.create.append(`  multi_root_items: ${!!ni_item.isMultiRoot},`);
+            closure.create.append(`  multi_root_items: ${!ni_item.isSingleRoot},`);
             closure.create.append(`  array_sensitive: ${ni.template.array_sensitive !== false},`);
             closure.create.append(`  index_sensitive: ${ni.template.index_sensitive !== false},`);
             closure.create.append(`  item_sensitive: ${ni.template.item_sensitive !== false},`);
@@ -832,7 +833,7 @@ export function compileTemplate(rootTemplate, options)
 
     // Store meta data about the component on the function since we need this before 
     // construction
-    templateConstructor.isMultiRoot = code.isMultiRoot;
+    templateConstructor.isSingleRoot = code.isSingleRoot;
 
     return templateConstructor;
 }

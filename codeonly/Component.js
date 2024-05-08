@@ -10,7 +10,7 @@ export class Component
 
     get rootNode() 
     { 
-        if (this.isMultiRoot)
+        if (!this.isSingleRoot)
             throw new Error("rootNode property can't be used on multi-root template");
 
         return this.dom.rootNode;
@@ -20,9 +20,9 @@ export class Component
         return this.dom.rootNodes; 
     }
 
-    get isMultiRoot() 
+    get isSingleRoot() 
     { 
-        return this.dom.isMultiRoot; 
+        return this.dom.isSingleRoot; 
     }
 
     invalidate()
@@ -31,16 +31,16 @@ export class Component
             return;
 
         this.invalid = true;
-        requestAnimationFrame(() => this.update());
+        requestAnimationFrame(() => {
+            if (this.invalid)
+                this.update();
+        });
     }
 
     update()
     {
-        if (this.invalid)
-        {
-            this.invalid = false;
-            this.dom.update();
-        }
+        this.invalid = false;
+        this.dom.update();
     }
 
     destroy()

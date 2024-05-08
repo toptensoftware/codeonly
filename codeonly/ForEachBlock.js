@@ -1,38 +1,85 @@
 import { diff_keys } from "./diff_keys.js";
+import { Component } from "./Component.js";
 
-export class ForEachManager
+export class ForEachManager extends Component
 {
+    static prepareTemplate(template)
+    {
+        return {
+            isSingleRoot: false,
+            wantsModel: true,
+            wantsUpdate: true,
+            templates: [ template.template ],
+        }
+    }
+
     constructor(options)
     {
-        this.options = options;
-        this.items = [];
-        this.headSentinal = document.createComment(" enter foreach ");
-        this.tailSentinal = document.createComment(" leave foreach ");
+        this._outer = null;
+        this._itemConstructor = null;
+        this._items = [];
+        this._headSentinal = document.createComment(" enter foreach block ");
+        this._tailSentinal = document.createComment(" leave foreach block ");
+    }
+
+    get outer()
+    {
+        return this._outer;
+    }
+
+    set outer(value)
+    {
+        this._outer = value;
+    }
+
+    get template()
+    {
+        return this._itemConstructor;
+    }
+
+    set template(value)
+    {
+        this._itemConstructor = value;
+    }
+
+    get hasSingleRootItems()
+    {
+        return this._itemConstructor.isSingleRoot;
+    }
+
+    get condition()
+    {
+        return this._condition;
+    }
+
+    set contition(value)
+    {
+        this._condition = value;
     }
 
     get nodes()
     {
-        if (this.options.multi_root_items)
+        if (this.hasMultiRootItems)
         {
-            let r = [ this.headSentinal ];
-            for (let i=0; i<this.items.length; i++)
+            let r = [ this._headSentinal ];
+            for (let i=0; i<this._items.length; i++)
             {
-                r.push(...this.items[i].rootNodes);
+                r.push(...this._items[i].rootNodes);
             }
-            r.push(this.tailSentinal);
+            r.push(this._tailSentinal);
             return r;
         }
         else
         {
-            return [this.headSentinal, ...this.items.map(x => x.rootNode), this.tailSentinal];
+            return [this._headSentinal, ...this._items.map(x => x.rootNode), this._tailSentinal];
         }
     }
 
     destroy()
     {
-        for (let i=0; i<this.items.length; i++)
+        for (let i=0; i<this._items.length; i++)
         {
-            this.items[i].destroy();
+            this._items[i].destroy();
         }
     }
 
@@ -50,8 +97,7 @@ export class ForEachManager
 
             // Setup item context
             let itemCtx = {
-                model: this.options.model,
-                outer: this.options.outer,
+                outer: this._outer,
                 item,
             };
 
@@ -76,7 +122,7 @@ export class ForEachManager
             let item_closure = this.options.item_constructor(itemCtx);
 
             // Add to collections
-            this.items.push(item_closure);
+            this._items.push(item_closure);
         }
     }
 
@@ -89,9 +135,9 @@ export class ForEachManager
             // If item's are sensitive then update them
             if (this.options.item_sensitive)
             {
-                for (let i=0; i<this.items; i++)
+                for (let i=0; i<this._items; i++)
                 {
-                    this.items[i].update();
+                    this._items[i].update();
                 }
             }
             return;
@@ -122,7 +168,7 @@ export class ForEachManager
         let needCoverage = this.options.item_sensitive || this.options.index_sensitive;
 
         // Run diff
-        let ops = diff_keys(this.items.map(x => x.itemCtx.key), newKeys, needCoverage);
+        let ops = diff_keys(this._items.map(x => x.itemCtx.key), newKeys, needCoverage);
         if (ops.length == 0)
             return;
 
@@ -175,7 +221,7 @@ export class ForEachManager
                 let item_closure = this.options.item_constructor(itemCtx);
 
                 // Add to item collection
-                this.items.splice(index + i, 0, item_closure);
+                this._items.splice(index + i, 0, item_closure);
 
                 // Build list of nodes to be inserted
                 newNodes.push(...item_closure.rootNodes);
@@ -183,13 +229,13 @@ export class ForEachManager
 
             // Insert the nodes
             let insertBefore;
-            if (index + count < this.items.length)
+            if (index + count < this._items.length)
             {
-                insertBefore = this.items[index + count].rootNodes[0];
+                insertBefore = this._items[index + count].rootNodes[0];
             }
             else
             {
-                insertBefore = this.tailSentinal;
+                insertBefore = this._tailSentinal;
             }
             insertBefore.before(...newNodes);
         }
@@ -203,18 +249,18 @@ export class ForEachManager
             for (let i=0; i<count; i++)
             {
                 // Remove child nodes
-                let children = this.items[index + i].rootNodes;
+                let children = this._items[index + i].rootNodes;
                 for (let j = 0; j<children.length; j++)
                 {
                     children[j].remove();
                 }
 
                 // Destroy the item
-                this.items[index + i].destroy();
+                this._items[index + i].destroy();
             }
 
             // Splice arrays
-            this.items.splice(index, count);
+            this._items.splice(index, count);
         }
 
         function multi_root_move(op)
@@ -223,7 +269,7 @@ export class ForEachManager
             let nodes = [];
             for (let i=0; i<op.count; i++)
             {
-                nodes.push(...this.items[op.from + i].rootNodes);
+                nodes.push(...this._items[op.from + i].rootNodes);
             }
             for (let i=0; i<nodes.length; i++)
             {
@@ -231,20 +277,20 @@ export class ForEachManager
             }
 
             // Remove items
-            let items = this.items.splice(op.from, op.count);
+            let items = this._items.splice(op.from, op.count);
 
             // Re-insert items
-            this.items.splice(op.to, 0, ...items);
+            this._items.splice(op.to, 0, ...items);
 
             // Insert the nodes
             let insertBefore;
-            if (op.to + op.count < this.items.length)
+            if (op.to + op.count < this._items.length)
             {
-                insertBefore = this.items[op.to + op.count].rootNodes[0];
+                insertBefore = this._items[op.to + op.count].rootNodes[0];
             }
             else
             {
-                insertBefore = this.tailSentinal;
+                insertBefore = this._tailSentinal;
             }
             insertBefore.before(...nodes);
         }
@@ -269,7 +315,7 @@ export class ForEachManager
                 let item_closure = this.options.item_constructor(itemCtx);
 
                 // Add to item collection
-                this.items.splice(index + i, 0, item_closure);
+                this._items.splice(index + i, 0, item_closure);
 
                 // Build list of nodes to be inserted
                 newNodes.push(item_closure.rootNode);
@@ -277,13 +323,13 @@ export class ForEachManager
 
             // Insert the nodes
             let insertBefore;
-            if (index + count < this.items.length)
+            if (index + count < this._items.length)
             {
-                insertBefore = this.items[index + count].rootNode;
+                insertBefore = this._items[index + count].rootNode;
             }
             else
             {
-                insertBefore = this.tailSentinal;
+                insertBefore = this._tailSentinal;
             }
             insertBefore.before(...newNodes);
         }
@@ -296,14 +342,14 @@ export class ForEachManager
             for (let i=0; i<count; i++)
             {
                 // Remove child nodes
-                this.items[index + i].rootNode.remove();
+                this._items[index + i].rootNode.remove();
 
                 // Destroy the item
-                this.items[index + i].destroy();
+                this._items[index + i].destroy();
             }
 
             // Splice arrays
-            this.items.splice(index, count);
+            this._items.splice(index, count);
         }
 
         function single_root_move(op)
@@ -312,7 +358,7 @@ export class ForEachManager
             let nodes = [];
             for (let i=0; i<op.count; i++)
             {
-                nodes.push(this.items[op.from + i].rootNode);
+                nodes.push(this._items[op.from + i].rootNode);
             }
             for (let i=0; i<nodes.length; i++)
             {
@@ -320,20 +366,20 @@ export class ForEachManager
             }
 
             // Remove items
-            let items = this.items.splice(op.from, op.count);
+            let items = this._items.splice(op.from, op.count);
 
             // Re-insert items
-            this.items.splice(op.to, 0, ...items);
+            this._items.splice(op.to, 0, ...items);
 
             // Insert the nodes
             let insertBefore;
-            if (op.to + op.count < this.items.length)
+            if (op.to + op.count < this._items.length)
             {
-                insertBefore = this.items[op.to + op.count].rootNodes[0];
+                insertBefore = this._items[op.to + op.count].rootNodes[0];
             }
             else
             {
-                insertBefore = this.tailSentinal;
+                insertBefore = this._tailSentinal;
             }
             insertBefore.before(...nodes);
 
@@ -346,7 +392,7 @@ export class ForEachManager
                 // If item sensitive, always update index and item
                 for (let i=op.index, end = op.index + op.count; i<end; i++)
                 {
-                    let item = this.items[i];
+                    let item = this._items[i];
                     item.itemCtx.index = i;
                     item.update();
                 }
@@ -356,7 +402,7 @@ export class ForEachManager
                 // If index sensitive, only update when index changes
                 for (let i=op.index, end = op.index + op.count; i<end; i++)
                 {
-                    let item = this.items[i];
+                    let item = this._items[i];
                     if (item.itemCtx.index != i)
                     {
                         item.itemCtx.index = i;

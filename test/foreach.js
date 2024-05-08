@@ -83,13 +83,12 @@ function assert_foreach_content(r, items, actual, expected)
     assert.deepEqual(actual(), expected());
 
     // Move left
-    /*
     temp = items.splice(-3, 3);
     items.unshift(...temp);
     r.update();
     assert.deepEqual(actual(), expected());
-    */
 }
+
 
 test("ForEach Dynamic", () => {
 
@@ -99,6 +98,16 @@ test("ForEach Dynamic", () => {
         type: "DIV",
         childNodes: [
             {
+            /*
+                type: ForEach,
+                items: () => items,
+                condition: (item) => item,
+                template: {
+                    type: "DIV",
+                    text: (item) => item.text,
+                }
+            */
+
                 foreach: () => items,
                 type: "DIV",
                 text: x => x,
@@ -111,12 +120,12 @@ test("ForEach Dynamic", () => {
 
     function actual()
     {
-        return items;
+        return r.rootNodes[0].childNodes.slice(1, -1).map(x => x.innerText);
     }
 
     function expected()
     {
-        return r.rootNodes[0].childNodes.slice(1, -1).map(x => x.innerText);
+        return items;
     }
 });
 

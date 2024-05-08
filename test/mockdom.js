@@ -136,6 +136,29 @@ class HTMLNode
         return this.attributes.get(name);
     }
 
+    get nextSibling()
+    {
+        if (!this.parentNode)
+            return null;
+        let index = this.parentNode.childNodes.indexOf(this);
+        if (index + 1 >= this.parentNode.childNodes.length)
+            return null;
+        else
+            return this.parentNode.childNodes[index + 1];
+    }
+
+
+    get previousSibling()
+    {
+        if (!this.parentNode)
+            return null;
+        let index = this.parentNode.childNodes.indexOf(this);
+        if (index == 0)
+            return null;
+        else
+            return this.parentNode.childNodes[index - 1];
+    }
+
     append(...nodes)
     {
         assert(this.nodeType == 1);
@@ -281,3 +304,5 @@ class Document
 }
 
 globalThis.document = new Document();
+globalThis.requestAnimationFrame = function(callback) { callback() };
+globalThis.Node = HTMLNode;

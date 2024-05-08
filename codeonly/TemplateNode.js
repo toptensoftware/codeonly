@@ -2,10 +2,10 @@ import { HtmlString } from "./HtmlString.js";
 import { is_constructor } from "./Utils.js";
 
 // Manages information about a node in a template
-export class NodeInfo
+export class TemplateNode
 {
-    // Constructs a new NodeInfo
-    // - parent: the parent NodeInfo of this node, or null
+    // Constructs a new TemplateNode
+    // - parent: the parent TemplateNode of this node, or null
     // - name: the variable name for this node (eg: "n1")
     // - template: the user supplied template object this node is derived from
     // - isItemNode: differentiates between the "foreach" node itself and
@@ -22,9 +22,15 @@ export class NodeInfo
 
     // Checks if this node is a single or multi-root node
     // (fragments and foreach nodes are multi-root, all others are single root)
-    get isMultiRoot()
+    get isSingleRoot()
     {
-        return this.isFragment || this.isForEach || (this.isComponent && this.template.type.isMultiRoot);
+        if (this.isFragment)
+            return false;
+        if (this.isForEach)
+            return false;
+        if (this.isComponent)
+            return this.template.type.isSingleRoot;
+        return true;
     }
 
     // Check if this is a fragment node
@@ -123,7 +129,7 @@ export class NodeInfo
             if (this != this.conditionGroup[0])
                 return;
 
-            let multiRoot = this.conditionGroup.some(x => x.isMultiRoot);
+            let multiRoot = this.conditionGroup.some(x => !x.isSingleRoot);
             let str = multiRoot ? "...(" : "(";
             let closing = ")";
             for (let i=0; i<this.conditionGroup.length; i++)
@@ -160,10 +166,10 @@ export class NodeInfo
 
         if (this.isComponent)
         {
-            if (this.isMultiRoot)
-                yield `...${this.name}.rootNodes`;
-            else
+            if (this.isSingleRoot)
                 yield `${this.name}.rootNode`;
+            else
+                yield `...${this.name}.rootNodes`;
         }
         else
         {
