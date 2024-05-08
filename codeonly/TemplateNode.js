@@ -5,19 +5,47 @@ import { is_constructor } from "./Utils.js";
 export class TemplateNode
 {
     // Constructs a new TemplateNode
-    // - parent: the parent TemplateNode of this node, or null
     // - name: the variable name for this node (eg: "n1")
     // - template: the user supplied template object this node is derived from
-    // - isItemNode: differentiates between the "foreach" node itself and
-    //    and item instance node
-    constructor(parent, name, template, isItemNode)
+    constructor(template)
     {
-        this.parent = parent;
-        this.name =  name;
+        // Setup
         this.template = template;
-        this.childNodes = [];
-        this.isItemNode = isItemNode;
-        this.nextPreviousValueIndex = 1;
+
+        // Work out its kind
+        if (is_constructor(template.type))
+        {
+            if (template.type.integrate)
+                this.kind = "integrated";
+            else
+                this.kind = "component";
+        }
+        else if (typeof(template) === 'string')
+            this.kind = "text";
+        else if (template instanceof HtmlString)
+            this.kind = "html";
+        else if (template instanceof Function)
+            this.kind = "dynamic_text";
+        else if (template.type === 'comment')
+            this.kind = "comment";
+        else if (template.type === undefined)
+            this.kind = "fragment";
+        else 
+            this.kind = "element";
+
+        if (this.kind === 'integrated')
+        {
+            // Prepare template if the component wants it
+            this.integrated = this.template.type.integrate(this.template);
+        }
+
+        // Recurse child nodes
+        if (template.childNodes)
+        {
+            if (this.kind != 'element' && this.kind != 'fragment')
+                throw new Error("childNodes only supported on element and fragment nodes");
+            this.childNodes = this.template.childNodes.map(x => new TemplateNode(x));
+        }
     }
 
     // Checks if this node is a single or multi-root node
@@ -25,42 +53,31 @@ export class TemplateNode
     get isSingleRoot()
     {
         if (this.isFragment)
-            return false;
-        if (this.isForEach)
-            return false;
+            return this.childNodes.length == 1 && this.childNodes[0].isSingleRoot;
+
         if (this.isComponent)
             return this.template.type.isSingleRoot;
+
+        if (this.isIntegrated)
+            return this.integrated.isSingleRoot;
+
         return true;
-    }
-
-    // Check if this is a fragment node
-    get isFragment()
-    {
-        // String
-        if (typeof(this.template) != 'object')
-            return false;
-        // HtmlString => string node
-        if (this.template instanceof HtmlString)
-            return false;
-        // Functions => string node
-        if (this.template instanceof Function)
-            return false;
-        // If type is set then it's an element, otherwise it's a fragment
-        return !this.template.type;
-    }
-
-    // Check if this is a foreach node
-    get isForEach()
-    {
-        // Template must have "foreach" and this not be the item node associated
-        // with that foreach loop
-        return !!this.template.foreach && !this.isItemNode;
     }
 
     // Is this a component?
     get isComponent()
     {
-        return is_constructor(this.template.type) && !this.isForEach;
+        return this.kind === 'component';
+    }
+
+    get isFragment()
+    {
+        return this.kind === 'fragment';
+    }
+
+    get isIntegrated()
+    {
+        return this.kind === 'integrated';
     }
 
     // Recursively get all the local node variables associated with this node and it's
@@ -69,18 +86,15 @@ export class TemplateNode
     // be reset to null when this item is conditionally removed from the DOM
     *enumLocalNodes()
     {
-        if (this.isForEach)
-        {
-            yield this;
-            return;
-        }
-
         if (!this.isFragment)
             yield this;
 
-        for (let i=0; i<this.childNodes.length; i++)
+        if (this.childNodes)
         {
-            yield *this.childNodes[i].enumLocalNodes();
+            for (let i=0; i<this.childNodes.length; i++)
+            {
+                yield *this.childNodes[i].enumLocalNodes();
+            }
         }
     }
 
@@ -94,10 +108,7 @@ export class TemplateNode
         {
             for (let i=0; i<n.childNodes.length; i++)
             {
-                if (!initOnCreate && n.childNodes[i].conditionGroup)
-                    yield `${n.childNodes[i].name}_placeholder`;
-                else
-                    yield n.childNodes[i].spreadDomNodes(false);
+                yield n.childNodes[i].spreadDomNodes(false);
             }
         }
     
@@ -116,106 +127,54 @@ export class TemplateNode
     }
 
     // Generate code to list out all this node's dom nodes
-    *enumAllNodes(excludeConditional)
+    *enumAllNodes()
     {
-        if (this.isForEach)
+        switch (this.kind)
         {
-            yield `...${this.name}_manager.nodes`;
-            return;
-        }
+            case 'fragment':
+                for (let i=0; i<this.childNodes.length; i++)
+                {
+                    yield *this.childNodes[i].enumAllNodes();
+                }
+                break;
 
-        if (this.conditionGroup && !excludeConditional)
-        {
-            if (this != this.conditionGroup[0])
-                return;
-
-            let multiRoot = this.conditionGroup.some(x => !x.isSingleRoot);
-            let str = multiRoot ? "...(" : "(";
-            let closing = ")";
-            for (let i=0; i<this.conditionGroup.length; i++)
-            {
-                let br = this.conditionGroup[i];
-
-                if (br.clause != "else")
-                    str += `${this.name}_branch == ${i} ? `;
-
-                if (multiRoot)
-                    str += `[${Array.from(br.enumAllNodes(true)).join(", ")}]`;
-                else if (br.isComponent)
-                    str += `${br.name}.rootNode`
+            case 'component':
+            case 'integrated':
+                if (this.isSingleRoot)
+                    yield `${this.name}.rootNode`;
                 else
-                    str += `${br.name}`
+                    yield `...${this.name}.rootNodes`;
+                break;
 
-                if (br.clause != "else")
-                    str += ` : `;
-            }
-
-            str += closing;
-            yield str;
-            return;
-        }
-
-        if (this.isFragment)
-        {
-            for (let i=0; i<this.childNodes.length; i++)
-            {
-                yield *this.childNodes[i].enumAllNodes();
-            }
-            return;
-        }
-
-        if (this.isComponent)
-        {
-            if (this.isSingleRoot)
-                yield `${this.name}.rootNode`;
-            else
-                yield `...${this.name}.rootNodes`;
-        }
-        else
-        {
-            yield this.name;
+            default:
+                yield this.name;
         }
     }
 
     renderDestroy()
     {
         let lines = [];
-        if (this.isForEach)
+        if (this.isComponent || this.isIntegrated)
+        {
+            lines.push(`${this.name}.destroy();`);
+        }            
+
+        if (this.template.bind)
         {
             lines.push(
-                `${this.name}_manager?.destroy();`,
-                `${this.name}_manager = null;`
+                `model[${JSON.stringify(this.template.bind)}] = null;`
                 );
         }
-        else if (this.isComponent)
-        {
-            lines.push(
-                `${this.name}?.destroy();`,
-                `${this.name} = null;`
-                );
-        }
-        else
-        {
-            lines.push(
-                `${this.name} = null;`
-                );
 
-            if (this.template.bind)
+        if (this.listenerCount)
+        {
+            for (let i=0; i<this.listenerCount; i++)
             {
-                lines.push(
-                    `model[${JSON.stringify(this.template.bind)}] = null;`
-                    );
-            }
-
-            if (this.listenerCount)
-            {
-                for (let i=0; i<this.listenerCount; i++)
-                {
-                    lines.push(`${this.name}_ev${i+1}?.();`);
-                    lines.push(`${this.name}_ev${i+1} = null;`);
-                }
+                lines.push(`${this.name}_ev${i+1}?.();`);
+                lines.push(`${this.name}_ev${i+1} = null;`);
             }
         }
+
         return lines;
     }
 }

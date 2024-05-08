@@ -1,14 +1,15 @@
-import { Component } from "./Component.js";
 import { Placeholder } from "./Placeholder.js";
+import { TemplateNode } from "./TemplateNode.js";
 import { TemplateHelpers } from "./TemplateHelpers.js";
 
-export class IfBlock extends Component
+export class IfBlock
 {
-    static prepareTemplate(template)
+    static integrate(template)
     {
         let branches = [];
-        let templates = [];
+        let nodes = [];
         let hasElseBranch = false;
+        let isSingleRoot = true;
         for (let i=0; i<template.branches.length; i++)
         {
             // Get branch
@@ -38,23 +39,28 @@ export class IfBlock extends Component
             // Setup template
             if (branch.template !== undefined)
             {
-                brInfo.templateIndex = templates.length;
-                templates.push(branch.template);
+                // Check if branch template has a single root
+                let ni_branch = new TemplateNode(branch.template);
+                if (!ni_branch.isSingleRoot)
+                    isSingleRoot = false;
+
+                brInfo.nodeIndex = nodes.length;
+                nodes.push(ni_branch);
             }
         }
 
         // Make sure there's always an else block
         if (!hasElseBranch)
         {
-            this.branches.push({
+            branches.push({
                 condition: () => true,
             });
         }
 
         return {
-            isSingleRoot: false,        // TODO:
+            isSingleRoot,
             wantsUpdate: true,
-            templates,
+            nodes,
             data: branches,
         };
     }
@@ -67,9 +73,9 @@ export class IfBlock extends Component
         // Setup constructors for branches
         for (let br of this.branches)
         {
-            if (br.templateIndex !== undefined)
+            if (br.nodeIndex !== undefined)
             {
-                br.create = options.templates[br.templateIndex];
+                br.create = options.nodes[br.nodeIndex];
             }
             else
             {

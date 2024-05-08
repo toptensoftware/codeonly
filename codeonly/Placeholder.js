@@ -1,4 +1,4 @@
-function Placeholder(comment)
+export function Placeholder(comment)
 {
     let fn = function()
     {

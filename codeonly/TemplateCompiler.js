@@ -7,10 +7,8 @@ import { TemplateHelpers } from "./TemplateHelpers.js";
 import { TemplateNode } from "./TemplateNode.js";
 
 
-export function compileTemplateCode(rootTemplate, options)
+export function compileTemplateCode(rootTemplate, rootCopts)
 {
-    let initOnCreate = options?.initOnCreate ?? true;
-
     // Every node in the template will get an id, starting at 1.
     let nodeId = 1;
 
@@ -19,355 +17,228 @@ export function compileTemplateCode(rootTemplate, options)
     let prevId = 1;
 
     // Any callbacks, arrays etc... referenced directly by the template
-    // will be stored here and passed back to the compile code via ctx.objrefs
-    let objrefs = [];
+    // will be stored here and passed back to the compile code via refs
+    let refs = [];
 
     // Create root node info        
-    let rootTemplateNode = new TemplateNode(null, `n${nodeId++}`, rootTemplate, false);
+    let rootTemplateNode = new TemplateNode(rootTemplate);
 
-    // Create condition group for root 'if' block
-    if (rootTemplate.if !== undefined && rootTemplate.foreach === undefined)
-    {
-        rootTemplateNode.conditionGroup = [ rootTemplateNode ];
-        rootTemplateNode.condition = rootTemplate.if;
-        rootTemplateNode.clause = 'if';
-        finalizeConditionGroup(rootTemplateNode.conditionGroup);
-        if (rootTemplateNode.conditionGroup)
-            rootTemplateNode = rootTemplateNode.conditionGroup[0];
-    }
-
-    // Build the node graph
-    buildNodeGraph(rootTemplateNode);
-    
-    let rootClosure = new ClosureBuilder();
-    rootClosure.callback_args = "model, model";
-    compileNodeToClosure(rootClosure, rootTemplateNode);
-
-    rootClosure.addLocal("temp");
+    // Compile root node to closure
+    let rootClosure = compileNodeToClosure(rootTemplateNode, Object.assign(
+        {
+            initOnCreate: true,
+            callback_args: "model, model",
+        }, 
+        rootCopts,
+    ));
 
     // Return the code and context
     return { 
         code: rootClosure.toString(), 
         isSingleRoot: rootTemplateNode.isSingleRoot,
-        ctx: {
-            objrefs,
-        }
+        refs,
     }
 
-    function buildNodeGraph(ni)
+    function compileNodeToClosure(ni, copts)
     {
-        // ForEach items have a second node info for the item itself.
-        if (ni.isForEach)
-        {
-            ni.item = new TemplateNode(ni, `i${ni.name}`, ni.template, true);
-            buildNodeGraph(ni.item);
-            return;
+        // Create a closure
+        let closure = new ClosureBuilder();
+
+        // Dispatch table to handle compiling different node types
+        let node_kind_handlers = {
+            compile_text_node,
+            compile_html_node,
+            compile_dynamic_text_node,
+            compile_comment_node,
+            compile_fragment_node,
+            compile_element_node,
+            compile_integrated_node,
+            compile_component_node,
         }
 
-        // Child nodes?
-        if (!ni.template.childNodes)
-            return;
-
-        // Create node infos for all children
-        let conditionGroup = null;
-        for (let i=0; i<ni.template.childNodes.length; i++)
-        {
-            let child = new TemplateNode(ni, `n${nodeId++}`, ni.template.childNodes[i], false);
-            buildNodeGraph(child);
-
-            // 'if' conditions on foreach blocks handled by the foreach manager
-            if (child.isForEach)
-            {
-                ni.childNodes.push(child);
-                conditionGroup = null;
-                continue;
-            }
-
-            // Connect if/elseif/else elements into condition groups
-            if (child.template.if !== undefined)
-            {
-                conditionGroup = [child];
-                child.conditionGroup = conditionGroup;
-                child.clause = 'if';
-                child.condition = child.template.if;
-                ni.childNodes.push(child);
-            }
-            else if (child.template.else !== undefined)
-            {
-                if (conditionGroup == null)
-                    throw new Error("Element has an 'else' condition that doesn't follow and 'if' or 'elseif'");
-                if (child.template.else !== true)
-                    throw new Error("'else' key must have value 'true'");
-                child.clause = 'else';
-                child.condition = true;
-                conditionGroup.push(child);
-                conditionGroup = null;
-            }
-            else if (child.template.elseif !== undefined)
-            {
-                if (conditionGroup == null)
-                    throw new Error("Element has an 'elseif' condition that doesn't follow and 'if' or 'elseif'");
-                child.clause = 'else if';
-                child.condition = child.template.elseif;
-                conditionGroup.push(child);
-            }
-            else
-            {
-                ni.childNodes.push(child);
-            }
-        }
-
-        // Handle static 'if' conditions and finalize condition groupds
-        for (let i = 0; i<ni.childNodes.length; i++)
-        {
-            let child = ni.childNodes[i];
-            if (child.conditionGroup)
-            {
-                let group = child.conditionGroup;
-                finalizeConditionGroup(group);
-                if (group.length == 0)
-                {
-                    ni.childNodes.splice(i, 1);
-                    i--;
-                }
-                else
-                {
-                    ni.childNodes[i] = group[0];
-                }
-            }
-        }
-    }
-
-    // Finalize a condition group (ie: a set of related if/else-if/else nodes)
-    // by removing redantant branches due to static eg: "if: true" or "if: false"
-    // and also ensuring that every condition group has an trailing else branch.
-    // This method might modify the conditionGroup array and after processing
-    // the first element in the array should become the root condition element.
-    function finalizeConditionGroup(conditionGroup)
-    {
-        for (let i=0; i<conditionGroup.length; i++)
-        {
-            let branch = conditionGroup[i];
-
-            // Static value?
-            if (!(branch.condition instanceof Function))
-            {
-                if (branch.condition)
-                {
-                    // True
-                    if (i == 0)
-                    {
-                        // First branch is true, whole condition just goes away
-                        delete branch.conditionGroup;
-                        delete branch.condition;
-                        delete branch.clause;
-                        conditionGroup.splice(0, conditionGroup.length, branch);
-                        return;
-                    }
-                    else
-                    {
-                        // Remaining branches can be deleted and this becomes the 'else' block
-                        conditionGroup.splice(i + 1, conditionGroup.length);
-                        branch.clause = 'else';
-                    }
-                }
-                else
-                {
-                    if (i == 0)
-                    {
-                        // "if: false", change the following 'elseif' to if
-                        if (i + 1 < conditionGroup.length && conditionGroup[i+1].clause == 'else if')
-                        {
-                            conditionGroup[i+1].clause = 'if';
-                        }
-                    }
-
-                    // Removing last?
-                    if (conditionGroup.length == 1)
-                    {
-                        // Replace with a comment
-                        conditionGroup[0] = new TemplateNode(conditionGroup[0].parent, `n${nodeId++}`, {
-                            type: "comment",
-                            text: " !if ",
-                        }, false);
-                    }
-                    else
-                    {
-                        // False, just remove the branch
-                        conditionGroup.splice(i, 1);
-                        i--;
-                    }
-                }
-            }
-        }
-
-        if (conditionGroup.length == 0)
-            throw new Error("internal error, condition group became empty")
-
-        // Reduced to a placeholder?
-        if (conditionGroup.length == 1 && conditionGroup[0].condition === undefined)
-            return;
-
-        // If there's no trailing else block, then add one
-        if (conditionGroup[conditionGroup.length-1].clause != 'else')
-        {
-            let ni = new TemplateNode(conditionGroup[0].parent, `n${nodeId++}`, {
-                clause: "else",
-                condition: true,
-                type: "comment",
-                text: " !if ",
-            }, false);
-            ni.condition = true;
-            ni.clause = "else";
-            conditionGroup.push(ni);
-        }
-
-        // Assign branch indicies
-        for (let i=0; i<conditionGroup.length; i++)
-        {
-            conditionGroup[i].branch_index = i;
-        }
-    }
-
-
-    function compileNodeToClosure(closure, ni)
-    {
         // Setup closure functions
         closure.update = closure.addFunction("update").code;
         closure.destroy = closure.addFunction("destroy").code;
         closure.create = closure.code;
 
-        // Setup exports array (unless it's an item node)
-        if (!ni.isItemNode)
-        {
-            closure.exports = new Map();
-            closure.bindings = new Map();
-        }
+        // Storarge for export and bindings
+        closure.exports = new Map();
+        closure.bindings = new Map();
 
         // Render code
-        compileNode(closure, ni);
+        compile_node(ni);
 
+        // Render destroy code
         for (let ln of ni.enumLocalNodes())
         {
             closure.destroy.append(ln.renderDestroy());
         }
 
-        closure.update.append(`temp = null;`);
+        // Render exports
+        let exports = [];
+        closure.exports.forEach((value, key) => exports.push(`  get ${key}() { return ${value}; },`));
 
-        // Return interface to the closure
-        if (ni.isItemNode)
+        // Render API to the closure
+        closure.code.append([
+            `return { `,
+            `  isSingleRoot: ${ni.isSingleRoot},`,
+            ni.isSingleRoot ? `  get rootNode() { return ${ni.spreadDomNodes()}; },` : null,
+            `  get rootNodes() { return [ ${ni.spreadDomNodes()} ]; },`,
+            `  update,`,
+            `  destroy,`,
+            ...exports,
+            `};`]);
+
+        // Done
+        return closure;
+
+        function need_update_temp()
         {
-            closure.code.append([
-                `return { `,
-                `  isSingleRoot: ${ni.isSingleRoot},`,
-                ni.isSingleRoot ? `  get rootNode() { return ${ni.spreadDomNodes()}; },` : null,
-                `  get rootNodes() { return [${ni.spreadDomNodes()}]; },`,
-                `  itemCtx,`,
-                `  update,`,
-                `  destroy`,
-                `};`]);
+            if (!closure.update.temp_declared)
+            {
+                closure.update.temp_declared = true;
+                closure.update.append(`let temp;`);
+            }
         }
-        else
+
+        // Recursively compile a node from a template
+        function compile_node(ni)
         {
-            let exports = [];
-            closure.exports.forEach((value, key) => exports.push(`  get ${key}() { return ${value}; },`));
+            // Assign it a name
+            ni.name = `n${nodeId++}`;
 
-            closure.code.append([
-                `return { `,
-                `  isSingleRoot: ${ni.isSingleRoot},`,
-                ni.isSingleRoot ? `  get rootNode() { return ${ni.spreadDomNodes()}; },` : null,
-                `  get rootNodes() { return [${ni.spreadDomNodes()}]; },`,
-                `  update,`,
-                `  destroy,`,
-                ...exports,
-                `};`]);
+            // Dispatch to kind compiler
+            node_kind_handlers[`compile_${ni.kind}_node`](ni);
         }
-    }
 
-    // Recursively compile a node from a template
-    function compileNode(closure, ni)
-    {
-        // Normal text?
-        if (typeof(ni.template) === 'string')
+        // Compile a static 'text' node
+        function compile_text_node(ni)
         {
             closure.addLocal(ni.name);
             closure.create.append(`${ni.name} = document.createTextNode(${JSON.stringify(ni.template)});`);
-            return true;
         }
 
-        // HTML Text?
-        if (ni.template instanceof HtmlString)
+        // Compile a static 'html' node
+        function compile_html_node(ni)
         {
             closure.addLocal(ni.name);
             closure.create.append(`${ni.name} = document.createElement("SPAN");`);
             closure.create.append(`${ni.name}.innerHTML = ${JSON.stringify(ni.template.html)};`);
-            return true;
         }
 
-        // Dynamic text?
-        if (ni.template instanceof Function)
+        // Compile a 'dynamic-text' onde
+        function compile_dynamic_text_node(ni)
         {
+            // Create
             closure.addLocal(ni.name);
             let prevName = `p${prevId++}`;
             closure.addLocal(prevName);
-            if (initOnCreate)
-                closure.create.append(`${ni.name} = helpers.createTextNode(${prevName} = ${format_callback(objrefs.length)});`);
+            if (copts.initOnCreate)
+                closure.create.append(`${ni.name} = helpers.createTextNode(${prevName} = ${format_callback(refs.length)});`);
             else
                 closure.create.append(`${ni.name} = helpers.createTextNode("");`);
-            closure.update.append(`temp = ${format_callback(objrefs.length)};`);
+
+            // Update
+            need_update_temp();
+            closure.update.append(`temp = ${format_callback(refs.length)};`);
             closure.update.append(`if (temp !== ${prevName})`)
-            closure.update.append(`  ${ni.name} = helpers.setNodeText(${ni.name}, ${prevName} = ${format_callback(objrefs.length)});`);
-            objrefs.push(ni.template);
-            return true;
+            closure.update.append(`  ${ni.name} = helpers.setNodeText(${ni.name}, ${prevName} = ${format_callback(refs.length)});`);
+
+            // Store the callback as a ref
+            refs.push(ni.template);
         }
 
-        // Is it a foreach node?
-        if (ni.isForEach)
-        {
-            compileForEachNode();
-            return true;
-        }
-
-        // Is it a conditional node?
-        if (ni.conditionGroup !== undefined)
-        {
-            compileConditionalNode();
-            return true;
-        }
-
-        // Comment?
-        if (ni.template.type === 'comment')
+        // Compile a 'comment' node
+        function compile_comment_node(ni)
         {
             closure.addLocal(ni.name);
-
             if (ni.template.text instanceof Function)
             {
+                // Dynamic comment
+
+                // Create
                 let prevName = `p${prevId++}`;
                 closure.addLocal(prevName);
-                if (initOnCreate)
-                    closure.create.append(`${ni.name} = document.createComment(${prevName} = ${format_callback(objrefs.length)});`);
+                if (copts.initOnCreate)
+                    closure.create.append(`${ni.name} = document.createComment(${prevName} = ${format_callback(refs.length)});`);
                 else
                     closure.create.append(`${ni.name} = document.createComment("");`);
-                closure.update.append(`temp = ${format_callback(objrefs.length)};`);
+
+                // Update
+                need_update_temp();
+                closure.update.append(`temp = ${format_callback(refs.length)};`);
                 closure.update.append(`if (temp !== ${prevName})`);
                 closure.update.append(`  ${ni.name}.nodeValue = ${prevName} = temp;`);
-                objrefs.push(ni.template.text);
+
+                // Store callback
+                refs.push(ni.template.text);
             }
             else
             {
+                // Static
                 closure.create.append(`${ni.name} = document.createComment(${JSON.stringify(ni.template.text)});`);
             }
-            return true;
         }
 
-        // Embedded component
-        if (ni.isComponent)
+        // Compile an 'integrated' component node
+        function compile_integrated_node(ni)
+        {
+            // Compile sub-nodes
+            let nodeConstructors = [];
+            if (ni.integrated.nodes)
+            {
+                for (let i=0; i<ni.integrated.nodes.length; i++)
+                {
+                    // Create the sub-template node
+                    let ni_sub = ni.integrated.nodes[i];
+                    ni_sub.name = `n${nodeId++}`;
+
+                    // Compile it
+                    let sub_closure = compileNodeToClosure(ni_sub, copts);
+
+                    // Append to our closure
+                    let nodeConstructor = `${ni_sub.name}_constructor_${i+1}`;
+                    let itemClosureFn = closure.addFunction(nodeConstructor, [ ]);
+                    sub_closure.appendTo(itemClosureFn.code);
+
+                    nodeConstructors.push(nodeConstructor);
+                }
+            }
+
+            if (ni.integrated.wantsUpdate)
+            {
+                closure.update.append(`${ni.name}.update()`);
+            }
+
+            let data_index = -1;
+            if (ni.integrated.data)
+            {
+                data_index = refs.length;
+                refs.push(ni.integrated.data);
+            }
+
+            // Create component
+            closure.addLocal(ni.name);
+            closure.create.append(
+                `${ni.name} = new refs[${refs.length}]({`,
+                `  initOnCreate: ${JSON.stringify(copts.initOnCreate)},`,
+                `  data: ${ni.integrated.data ? `refs[${data_index}]` : `null`},`,
+                `  nodes: [ ${nodeConstructors.join(", ")} ],`,
+                `});`
+            );
+            refs.push(ni.template.type);
+        }
+
+        
+        // Compile a 'component' node
+        function compile_component_node(ni)
         {
             // Create component
             closure.addLocal(ni.name);
-            closure.create.append(`${ni.name} = new ctx.objrefs[${objrefs.length}]();`);
-            objrefs.push(ni.template.type);
+            closure.create.append(`${ni.name} = new refs[${refs.length}]();`);
+            refs.push(ni.template.type);
 
+            // Process all keys
             for (let key of Object.keys(ni.template))
             {
                 // Process properties common to components and elements
@@ -384,15 +255,22 @@ export function compileTemplateCode(rootTemplate, options)
                 else if (propType === 'function')
                 {
                     // Dynamic property
+
+                    // Create
                     let prevName = `p${prevId++}`;
                     closure.addLocal(prevName);
-                    let callback_index = objrefs.length;
-                    if (initOnCreate)
+                    let callback_index = refs.length;
+                    if (copts.initOnCreate)
                         closure.create.append(`${ni.name}[${JSON.stringify(key)}] = ${prevName} = ${format_callback(callback_index)};`);
+
+                    // Update
+                    need_update_temp();
                     closure.update.append(`temp = ${format_callback(callback_index)};`);
                     closure.update.append(`if (temp !== ${prevName})`);
                     closure.update.append(`  ${ni.name}[${JSON.stringify(key)}] = ${prevName} = temp;`);
-                    objrefs.push(ni.template[key]);
+
+                    // Store callback
+                    refs.push(ni.template[key]);
                 }
                 else
                 {
@@ -402,16 +280,20 @@ export function compileTemplateCode(rootTemplate, options)
                         val = val.value;
 
                     // Object property
-                    closure.create.append(`${ni.name}[${JSON.stringify(key)}] = ctx.objrefs[${objrefs.length}];`);
-                    objrefs.push(val);
+                    closure.create.append(`${ni.name}[${JSON.stringify(key)}] = refs[${refs.length}];`);
+                    refs.push(val);
                 }
             }
-
-            return true;
         }
-        
-        // Element node?
-        if (ni.template.type)
+
+        // Compile a 'fragment' noe
+        function compile_fragment_node(ni)
+        {
+            compile_child_nodes(ni);
+        }
+
+        // Compile an 'element' node
+        function compile_element_node(ni)
         {
             // Create the element
             closure.addLocal(ni.name);
@@ -496,33 +378,34 @@ export function compileTemplateCode(rootTemplate, options)
                     continue;
                 }
 
+                throw new Error(`Unknown element template key: ${key}`);
+            }
 
-                throw new Error(`Unknown template object key: ${key}`);
+            // Compile child nodes
+            compile_child_nodes(ni);
+            
+            // Add all the child nodes to this node
+            if (ni.childNodes?.length)
+            {
+                closure.create.append(`${ni.name}.append(${ni.spreadChildDomNodes(copts.initOnCreate)});`);
             }
         }
 
-        // Child nodes?
-        if (ni.childNodes)
+        // Compile the child nodes of an element or fragment node
+        function compile_child_nodes(ni)
         {
+            // Child nodes?
+            if (!ni.childNodes)
+                return;
+
             // Create the child nodes
             for (let i=0; i<ni.childNodes.length; i++)
             {
-                if (!compileNode(closure, ni.childNodes[i]))
-                {
-                    ni.childNodes.splice(i, 1);
-                    i--;
-                }
-            }
-
-            // Add all the child nodes to this node
-            if (ni.childNodes.length && !ni.isFragment)
-            {
-                closure.create.append(`${ni.name}.append(${ni.spreadChildDomNodes(initOnCreate)});`);
+                compile_node(ni.childNodes[i]);
             }
         }
 
-        return true;
-
+        // Process properties common to html elements and components
         function process_common_property(key)
         {
             if (is_known_property(key))
@@ -571,8 +454,8 @@ export function compileTemplateCode(rootTemplate, options)
                 closure.addLocal(listener_name);
 
                 // Add listener
-                closure.create.append(`${listener_name} = helpers.addEventListener(model, ${ni.name}, ${JSON.stringify(eventName)}, ctx.objrefs[${objrefs.length}]);`);
-                objrefs.push(ni.template[key]);
+                closure.create.append(`${listener_name} = helpers.addEventListener(model, ${ni.name}, ${JSON.stringify(eventName)}, refs[${refs.length}]);`);
+                refs.push(ni.template[key]);
                 return true;
             }
 
@@ -581,23 +464,12 @@ export function compileTemplateCode(rootTemplate, options)
 
         function is_known_property(key)
         {
-            if (key == "type" || key == "childNodes" || key == "if" || key == "elseif" || key == "else" || key == "foreach")
-                return true;
-            if (ni.isItemNode)
-            {
-                if (key == "index_sensitive")
-                    return true;
-                if (key == "array_sensitive")
-                    return true;
-                if (key == "item_sensitive")
-                    return true;
-            }
-            return false;
+            return key == "type" || key == "childNodes";
         }
 
         function format_callback(index)
         {
-            return `ctx.objrefs[${index}].call(${closure.callback_args})`
+            return `refs[${index}].call(${copts.callback_args})`
         }
 
         // Helper to format a dynamic value on a node (ie: a callback)
@@ -613,18 +485,19 @@ export function compileTemplateCode(rootTemplate, options)
 
                 // Append the code to both the main code block (to set initial value) and to 
                 // the update function.
-                if (initOnCreate)
+                if (copts.initOnCreate)
                 {
-                    closure.create.append(`${prevName} = ${format_callback(objrefs.length)};`);
+                    closure.create.append(`${prevName} = ${format_callback(refs.length)};`);
                     closure.create.append(`${formatter(prevName)};`);
                 }
 
-                closure.update.append(`temp = ${format_callback(objrefs.length)};`);
+                need_update_temp();
+                closure.update.append(`temp = ${format_callback(refs.length)};`);
                 closure.update.append(`if (temp !== ${prevName})`);
                 closure.update.append(`  ${formatter(prevName + " = temp")};`);
 
                 // Store the callback in the context callback array
-                objrefs.push(value);
+                refs.push(value);
             }
             else
             {
@@ -632,203 +505,24 @@ export function compileTemplateCode(rootTemplate, options)
                 closure.create.append(formatter(JSON.stringify(value)));
             }
         }
-
-
-        function compileConditionalNode()
-        {
-            closure.update.append(`${ni.name}_select(${ni.name}_resolve());`);
-
-            // Generate code to create initially selected branch
-            closure.addLocal(`${ni.name}_branch`);
-            if (initOnCreate)
-            {
-                closure.create.append(`${ni.name}_branch = ${ni.name}_resolve();`);
-                closure.create.append(`${ni.name}_branches[${ni.name}_branch].create();`);
-            }
-            else
-            {
-                closure.addLocal(`${ni.name}_placeholder`);
-                closure.create.append(`${ni.name}_placeholder = document.createComment(" if place holder");`);
-            }
-
-            // Generate a function to resolve the selected branch
-            let fnResolve = closure.addFunction(`${ni.name}_resolve`);
-            for (let br of ni.conditionGroup)
-            {
-                if (br.clause != 'else')
-                {
-                    if (!(br.condition instanceof Function))
-                        throw new Error("internal error - incorrectly configure condition group");
-
-                    fnResolve.code.append(`${br.clause} (${format_callback(objrefs.length)})`);
-                    fnResolve.code.append(`  return ${br.branch_index};`);
-                    objrefs.push(br.condition);
-                }
-                else
-                {
-                    fnResolve.code.append(`else`);
-                    fnResolve.code.append(`  return ${br.branch_index};`);
-                }
-            }
-
-            // Generate function to switch branches
-            let multiRoot = ni.conditionGroup.some(x => !x.isSingleRoot);
-            let fn = closure.addFunction(`${ni.name}_select`, ['branch']);
-            if (!initOnCreate)
-            {
-                fn.code.append(`if (${ni.name}_placeholder)`);
-                fn.code.append(`{`);
-                fn.code.append(`  ${ni.name}_branch = branch;`);
-                fn.code.append(`  ${ni.name}_branches[branch].create();`);
-                if (multiRoot)
-                    fn.code.append(`  ${ni.name}_placeholder.replaceWith(...[${ni.spreadDomNodes(false)}]);`);
-                else
-                    fn.code.append(`  ${ni.name}_placeholder.replaceWith(${ni.spreadDomNodes(false)});`);
-                fn.code.append(`  ${ni.name}_placeholder = null;`);
-                fn.code.append(`  return;`);
-                fn.code.append(`}`);
-            }
-            fn.code.append(`if (${ni.name}_branch == branch)`);
-            fn.code.append(`  return;`);
-            fn.code.append(`let old_branch = ${ni.name}_branch;`);
-            fn.code.append(`${ni.name}_branches[branch].create();`);
-            if (multiRoot)
-            {
-                fn.code.append(`let old_nodes = [${ni.spreadDomNodes(false)}];`);
-                fn.code.append(`${ni.name}_branch = branch;`);
-                fn.code.append(`let new_nodes = [${ni.spreadDomNodes(false)}];`);
-                fn.code.append(`helpers.replaceMany(old_nodes, new_nodes);`);
-            }
-            else
-            {
-                fn.code.append(`let old_node = ${ni.spreadDomNodes(false)};`);
-                fn.code.append(`${ni.name}_branch = branch;`);
-                fn.code.append(`let new_node = ${ni.spreadDomNodes(false)};`);
-                fn.code.append(`old_node.replaceWith(new_node);`);
-            }
-            fn.code.append(`${ni.name}_branches[old_branch].destroy();`);
-
-            // As we generate the update code for each of the branches, make sure it's wrapped
-            // in appropriate check to make sure the branch is active
-            let cblock = closure.update.enterCollapsibleBlock(`if (${ni.name}_branch == ${ni.branch_index}) {`);
-            closure.update.indent();
-
-            // Generate the branches create/destroy functions
-            let prolog = closure.addProlog();
-            prolog.append(`let ${ni.name}_branches = `);
-            prolog.append(`[`);
-            prolog.indent();
-            for (let br of ni.conditionGroup)
-            {
-                // Generate function to create the node
-                prolog.append(`{`);
-                prolog.indent();
-                prolog.append(`create: function()`);
-                prolog.append(`{`);
-                prolog.indent();
-                let save = br.conditionGroup;
-                delete br.conditionGroup;
-                let saveCreate = closure.create;
-                closure.create = prolog;
-                compileNode(closure, br);
-                closure.create = saveCreate;
-                br.conditionGroup = save;
-                prolog.unindent();
-                prolog.append(`},`);
-                prolog.append(`destroy: function()`);
-                prolog.append(`{`);
-                prolog.indent();
-                for (let ln of br.enumLocalNodes())
-                {
-                    prolog.append(ln.renderDestroy());
-                }
-                prolog.unindent();
-                prolog.append(`},`);
-                prolog.unindent();
-                prolog.append(`},`);
-            }
-            prolog.unindent();
-            prolog.append(`];`);
-
-
-            closure.update.unindent();
-            closure.update.leaveCollapsibleBlock(cblock, `}`);
-        }
-
-        function compileForEachNode()
-        {
-            // Create a node item for the child
-            let ni_item = ni.item;
-
-            // Create a construction function for the items
-            let itemClosureFn = closure.addFunction(`${ni.name}_item_constructor`, [ "itemCtx" ]);
-            let itemClosure = new ClosureBuilder();
-            itemClosure.callback_args = "model, itemCtx.item, itemCtx";
-            itemClosure.outer = "itemCtx";
-            let saveInitOnCreate = initOnCreate;
-            initOnCreate = true;
-            compileNodeToClosure(itemClosure, ni_item);
-            initOnCreate = saveInitOnCreate;
-            itemClosure.appendTo(itemClosureFn.code);
-
-            // Create the "foreach" manager
-            closure.addLocal(`${ni.name}_manager`);
-            closure.create.append(`${ni.name}_manager = new helpers.ForEachManager({`);
-            closure.create.append(`  item_constructor: ${ni.name}_item_constructor,`);
-            closure.create.append(`  model: model,`);
-            if (closure.outer)
-                closure.create.append(`  outer: ${closure.outer},`);
-            closure.create.append(`  multi_root_items: ${!ni_item.isSingleRoot},`);
-            closure.create.append(`  array_sensitive: ${ni.template.array_sensitive !== false},`);
-            closure.create.append(`  index_sensitive: ${ni.template.index_sensitive !== false},`);
-            closure.create.append(`  item_sensitive: ${ni.template.item_sensitive !== false},`);
-            if (ni.item_key)
-            {
-                let itemkey_index = objrefs.length;
-                objrefs.push(ni.template.item_key);
-                closure.create.append(`  item_key: ctx.objrefs[${itemkey_index}],`);
-            }
-            if (ni.template.if)
-            {
-                let condition_index = objrefs.length;
-                objrefs.push(ni.template.if);
-                closure.create.append(`  condition: ctx.objrefs[${condition_index}],`);
-            }
-            closure.create.append(`});`);
-
-            let objref_index = objrefs.length;
-            objrefs.push(ni.template.foreach);
-            if (!(ni.template.foreach instanceof Function))
-            {
-                closure.create.append(`${ni.name}_manager.loadItems(ctx.objrefs[${objref_index}]);`);
-            }
-            else
-            {
-                if (initOnCreate)
-                    closure.create.append(`${ni.name}_manager.loadItems(${format_callback(objref_index)});`);
-                else
-                    closure.create.append(`${ni.name}_manager.loadItems([]]);`);
-                closure.update.append(`${ni.name}_manager.updateItems(${format_callback(objref_index)});`);
-            }
-        }
     }    
 }
 
 
 
-export function compileTemplate(rootTemplate, options)
+export function compileTemplate(rootTemplate, compilerOptions)
 {
     // Compile code
-    let code = compileTemplateCode(rootTemplate, options);
-    //console.log(code.code);
+    let code = compileTemplateCode(rootTemplate, compilerOptions);
+    console.log(code.code);
 
     // Put it in a function
-    let templateFunction = new Function("ctx", "helpers", "model", code.code);
+    let templateFunction = new Function("refs", "helpers", "model", code.code);
 
     // Wrap it in a constructor function
     let templateConstructor = function(model)
     {
-        return templateFunction(code.ctx, TemplateHelpers, model);
+        return templateFunction(code.refs, TemplateHelpers, model);
     }
 
     // Store meta data about the component on the function since we need this before 
