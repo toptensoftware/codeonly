@@ -11,9 +11,18 @@ export class TemplateNode
     // - template: the user supplied template object this node is derived from
     constructor(template)
     {
+        if (Array.isArray(template))
+        {
+            template = { $:template }
+        }
+
         // Apply automatic transforms
         template = ForEachBlock.transform(template);
         template = IfBlock.transform(template);
+        if (is_constructor(template))
+        {
+            template = { type: template }
+        }
 
         // Setup
         this.template = template;
@@ -43,6 +52,16 @@ export class TemplateNode
         {
             // Prepare template if the component wants it
             this.integrated = this.template.type.integrate(this.template);
+        }
+
+        if (template.$ && !template.childNodes)
+        {
+            template.childNodes = template.$;
+            delete template.$;
+        }
+        if (template.childNodes && !Array.isArray(template.childNodes))
+        {
+            template.childNodes = [ template.childNodes ];
         }
 
         // Recurse child nodes

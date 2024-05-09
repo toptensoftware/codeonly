@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Component } from "../codeonly/codeonly.js";
+import { Component, Template } from "../codeonly/codeonly.js";
 import "./mockdom.js";
 
 class TestComponent extends Component
@@ -47,4 +47,15 @@ test("Update Component", () => {
     c.value = "foo";
     c.update();
     assert.equal(c.rootNode.childNodes[0].innerText, "foo");
+});
+
+test("Component as direct child node", () => {
+    let r = Template.compile({
+        childNodes: [
+            TestComponent,
+        ]
+    })();
+
+    assert.equal(r.rootNodes[0].nodeType, 1);
+    assert.equal(r.rootNodes[0].childNodes[0].innerText, "Hello World");
 });

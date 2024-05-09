@@ -4,7 +4,16 @@ export class Component
 {
     constructor()
     {
-        this.dom = this.template({ model: this });
+        if (!this.template)
+        {
+            if (this.constructor.template && !this.constructor.templateConstructor)
+                this.constructor.templateConstructor = Template.compile(this.constructor.template, { initOnCreate: false });
+            if (this.constructor.templateConstructor)
+                this.template = this.constructor.templateConstructor;
+        }            
+
+
+        this.dom = new this.template({ model: this });
         this.invalidate();
     }
 

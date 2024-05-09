@@ -1,17 +1,21 @@
 export class EmbedSlot
 {
+    #content;
+    #headSentinal;
+    #tailSentinal;
+
     constructor()
     {
-        this.headSentinal = document.createComment(" start embed slot ");
-        this.tailSentinal = document.createComment(" end embed slot ");
-        this._content = undefined;
+        this.#headSentinal = document.createComment(" start embed slot ");
+        this.#tailSentinal = document.createComment(" end embed slot ");
+        this.#content = undefined;
     }
 
     get rootNodes() 
     { 
         return [ 
-            this.headSentinal, 
-            this.tailSentinal 
+            this.#headSentinal, 
+            this.#tailSentinal 
         ]; 
     }
 
@@ -22,51 +26,52 @@ export class EmbedSlot
 
     get content()
     {
-        return this._content;
+        return this.#content;
     }
 
     set content(value)
     {
         // Remove old content
-        let n = this.headSentinal.nextSibling;
-        while (n != this.tailSentinal)
+        let n = this.#headSentinal.nextSibling;
+        while (n != this.#tailSentinal)
         {
             let t = n.nextSibling;
             n.remove();
             n = t;
         }
+        this.#content?.destroy?.();
 
-        this._content = value;
+        this.#content = value;
 
         if (!value)
             return;
 
-        if (Array.isArray(value))
+        if (value.rootNodes !== undefined)
+        {
+            // Component like object
+            this.#tailSentinal.before(...value.rootNodes);
+        }
+        else if (Array.isArray(value))
         {
             // Array of HTML nodes
-            this.tailSentinal.before(...value);
+            this.#tailSentinal.before(...value);
         }
         else if (value instanceof Node)
         {
             // Single HTML node
-            this.tailSentinal.before(value);
+            this.#tailSentinal.before(value);
         }
         else
         {
-            // Component
-            this.tailSentinal.before(...value.rootNodes);
+            throw new Error("Embed slot requires component, array of HTML nodes or a single HTML node");
         }
-    }
-
-    removeContent()
-    {
     }
 
     destroy()
     {
-        if (this._content?.destroy instanceof Function)
+        if (this.#content?.destroy instanceof Function)
         {
-            this._content.destroy();
+            this.#content.destroy();
         }
     }
 }
