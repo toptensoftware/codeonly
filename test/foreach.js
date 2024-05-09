@@ -184,9 +184,11 @@ test("ForEach with Conditional Items", () => {
     let r = Template.compile({
         childNodes: [
             {
+                foreach: {
+                    items: () => items,
+                    condition: check_condition,
+                },
                 type: "DIV",
-                foreach: () => items,
-                if: check_condition,
                 text: x => x,
             }
         ]
@@ -217,8 +219,10 @@ test("ForEach Array Inensitive", () => {
         type: "DIV",
         childNodes: [
             {
-                foreach: () => items,
-                array_sensitive: false,
+                foreach: {
+                    items: () => items,
+                    arraySensitive: false,
+                },
                 type: "DIV",
                 text: (x, ctx) => `${x}${ctx.index}`,
             }
@@ -271,9 +275,11 @@ test("ForEach Index Inensitive", () => {
         type: "DIV",
         childNodes: [
             {
-                foreach: () => items,
-                item_sensitive: false,
-                index_sensitive: false,         // Update items when index changes
+                foreach: {
+                    items: () => items,
+                    itemSensitive: false,
+                    indexSensitive: false,         // Update items when index changes
+                },
                 type: "DIV",
                 text: (x, ctx) => `${x}${ctx.index}`,
             }
@@ -310,9 +316,9 @@ test("ForEach Nested", () => {
                 childNodes: 
                 [
                     {
-                        type: "DIV",
                         foreach: (item) => item.subItems,
-                        text: (subItem, ctx) => `${ctx.outer.item.name}${subItem}`,
+                        type: "DIV",
+                        text: (subItem, ctx) => `${ctx.outer.model.name}${subItem}`,
                     }
                 ],
             }

@@ -503,7 +503,7 @@ export function compileTemplateCode(rootTemplate, copts)
 
     function format_callback(index)
     {
-        return `refs[${index}].call(model, model)`
+        return `refs[${index}].call(model, model, context)`
     }
 
     // Helper to format a dynamic value on a node (ie: a callback)

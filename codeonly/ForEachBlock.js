@@ -17,6 +17,35 @@ export class ForEachBlock
         }
     }
 
+    static transform(template)
+    {
+        if (template.foreach === undefined)
+            return template;
+
+        let newTemplate;
+
+        if (template.foreach instanceof Function || Array.isArray(template.foreach))
+        {
+            newTemplate = {
+                type: ForEachBlock,
+                template: template,
+                items: template.foreach,
+            };
+            delete template.foreach;
+        }
+        else
+        {
+            newTemplate = Object.assign({}, template.foreach, {
+                type: ForEachBlock,
+                template: template,
+            });
+            delete template.foreach;
+        }
+
+        return newTemplate;
+    }
+
+
     constructor(options)
     {
         // Get the item consructor we compiled earlier
