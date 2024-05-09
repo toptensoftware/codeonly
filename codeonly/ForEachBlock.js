@@ -1,5 +1,6 @@
 import { diff_keys } from "./diff_keys.js";
 import { Template } from "./Template.js";
+import { TemplateNode } from "./TemplateNode.js";
 
 export class ForEachBlock
 {
@@ -14,6 +15,7 @@ export class ForEachBlock
             isSingleRoot: false,
             wantsUpdate: true,
             data: data,
+            nodes: template.empty ? [ new TemplateNode(template.empty) ] : [],
         }
     }
 
@@ -45,6 +47,27 @@ export class ForEachBlock
         return newTemplate;
     }
 
+    static transformGroup(templates)
+    {
+        for (let i=1; i<templates.length; i++)
+        {
+            if (templates[i].else !== undefined)
+            {
+                // Transform previous item to ForEachBlock
+                if (templates[i-1].foreach !== undefined)
+                {
+                    templates[i-1] = ForEachBlock.transform(templates[i-1]);
+                }
+                if (templates[i-1].type === ForEachBlock && !templates[i-1].else)
+                {
+                    delete templates[i].else;
+                    templates[i-1].empty = templates[i];
+                    templates.splice(i, 1);
+                    i--;
+                }  
+            }
+        }
+    }
 
     constructor(options)
     {
@@ -61,6 +84,7 @@ export class ForEachBlock
         this.arraySensitive = options.data.template.arraySensitive !== false;
         this.itemSensitive = options.data.template.itemSensitive !== false;
         this.indexSensitive = options.data.template.indexSensitive !== false;
+        this.emptyConstructor = options.nodes.length ? options.nodes[0] : null;
 
         // This will be an array of items constructed from the template
         this.itemDoms = [];
@@ -89,6 +113,8 @@ export class ForEachBlock
 
     get rootNodes()
     {
+        let emptyNodes = this.emptyDom ? this.emptyDom.rootNodes : [];
+
         if (!this.itemConstructor.isSingleRoot)
         {
             let r = [ this.headSentinal ];
@@ -96,12 +122,13 @@ export class ForEachBlock
             {
                 r.push(...this.itemDoms[i].rootNodes);
             }
+            r.push(...emptyNodes);
             r.push(this.tailSentinal);
             return r;
         }
         else
         {
-            return [this.headSentinal, ...this.itemDoms.map(x => x.rootNode), this.tailSentinal];
+            return [this.headSentinal, ...this.itemDoms.map(x => x.rootNode), ...emptyNodes, this.tailSentinal];
         }
     }
 
@@ -115,6 +142,32 @@ export class ForEachBlock
         for (let i=0; i<this.itemDoms.length; i++)
         {
             this.itemDoms[i].destroy();
+        }
+    }
+
+    insertEmpty()
+    {
+        if (!this.emptyDom && this.emptyConstructor)
+        {
+            this.emptyDom = this.emptyConstructor();
+            if (this.tailSentinal.parentNode)
+                this.tailSentinal.before(...this.emptyDom.rootNodes);
+        }
+    }
+
+    removeEmpty()
+    {
+        if (this.emptyDom)
+        {
+            if (this.tailSentinal.parentNode)
+            {
+                for (var n of this.emptyDom.rootNodes)
+                {
+                    n.remove();
+                }
+            }
+            this.emptyDom.destroy();
+            this.emptyDom = null;
         }
     }
 
@@ -159,6 +212,11 @@ export class ForEachBlock
             // Add to collections
             this.itemDoms.push(itemDom);
         }
+
+        if (this.itemDoms.length == 0)
+        {
+            this.insertEmpty();
+        }
     }
 
     // Update items
@@ -191,6 +249,10 @@ export class ForEachBlock
                 return this.condition.call(item, item, tempCtx);
             });
         }
+
+        // Remove empty mode nodes
+        if (newItems.length > 0)
+            this.removeEmpty();
 
         // Generate keys
         let newKeys = this.itemKey ? newItems.map((item) => {
@@ -235,6 +297,10 @@ export class ForEachBlock
             handlers[o.op].call(this, o);
         }
 
+        // Remove empty mode nodes
+        if (newItems.length == 0)
+            this.insertEmpty();
+        
         function multi_root_insert(op)
         {
             let index = op.index;

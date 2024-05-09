@@ -50,6 +50,7 @@ export class TemplateNode
         {
             if (template.childNodes)
             {
+                ForEachBlock.transformGroup(template.childNodes);
                 IfBlock.transformGroup(template.childNodes);
                 this.childNodes = this.template.childNodes.map(x => new TemplateNode(x));
             }

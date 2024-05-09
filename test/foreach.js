@@ -338,3 +338,57 @@ test("ForEach Nested", () => {
 
 });
 
+
+test("ForEach Else", () => {
+
+    let items = [];
+
+    let r = Template.compile(
+    {
+        type: "DIV",
+        childNodes: [
+            {
+                type: "DIV",
+                foreach: () => items,
+                text: x => x,
+            },
+            {
+                else: true,
+                type: "DIV",
+                text: "Empty!",
+                export: "empty",
+            }
+        ],
+    })();
+
+    assert.deepStrictEqual([
+        "Empty!",
+        ], r.rootNode.childNodes.filter(x => x.nodeType == 1).map(x => x.innerText));
+
+    assert.equal(r.empty.innerText, "Empty!");
+
+
+    items = [ "apples", "bananas" ];
+    r.update();
+    assert.deepStrictEqual([
+        "apples", "bananas",
+        ], r.rootNode.childNodes.filter(x => x.nodeType == 1).map(x => x.innerText));
+    assert.equal(r.empty, null);
+
+
+    items = [ ];
+    r.update();
+    assert.deepStrictEqual([
+        "Empty!",
+        ], r.rootNode.childNodes.filter(x => x.nodeType == 1).map(x => x.innerText));
+    assert.equal(r.empty.innerText, "Empty!");
+
+
+    items = [ "foo", "bar" ];
+    r.update();
+    assert.deepStrictEqual([
+        "foo", "bar"
+        ], r.rootNode.childNodes.filter(x => x.nodeType == 1).map(x => x.innerText));
+    assert.equal(r.empty, null);
+});
+
