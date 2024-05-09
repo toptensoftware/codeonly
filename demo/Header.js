@@ -10,9 +10,7 @@ export class Header extends Component
     static template = {
         type: "div",
         id: "header",
-        $:[
-            "Code Only Demo Sandbox",
-        ]
+        $: "Code Only Demo Sandbox",
     }
 }
 

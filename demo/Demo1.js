@@ -3,11 +3,6 @@ import { Router } from "./Router.js";
 
 class Demo1 extends Component
 {
-    constructor()
-    {
-        super();
-    }
-
     static template = [
         "This is demo 1",
     ]

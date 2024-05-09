@@ -3,11 +3,6 @@ import { Router } from "./Router.js";
 
 export class SidePanel extends Component
 {
-    constructor()
-    {
-        super();
-    }
-
     static template = {
         type: "div",
         id: "side-panel",

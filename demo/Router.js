@@ -2,16 +2,10 @@ class RouteManager
 {
     constructor()
     {
-        window.addEventListener('hashchange', (ev) => this.onHashChange(ev));
+        window.addEventListener('hashchange', () => this.navigate());
         this.routes = [];
         this.listeners = [];
-        this.treeRoot = [];
         requestAnimationFrame(() => this.navigate());
-    }
-
-    onHashChange(ev)
-    {
-        this.navigate();
     }
 
     navigate()
