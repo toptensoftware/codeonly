@@ -1,8 +1,26 @@
+import { is_constructor } from "./Utils.js";
+
 export class EmbedSlot
 {
     #content;
     #headSentinal;
     #tailSentinal;
+
+    static transform(template)
+    {
+        if (template instanceof Function && !is_constructor(template))
+        {
+            return {
+                type: EmbedSlot,
+                content: template,
+            }
+        }
+        return template;
+    }
+
+    static transformGroup(templates)
+    {
+    }
 
     constructor()
     {

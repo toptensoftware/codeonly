@@ -1,10 +1,6 @@
 import { HtmlString } from "./HtmlString.js";
-import { ForEachManager } from "./ForEachManager.js";
 
 export let TemplateHelpers = {
-    // The foreach manager class
-    ForEachManager,
-
     // Create either a text node from a string, or
     // a SPAN from an HtmlString
     createTextNode(text)

@@ -2,6 +2,7 @@ import { HtmlString } from "./HtmlString.js";
 import { is_constructor } from "./Utils.js";
 import { IfBlock } from "./IfBlock.js";
 import { ForEachBlock } from "./ForEachBlock.js";
+import { EmbedSlot } from "./EmbedSlot.js";
 
 // Manages information about a node in a template
 export class TemplateNode
@@ -18,6 +19,7 @@ export class TemplateNode
 
         // Apply automatic transforms
         template = ForEachBlock.transform(template);
+        template = EmbedSlot.transform(template);
         template = IfBlock.transform(template);
         if (is_constructor(template))
         {
@@ -70,6 +72,7 @@ export class TemplateNode
             if (template.childNodes)
             {
                 ForEachBlock.transformGroup(template.childNodes);
+                EmbedSlot.transformGroup(template.childNodes);
                 IfBlock.transformGroup(template.childNodes);
                 this.childNodes = this.template.childNodes.map(x => new TemplateNode(x));
             }
