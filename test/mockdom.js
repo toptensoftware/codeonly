@@ -1,4 +1,5 @@
 import { strict as assert } from "node:assert";
+import { tokenizer } from "../codeonly/tokenizer.js";
 
 class HTMLClassList
 {
@@ -123,6 +124,73 @@ class HTMLNode
         }
 
         this.parentNode = null;
+    }
+
+    get html()
+    {
+        switch (this.nodeType)
+        {
+            case 1:
+                let r = `<${this.nodeName}`;
+                if (this.attributes)
+                {
+                    for (let [key,value] of this.attributes)
+                    {
+                        r += ` ${key}=\"${value}\"`;
+                    }
+                }
+                if (this.childNodes)
+                {
+                    r += ">";
+                    this.childNodes.forEach(x => r += x.html);
+                    r += `</${this.nodeName}>`;
+                }
+                else
+                {
+                    r += "/>";
+                }
+                return r;
+
+            case 3:
+                return this.nodeValue;
+
+            case 8:
+                return `<!--${this.nodeValue}-->`;
+        }
+        throw new Error('not implemented');
+    }
+
+    get innerHTML()
+    {
+        if (this.childNodes)
+            return this.childNodes.map(x => x.html).join("");
+        else
+            return "";
+    }
+
+    set innerHTML(value)
+    {
+        var nodes = parseHtml(value);
+        this.childNodes.forEach(x => x.remove());
+        this.append(...nodes);
+    }
+
+    get innerText()
+    {
+        let text = this.childNodes.filter(x => x.nodeType == 3).map(x => x.nodeValue).join();
+        return text.replace(/\s+/g, ' ');
+    }
+
+    set innerText(value)
+    {
+        assert.equal(this.nodeType, 1);
+
+        // Remove all child nodes
+        if (this.childNodes)
+            this.childNodes.forEach(x => x.remove());
+
+        // Set inner text
+        this.append(document.createTextNode(value));
     }
 
     setAttribute(name, value)
@@ -295,7 +363,7 @@ class Document
     }
     createTextNode(text)
     {
-        return new HTMLNode(3, text);
+        return new HTMLNode(3, text.replace(/\s+/g, ' '));
     }
     createComment(text)
     {
@@ -303,6 +371,125 @@ class Document
     }
 }
 
+
+// Mini parser converts HTML to an array of nodes
+// (lots of limitations, good enough for mocking)
+export function parseHtml(str)
+{
+    let tokens = tokenizer(str);
+    let token;
+
+    function nextToken()
+    {
+        return token = tokens(...arguments);
+    }
+
+    nextToken();
+
+    let finalNodes = parseNodes();
+
+    if (token != '\0')
+        throw new Error("syntax error: expected eof");
+
+    return finalNodes;
+
+    function parseNodes()
+    {
+        let nodes = [];
+        while (token != '\0'  && token != '</')
+        {
+            // Text?
+            if (token.text)
+            {
+                nodes.push(document.createTextNode(token.text));
+                nextToken();
+                continue;
+            }
+
+            // Comment?
+            if (token.comment)
+            {
+                nodes.push(document.createComment(token.comment));
+                nextToken();
+                continue;
+            }
+
+            // Tag
+            if (token == '<')
+            {
+                // Skip it
+                nextToken();
+
+                // Must be a tag identifier
+                if (!token.identifier)
+                {
+                    throw new Error("syntax error: expected identifier after '<'");
+                }
+
+                let node = document.createElement(token.identifier);
+                nodes.push(node);
+
+                // Parse attributes
+                while (token != '\0' && token != '>' && token != '/>')
+                {
+                    // Get attribute name, quit if tag closed
+                    let attribName = nextToken(true);
+                    if (attribName.string === undefined)
+                        break;
+
+                    // Store just the name
+                    attribName = attribName.string;
+                    let attribValue = attribName;
+
+                    // Assigned value?
+                    if (nextToken() == '=')
+                    {
+                        let val = nextToken(true);
+                        if (val.string === undefined)
+                            throw new Error("syntax error, expected value after '='");
+                        attribValue = val.string;
+                        nextToken();
+                    }
+
+                    // Set attribute value
+                    node.setAttribute(attribName, attribValue);
+                }
+
+                // Self closing tag?
+                if (token == '/>')
+                {
+                    nextToken();
+                    continue;
+                }
+
+                if (token != '>')
+                {
+                    throw new Error("syntax error: expected '>' || '/>'");
+                }
+                nextToken();
+
+                // Parse child nodes
+                node.append(...parseNodes());
+
+                if (token == '</')
+                {
+                    nextToken();
+                    if (token.identifier != node.nodeName)
+                        throw new Error("mismatched tags");
+                    nextToken();
+                    if (token != '>')
+                        throw new Error("expected '>' for closing tag");
+                    nextToken();
+                }
+            }
+        }
+
+        return nodes;
+    }
+}
+
+
 globalThis.document = new Document();
 globalThis.requestAnimationFrame = function(callback) { callback() };
 globalThis.Node = HTMLNode;
+

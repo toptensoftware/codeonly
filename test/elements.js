@@ -54,12 +54,24 @@ test("Dynamic Text Node", () => {
     let val = "foo";
     let r = Template.compile(() => val)();
 
-    assert.equal(r.rootNodes[0].nodeType, 3);
-    assert.equal(r.rootNodes[0].nodeValue, val);
+    let outer = document.createElement("div");
+    outer.append(...r.rootNodes);
+
+    assert.equal(outer.childNodes.length, 3);
+    assert.deepStrictEqual(outer.childNodes, r.rootNodes);
+    let contentNodes = outer.childNodes.filter(x => x.nodeType != 8);
+    assert.equal(contentNodes.length, 1);
+    assert.equal(contentNodes[0].nodeType, 3);
+    assert.equal(contentNodes[0].nodeValue, val);
+
     val = "bar";
     r.update();
-    assert.equal(r.rootNodes[0].nodeType, 3);
-    assert.equal(r.rootNodes[0].nodeValue, val);
+    assert.equal(outer.childNodes.length, 3);
+    assert.deepStrictEqual(outer.childNodes, r.rootNodes);
+    contentNodes = outer.childNodes.filter(x => x.nodeType != 8);
+    assert.equal(contentNodes.length, 1);
+    assert.equal(contentNodes[0].nodeType, 3);
+    assert.equal(contentNodes[0].nodeValue, val);
 });
 
 test("Static HTML Node", () => {
@@ -76,16 +88,16 @@ test("Dynamic HTML Node", () => {
     let val = "foo";
     let r = Template.compile(() => html(val))();
 
-    assert.equal(r.rootNodes[0].nodeType, 1);
-    assert.equal(r.rootNodes[0].nodeName, "SPAN");
-    assert.equal(r.rootNodes[0].innerHTML, val);
+    let contentNodes = r.rootNodes.filter(x => x.nodeType != 8);
+    assert.equal(contentNodes[0].nodeType, 3);
+    assert.equal(contentNodes[0].nodeValue, val);
 
     val = "bar";
     r.update();
 
-    assert.equal(r.rootNodes[0].nodeType, 1);
-    assert.equal(r.rootNodes[0].nodeName, "SPAN");
-    assert.equal(r.rootNodes[0].innerHTML, val);
+    contentNodes = r.rootNodes.filter(x => x.nodeType != 8);
+    assert.equal(contentNodes[0].nodeType, 3);
+    assert.equal(contentNodes[0].nodeValue, val);
 });
 
 

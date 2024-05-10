@@ -8,14 +8,37 @@ export class ForEachBlock
     {
         let data = {
             itemConstructor: Template.compile(template.template, { initOnCreate: true}),
-            template,
+            template: {
+                items: template.items,
+                condition: template.condition,
+                itemKey: template.itemKey,
+                arraySensitive: template.arraySensitive,
+                itemSensitive: template.itemSensitive,
+                indexSensitive: template.indexSensitive,
+            },
         }
+
+
+        let nodes;
+        if (template.empty)
+        {
+            nodes = [ new TemplateNode(template.empty) ];
+        }
+
+        delete template.template;
+        delete template.items;
+        delete template.condition;
+        delete template.itemKey;
+        delete template.arraySensitive;
+        delete template.itemSensitive;
+        delete template.indexSensitive;
+        delete template.empty;
 
         return {
             isSingleRoot: false,
             wantsUpdate: true,
             data: data,
-            nodes: template.empty ? [ new TemplateNode(template.empty) ] : [],
+            nodes: nodes
         }
     }
 

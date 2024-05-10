@@ -250,7 +250,7 @@ export function compileTemplateCode(rootTemplate, copts)
             refs.push(ni.integrated.data);
         }
 
-        // Create component
+        // Create integrated component
         closure.addLocal(ni.name);
         closure.create.append(
             `${ni.name} = new refs[${refs.length}]({`,
@@ -261,6 +261,17 @@ export function compileTemplateCode(rootTemplate, copts)
             `});`
         );
         refs.push(ni.template.type);
+
+        // Process common properties
+        for (let key of Object.keys(ni.template))
+        {
+            // Process properties common to components and elements
+            if (process_common_property(ni, key))
+                continue;
+
+            throw new Error(`Unknown element template key: ${key}`);
+        }
+    
     }
 
     

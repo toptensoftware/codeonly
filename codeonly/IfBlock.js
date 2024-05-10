@@ -49,6 +49,8 @@ export class IfBlock
             }
         }
 
+        delete template.branches;
+
         // Make sure there's always an else block
         if (!hasElseBranch)
         {
