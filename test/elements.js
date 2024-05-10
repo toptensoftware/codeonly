@@ -74,13 +74,33 @@ test("Dynamic Text Node", () => {
     assert.equal(contentNodes[0].nodeValue, val);
 });
 
-test("Static HTML Node", () => {
+test("Static Single-Node HTML", () => {
 
     let r = Template.compile(html("Hello World"))();
 
+    assert.equal(r.isSingleRoot, true);
+    assert.equal(r.rootNodes[0].nodeType, 3);
+    assert.equal(r.rootNodes[0].nodeValue, "Hello World");
+});
+
+test("Static Multi-Node HTML", () => {
+
+    let r = Template.compile(html("<div>Hello</div><div>World</div>"))();
+
+    assert.equal(r.isSingleRoot, false);
+    assert.equal(r.rootNodes.length, 2);
     assert.equal(r.rootNodes[0].nodeType, 1);
-    assert.equal(r.rootNodes[0].nodeName, "SPAN");
-    assert.equal(r.rootNodes[0].innerHTML, "Hello World");
+    assert.equal(r.rootNodes[0].innerText, "Hello");
+    assert.equal(r.rootNodes[1].nodeType, 1);
+    assert.equal(r.rootNodes[1].innerText, "World");
+});
+
+test("Empty HTML Node", () => {
+
+    let r = Template.compile(html(""))();
+
+    assert.equal(r.isSingleRoot, false);
+    assert.equal(r.rootNodes.length, 0);
 });
 
 test("Dynamic HTML Node", () => {

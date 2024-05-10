@@ -154,9 +154,21 @@ export function compileTemplateCode(rootTemplate, copts)
     // Emit a static 'html' node
     function emit_html_node(ni)
     {
+        if (ni.nodes.length == 0)
+            return;
+
+        // Emit
         closure.addLocal(ni.name);
-        closure.create.append(`${ni.name} = document.createElement("SPAN");`);
-        closure.create.append(`${ni.name}.innerHTML = ${JSON.stringify(ni.template.html)};`);
+        if (ni.nodes.length == 1)
+        {
+            closure.create.append(`${ni.name} = refs[${refs.length}].cloneNode();`);
+            refs.push(ni.nodes[0]);
+        }
+        else
+        {
+            closure.create.append(`${ni.name} = refs[${refs.length}].map(x => x.cloneNode());`);
+            refs.push(ni.nodes);
+        }
     }
 
     // Emit a 'dynamic-text' onde
@@ -558,7 +570,7 @@ export function compileTemplate(rootTemplate, compilerOptions)
 {
     // Compile code
     let code = compileTemplateCode(rootTemplate, compilerOptions);
-    //console.log(code.code);
+    console.log(code.code);
 
     // Put it in a function
     let templateFunction = new Function("refs", "helpers", "context", code.code);

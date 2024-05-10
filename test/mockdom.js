@@ -121,9 +121,50 @@ class HTMLNode
             case 8:
                 this.nodeValue = nameOrValue;
                 break;
+
+            case 11:
+                this.childNodes = [];
+                break;
         }
 
         this.parentNode = null;
+    }
+
+    cloneNode()
+    {
+        switch (this.nodeType)
+        {
+            case 3:
+            case 8:
+                return new HTMLNode(this.nodeType, this.nodeValue);
+
+            case 1:
+            case 11:
+            {
+                // Create node
+                let newNode = new HTMLNode(this.nodeType);
+
+                // Clone attributes
+                if (this.attributes)
+                {
+                    for (let [k,v] of this.attributes)
+                    {
+                        newNode.setAttribute(k,v);
+                    }
+                }
+
+                // Clone child nodes
+                newNode.childNodes = this.childNodes.map(x => {
+                    let childNode = x.cloneNode();
+                    childNode.parentNode = this;
+                    return childNode;
+                });
+
+                // Return cloned node
+                return newNode;
+            }
+
+        }
     }
 
     get html()
@@ -156,7 +197,19 @@ class HTMLNode
 
             case 8:
                 return `<!--${this.nodeValue}-->`;
+
+            case 11:
+            {
+                let r = `<#document-fragment>`;
+                if (this.childNodes)
+                {
+                    this.childNodes.forEach(x => r += x.html);
+                }
+                r += `</#document-fragment>`;
+                return r;
+            }
         }
+
         throw new Error('not implemented');
     }
 
@@ -229,19 +282,15 @@ class HTMLNode
 
     append(...nodes)
     {
-        assert(this.nodeType == 1);
-        for (let arg of nodes)
-        {
-            assert(arg instanceof HTMLNode);
-            arg.parentNode = this;
-        }
-        this.childNodes.push(...arguments);
+        assert(this.nodeType == 1 || this.nodeType == 11);
+
+        this.insertNodesBefore(nodes, null);
     }
 
     remove()
     {
-        assert(this.parentNode)
-        this.parentNode.removeChild(this);
+        if (this.parentNode)
+            this.parentNode.removeChild(this);
     }
 
     replaceWith(...newNodes)
@@ -253,55 +302,59 @@ class HTMLNode
     after(...newNodes)
     {
         assert(this.parentNode);
-        assert(!newNodes.some(x => x.parentNode));
-        assert(!newNodes.some(x => !(x instanceof HTMLNode)));
-
-        let index = this.parentNode.childNodes.indexOf(this);
-
-        this.parentNode.childNodes.splice(index + 1, 0, ...newNodes);
-
-        for (let i=0; i<newNodes.length; i++)
-            newNodes[i].parentNode = this.parentNode;
+        this.parentNode.insertNodesBefore(newNodes, this.nextSibling);
     }
 
     before(...newNodes)
     {
         assert(this.parentNode);
-        assert(!newNodes.some(x => x.parentNode));
-        assert(!newNodes.some(x => !(x instanceof HTMLNode)));
+        this.parentNode.insertNodesBefore(newNodes, this);
+    }
 
-        let index = this.parentNode.childNodes.indexOf(this);
+    insertNodesBefore(nodes, before)
+    {
+        if (before)
+        {
+            assert(before.parentNode == this);
+        }
 
-        this.parentNode.childNodes.splice(index, 0, ...newNodes);
+        // Expand document fragments
+        let expanded = [];
+        for (let i=0; i<nodes.length; i++)
+        {
+            if (nodes[i].nodeType == 11)
+            {
+                expanded.push(...nodes[i].childNodes);
+            }
+            else
+            {
+                expanded.push(nodes[i]);
+            }
+        }
 
-        for (let i=0; i<newNodes.length; i++)
-            newNodes[i].parentNode = this.parentNode;
+        // Remove nodes from other parents
+        expanded.forEach(x => {
+            x.remove();
+            x.parentNode = this;
+        });
+
+        // Work out where to insert
+        let index = this.childNodes.indexOf(before);
+        if (index < 0)
+            index = this.childNodes.length;
+
+        // Insert into this node
+        this.childNodes.splice(index, 0, ...expanded);
     }
 
     insertBefore(node, before)
     {
-        assert(this.nodeType == 1);
-        assert(node instanceof HTMLNode);
-        assert(!node.parentNode);
-
-        if (!before)
-        {
-            this.childNodes.push(node);
-        }
-        else
-        {
-            assert(before instanceof HTMLNode);
-            let index = this.childNodes.indexOf(before);
-            assert(index >= 0);
-            this.childNodes.splice(index, 0, node);
-        }
-
-        node.parentNode = this;
+        this.insertNodesBefore([ node ], before);
     }
 
     removeChild(node)
     {
-        assert(this.nodeType == 1);
+        assert(this.nodeType == 1 || this.nodeType == 11);
         let index = this.childNodes.indexOf(node);
         assert(index >= 0);
         this.childNodes.splice(index, 1);
@@ -368,6 +421,10 @@ class Document
     createComment(text)
     {
         return new HTMLNode(8, text);
+    }
+    createDocumentFragment()
+    {
+        return new HTMLNode(11);
     }
 }
 

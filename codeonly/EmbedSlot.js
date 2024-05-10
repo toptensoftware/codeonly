@@ -1,5 +1,6 @@
 import { is_constructor } from "./Utils.js";
 import { HtmlString } from "./HtmlString.js";
+import { TemplateNode } from "./TemplateNode.js";
 
 export class EmbedSlot
 {
@@ -15,6 +16,7 @@ export class EmbedSlot
         }
 
         delete template.content;
+        delete template.placeholder;
 
         return retv;
     }

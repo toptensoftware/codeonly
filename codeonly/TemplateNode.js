@@ -40,7 +40,16 @@ export class TemplateNode
         else if (typeof(template) === 'string')
             this.kind = "text";
         else if (template instanceof HtmlString)
+        {
+            // Use div to parse HTML
+            let div = document.createElement('div');
+            div.innerHTML = template.html;
+
+            // Store nodes
             this.kind = "html";
+            this.nodes = [...div.childNodes];
+            this.nodes.forEach(x => x.remove());
+        }
         else if (template instanceof Function)
             this.kind = "dynamic_text";
         else if (template.type === 'comment')
@@ -97,6 +106,9 @@ export class TemplateNode
 
         if (this.isIntegrated)
             return this.integrated.isSingleRoot;
+
+        if (this.kind == 'html')
+            return this.nodes.length == 1;
 
         return true;
     }
@@ -176,6 +188,16 @@ export class TemplateNode
                     yield `${this.name}.rootNode`;
                 else
                     yield `...${this.name}.rootNodes`;
+                break;
+
+            case 'html':
+                if (this.nodes.length > 0)
+                {
+                    if (this.nodes.length > 1)
+                        yield `...${this.name}`;
+                    else
+                        yield `${this.name}`;
+                }
                 break;
 
             default:

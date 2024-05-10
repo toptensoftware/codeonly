@@ -76,6 +76,40 @@ test("Embedded Multiple Elements", () => {
 });
 
 
+test("Embedded with Placeholder", () => {
+
+    let r = Template.compile({
+        type: "DIV",
+        childNodes: [
+            "pre",
+            {
+                type: EmbedSlot,
+                export: "slot",
+            },
+            {
+                else: true,
+                type: "span",
+                text: "placeholder content",
+            },
+            "post",
+        ]
+    })();
+
+    assert(r.slot instanceof EmbedSlot);
+
+    r.slot.content = document.createElement('span');
+    r.slot.content.innerText = "embedded content";
+
+    assert.equal(r.rootNode.childNodes.length, 5);      // pre + post + embed head/tail sentinals + 2x spans
+    assert.equal(r.rootNode.childNodes[2].innerText, "embedded content");
+
+    r.slot.content = null;
+    assert.equal(r.rootNode.childNodes[2].innerText, "placeholder content");
+});
+
+
+
+
 
 class MyComponent extends Component
 {
