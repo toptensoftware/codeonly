@@ -7,3 +7,4 @@ export { EmbedSlot } from "./EmbedSlot.js";
 export { IfBlock } from "./IfBlock.js";
 export { ForEachBlock} from "./ForEachBlock.js";
 export { Html } from "./Html.js";
+export { EventEmitter } from "./EventEmitter.js";
