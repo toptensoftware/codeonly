@@ -228,6 +228,10 @@ export class TemplateNode
                 lines.push(`${this.name}_ev${i+1} = null;`);
             }
         }
+
+        if (this.kind == 'html' && this.nodes.length == 0)
+            return lines;
+
         lines.push(`${this.name} = null;`);
 
         return lines;
