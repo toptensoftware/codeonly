@@ -76,7 +76,7 @@ export class TemplateNode
         }
 
         // Recurse child nodes
-        if (this.kind == 'element' || this.kind == 'fragment')
+        if (this.kind == 'element' || this.kind == 'fragment' || this.kind == 'component')
         {
             if (template.childNodes)
             {

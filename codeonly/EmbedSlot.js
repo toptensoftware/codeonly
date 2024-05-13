@@ -72,8 +72,8 @@ export class EmbedSlot
     {
         this.#context = options.context;
         this.#placeholderConstructor = options.nodes.length > 0 ? options.nodes[0] : null;
-        this.#headSentinal = document.createComment(" start embed slot ");
-        this.#tailSentinal = document.createComment(" end embed slot ");
+        this.#headSentinal = document.createTextNode("");
+        this.#tailSentinal = document.createTextNode("");
         this.#nodes = [];
 
         if (this.#content instanceof Function && !options.initOnCreate)

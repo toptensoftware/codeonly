@@ -1,10 +1,19 @@
-import { Component, Style } from "../codeonly/codeonly.js";
+import { Component, Html } from "../codeonly/codeonly.js";
 import { Router } from "./Router.js";
+import { RouterLink } from "../codeonly/RouterLink.js";
 
 class Demo1 extends Component
 {
     static template = [
-        "This is demo 1",
+        Html.h(1, "This is demo 1"),
+        {
+            type: "p",
+            $: {
+                type: RouterLink,
+                title: "Hello World",
+                href: "/demo2",
+            }
+        }
     ]
 
     static {
