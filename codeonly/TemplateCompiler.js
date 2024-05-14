@@ -295,12 +295,27 @@ export function compileTemplateCode(rootTemplate, copts)
         closure.create.append(`${ni.name} = new refs[${refs.length}]();`);
         refs.push(ni.template.type);
 
+        let slotNames = new Set(ni.template.type.slots ?? []);
+
         // Process all keys
         for (let key of Object.keys(ni.template))
         {
             // Process properties common to components and elements
             if (process_common_property(ni, key))
                 continue;
+
+            // Compile value as a template
+            if (slotNames.has(key))
+            {
+                // Emit the template node
+                let propTemplate = new TemplateNode(ni.template[key]);
+                emit_node(propTemplate);
+                if (propTemplate.isSingleRoot)
+                    closure.create.append(`${ni.name}[${JSON.stringify(key)}].content = ${propTemplate.name};`);
+                else
+                    closure.create.append(`${ni.name}[${JSON.stringify(key)}].content = [${propTemplate.spreadDomNodes()}];`);
+                continue;
+            }
 
             // All other properties, assign to the object
             let propType = typeof(ni.template[key]);

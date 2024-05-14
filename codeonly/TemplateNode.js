@@ -12,6 +12,8 @@ export class TemplateNode
     // - template: the user supplied template object this node is derived from
     constructor(template)
     {
+        // Automatically wrap array as a fragment with the array
+        // as the child nodes.
         if (Array.isArray(template))
         {
             template = { $:template }
@@ -65,21 +67,22 @@ export class TemplateNode
             this.integrated = this.template.type.integrate(this.template);
         }
 
-        if (template.$ && !template.childNodes)
-        {
-            template.childNodes = template.$;
-            delete template.$;
-        }
-        if (template.childNodes && !Array.isArray(template.childNodes))
-        {
-            template.childNodes = [ template.childNodes ];
-        }
-
         // Recurse child nodes
-        if (this.kind == 'element' || this.kind == 'fragment' || this.kind == 'component')
+        if (this.kind == 'element' || this.kind == 'fragment')
         {
+            if (template.$ && !template.childNodes)
+            {
+                template.childNodes = template.$;
+                delete template.$;
+            }
+
             if (template.childNodes)
             {
+                if (!Array.isArray(template.childNodes))
+                {
+                    template.childNodes = [ template.childNodes ];
+                }
+
                 ForEachBlock.transformGroup(template.childNodes);
                 EmbedSlot.transformGroup(template.childNodes);
                 IfBlock.transformGroup(template.childNodes);
@@ -87,6 +90,14 @@ export class TemplateNode
             }
             else
                 this.childNodes = [];
+        }
+        else if (this.isComponent)
+        {
+            if (template.$ && !template.content)
+            {
+                template.content = template.$;
+                delete template.$;
+            }
         }
         else if (template.childNodes)
         {

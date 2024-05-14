@@ -230,8 +230,21 @@ class HTMLNode
 
     get innerText()
     {
-        let text = this.childNodes.filter(x => x.nodeType == 3).map(x => x.nodeValue).join();
-        return text.replace(/\s+/g, ' ');
+        let buf = "";
+        for (let ch of this.childNodes)
+        {
+            switch (ch.nodeType)
+            {
+                case 1:
+                    buf += ch.innerText;
+                    break;
+                
+                case 3:
+                    buf += ch.nodeValue;
+                    break;
+            }
+        }
+        return buf.replace(/\s+/g, ' ');
     }
 
     set innerText(value)

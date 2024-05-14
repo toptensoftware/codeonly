@@ -59,7 +59,7 @@ test("Dynamic Text Node", () => {
 
     assert.equal(outer.childNodes.length, 3);
     assert.deepStrictEqual(outer.childNodes, r.rootNodes);
-    let contentNodes = outer.childNodes.filter(x => x.nodeType != 8);
+    let contentNodes = outer.childNodes.filter(x => x.nodeType != 8 && x.nodeValue != "");
     assert.equal(contentNodes.length, 1);
     assert.equal(contentNodes[0].nodeType, 3);
     assert.equal(contentNodes[0].nodeValue, val);
@@ -68,7 +68,7 @@ test("Dynamic Text Node", () => {
     r.update();
     assert.equal(outer.childNodes.length, 3);
     assert.deepStrictEqual(outer.childNodes, r.rootNodes);
-    contentNodes = outer.childNodes.filter(x => x.nodeType != 8);
+    contentNodes = outer.childNodes.filter(x => x.nodeType != 8 && x.nodeValue != "");
     assert.equal(contentNodes.length, 1);
     assert.equal(contentNodes[0].nodeType, 3);
     assert.equal(contentNodes[0].nodeValue, val);
@@ -108,14 +108,14 @@ test("Dynamic HTML Node", () => {
     let val = "foo";
     let r = Template.compile(() => html(val))();
 
-    let contentNodes = r.rootNodes.filter(x => x.nodeType != 8);
+    let contentNodes = r.rootNodes.filter(x => x.nodeValue != "");
     assert.equal(contentNodes[0].nodeType, 3);
     assert.equal(contentNodes[0].nodeValue, val);
 
     val = "bar";
     r.update();
 
-    contentNodes = r.rootNodes.filter(x => x.nodeType != 8);
+    contentNodes = r.rootNodes.filter(x => x.nodeValue != "");
     assert.equal(contentNodes[0].nodeType, 3);
     assert.equal(contentNodes[0].nodeValue, val);
 });

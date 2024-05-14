@@ -272,3 +272,101 @@ test("Component properties", () => {
 
 });
 
+
+
+test("Component Embed Slots (single root)", () => {
+
+    let component = Template.compile({
+        type: "a",
+        $: {
+            type: "embed-slot",
+            export: "content",
+        }
+    });
+    component.slots = [ "content" ];
+
+    let val = "foo";
+    let r = Template.compile({
+        type: "DIV",
+        $:{
+            export: "anchor",
+            type: component,
+            content: {
+                type: "span",
+                text: () => val,
+            }
+        }
+    })();
+
+    assert.equal(r.anchor.rootNode.nodeName, "a");
+    assert.equal(r.anchor.rootNode.innerText, "foo");
+
+    val = "bar";
+    r.update();
+    assert.equal(r.anchor.rootNode.innerText, "bar");
+
+});
+
+test("Component Embed Slots (multi root)", () => {
+
+    let component = Template.compile({
+        type: "a",
+        $: {
+            type: "embed-slot",
+            export: "content",
+        }
+    });
+    component.slots = [ "content" ];
+
+    let val = "foo";
+    let r = Template.compile({
+        type: "DIV",
+        $:{
+            export: "anchor",
+            type: component,
+            content: [
+                {
+                    type: "span",
+                    text: () => val,
+                },
+                "-baz"
+            ]
+        }
+    })();
+
+    assert.equal(r.anchor.rootNode.nodeName, "a");
+    assert.equal(r.anchor.rootNode.innerText, "foo-baz");
+
+    val = "bar";
+    r.update();
+    assert.equal(r.anchor.rootNode.innerText, "bar-baz");
+
+});
+
+test("Component Embed Slots ($ content)", () => {
+
+    let component = Template.compile({
+        type: "a",
+        $: {
+            type: "embed-slot",
+            export: "content",
+        }
+    });
+    component.slots = [ "content" ];
+
+    let val = "foo";
+    let r = Template.compile({
+        type: "div",
+        $:{
+            type: component,
+            $: [ () => val, "-baz" ]
+        }
+    })();
+
+    assert.equal(r.rootNode.innerHTML, "<a>foo-baz</a>");
+
+    val = "bar";
+    r.update();
+    assert.equal(r.rootNode.innerHTML, "<a>bar-baz</a>");
+});
+

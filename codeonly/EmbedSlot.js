@@ -33,6 +33,9 @@ export class EmbedSlot
                 content: template,
             }
         }
+
+        if (template.type == 'embed-slot')
+            template.type = EmbedSlot;
         return template;
     }
 
