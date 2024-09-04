@@ -36,5 +36,5 @@ export class RouterLink extends Component
         }
     };
 
-    static defaultSlot = "content";
+    static slots = [ "content" ];
 }
