@@ -519,7 +519,7 @@ export function compileTemplateCode(rootTemplate, copts)
                 throw new Error(`event handler for '${key}' is not a function`);
 
             // create a variable name for the listener
-            if (!ni.listeners)
+            if (!ni.listenerCount)
                 ni.listenerCount = 0;
             ni.listenerCount++;
             let listener_name = `${ni.name}_ev${ni.listenerCount}`;
