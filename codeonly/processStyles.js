@@ -17,7 +17,7 @@ function is_identifier_lead_char(ch)
 
 function is_identifier_char(ch)
 {
-    return ch == '_' || ch == '-' || ch == '#' || ch == '.' ||
+    return ch == '_' || ch == '-' || ch == '#' || ch == '.' || ch == '[' || ch == ']' || ch == '=' ||
         (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9');
 }
 
