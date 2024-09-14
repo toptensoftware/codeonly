@@ -367,9 +367,25 @@ export function compileTemplateCode(rootTemplate, copts)
     // Emit an 'element' node
     function emit_element_node(ni)
     {
+        // Work out namespace
+        let save_xmlns = closure.current_xmlns;
+        let xmlns = ni.template.xmlns;
+        if (xmlns === undefined && ni.template.type == 'svg')
+        {
+            xmlns = "http://www.w3.org/2000/svg";
+        }
+        if (xmlns == null)
+            xmlns = closure.current_xmlns;
+
         // Create the element
         closure.addLocal(ni.name);
-        closure.create.append(`${ni.name} = document.createElement(${JSON.stringify(ni.template.type)});`);
+        if (!xmlns)
+            closure.create.append(`${ni.name} = document.createElement(${JSON.stringify(ni.template.type)});`);
+        else
+        {
+            closure.current_xmlns = xmlns;
+            closure.create.append(`${ni.name} = document.createElementNS(${JSON.stringify(xmlns)}, ${JSON.stringify(ni.template.type)});`);
+        }
 
         for (let key of Object.keys(ni.template))
         {
@@ -427,7 +443,9 @@ export function compileTemplateCode(rootTemplate, copts)
 
             if (key.startsWith("attr_"))
             {
-                let attrName = camel_to_dash(key.substring(5));
+                let attrName = key.substring(5);
+                if (!closure.current_xmlns)
+                    attrName = camel_to_dash(attrName);
 
                 format_dynamic(ni.template[key], (valueExpr) => `${ni.name}.setAttribute(${JSON.stringify(attrName)}, ${valueExpr})`);
                 continue;
@@ -461,6 +479,7 @@ export function compileTemplateCode(rootTemplate, copts)
         {
             closure.create.append(`${ni.name}.append(${ni.spreadChildDomNodes(copts.initOnCreate)});`);
         }
+        closure.current_xmlns = save_xmlns;
     }
 
     // Emit the child nodes of an element or fragment node
@@ -536,7 +555,7 @@ export function compileTemplateCode(rootTemplate, copts)
 
     function is_known_property(key)
     {
-        return key == "type" || key == "childNodes";
+        return key == "type" || key == "childNodes" || key == "xmlns";
     }
 
     function format_callback(index)
@@ -585,7 +604,7 @@ export function compileTemplate(rootTemplate, compilerOptions)
 {
     // Compile code
     let code = compileTemplateCode(rootTemplate, compilerOptions);
-    //console.log(code.code);
+    console.log(code.code);
 
     // Put it in a function
     let templateFunction = new Function("refs", "helpers", "context", code.code);

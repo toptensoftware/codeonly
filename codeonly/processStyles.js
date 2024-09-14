@@ -196,8 +196,12 @@ function append_token(str, token)
     if (token == ';')
         return str + ";\n";
 
+    if (token == 'and' || token == 'or' || token == 'not' || token == 'only')
+        token += ' ';
+        
     if (is_whitespace(str[str.length-1]))
         return str + token;
+
 
     if (is_token_separator(str[str.length-1]) || is_token_separator(token[0]))
         return str + token;
