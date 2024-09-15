@@ -23,6 +23,14 @@ class Application extends Component
 }
 
 Style.declare(`
+    #main-container a:hover
+    {
+        background-color:red;
+    }
+`);
+    
+    
+Style.declare(`
 #main-container
 {
     width: 100%;
@@ -31,6 +39,12 @@ Style.declare(`
     top: 3rem;
     display: flex;
 }
+
+#main-container a:hover
+{
+    background-color:red;
+}
+
 `);
 
 export function main()

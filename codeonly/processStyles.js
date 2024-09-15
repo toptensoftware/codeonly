@@ -277,8 +277,8 @@ export function processStyles(str)
             continue;
         }
 
-        if (token == ':' && !isSelector)
-        {   
+        if (token == ':' && !isSelector && openScopes.length > 0 && openScopes[openScopes.length-1].isSelectorBlock)
+            {   
             if (pending == "")
             {
                 isSelector = true;
