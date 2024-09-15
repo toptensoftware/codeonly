@@ -8,3 +8,4 @@ export { IfBlock } from "./IfBlock.js";
 export { ForEachBlock} from "./ForEachBlock.js";
 export { Html } from "./Html.js";
 export { EventEmitter } from "./EventEmitter.js";
+export { Transition } from "./Transition.js";
