@@ -395,13 +395,13 @@ export function compileTemplateCode(rootTemplate, copts)
 
             if (key == "id")
             {
-                format_dynamic(ni.template.id, (valueExpr) => `${ni.name}.setAttribute("id", ${valueExpr})`);
+                format_dynamic(ni.template.id, (valueExpr) => `${ni.name}.setAttribute("id", ${valueExpr});`);
                 continue;
             }
 
             if (key == "class")
             {
-                format_dynamic(ni.template.class, (valueExpr) => `${ni.name}.setAttribute("class", ${valueExpr})`);
+                format_dynamic(ni.template.class, (valueExpr) => `${ni.name}.setAttribute("class", ${valueExpr});`);
                 continue;
             }
 
@@ -415,7 +415,7 @@ export function compileTemplateCode(rootTemplate, copts)
 
             if (key == "style")
             {
-                format_dynamic(ni.template.style, (valueExpr) => `${ni.name}.setAttribute("style", ${valueExpr})`);
+                format_dynamic(ni.template.style, (valueExpr) => `${ni.name}.setAttribute("style", ${valueExpr});`);
                 continue;
             }
 
@@ -447,7 +447,7 @@ export function compileTemplateCode(rootTemplate, copts)
                 if (!closure.current_xmlns)
                     attrName = camel_to_dash(attrName);
 
-                format_dynamic(ni.template[key], (valueExpr) => `${ni.name}.setAttribute(${JSON.stringify(attrName)}, ${valueExpr})`);
+                format_dynamic(ni.template[key], (valueExpr) => `${ni.name}.setAttribute(${JSON.stringify(attrName)}, ${valueExpr});`);
                 continue;
             }
 
