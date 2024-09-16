@@ -184,6 +184,9 @@ function is_math_operator(ch)
 
 function append_token(str, token)
 {
+    if (token[0] == '@' || token == 'and' || token == 'or' || token == 'not' || token == 'only')
+        token += ' ';
+        
     if (str.length == 0)
         return token;
 
@@ -196,9 +199,6 @@ function append_token(str, token)
     if (token == ';')
         return str + ";\n";
 
-    if (token == 'and' || token == 'or' || token == 'not' || token == 'only')
-        token += ' ';
-        
     if (is_whitespace(str[str.length-1]))
         return str + token;
 
