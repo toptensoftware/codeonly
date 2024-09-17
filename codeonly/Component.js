@@ -1,9 +1,11 @@
 import { Template } from "./Template.js";
 
-export class Component
+export class Component extends EventTarget
 {
     constructor()
     {
+        super();
+        
         if (!this.template)
         {
             if (this.constructor.template && !this.constructor.templateConstructor)
