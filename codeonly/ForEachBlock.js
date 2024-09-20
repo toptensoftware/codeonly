@@ -197,6 +197,8 @@ export class ForEachBlock
     // Load initial items
     loadItems(items)
     {
+        this.itemsLoaded = false;
+
         if (!items)
             items = [];
 
@@ -246,8 +248,10 @@ export class ForEachBlock
     updateItems(newItems)
     {
         // If not array sensitive, don't bother diffing
-        if (!this.arraySensitive)
+        if (this.itemsLoaded && !this.arraySensitive)
         {
+            this.itemsLoaded = true;
+            
             // If item's are sensitive then update them
             if (this.itemSensitive)
             {
