@@ -2,7 +2,7 @@ import { Template } from "./Template.js";
 
 export class Component extends EventTarget
 {
-    constructor()
+    constructor(shouldInit)
     {
         super();
         
@@ -14,7 +14,12 @@ export class Component extends EventTarget
                 this.template = this.constructor.templateConstructor;
         }            
 
+        if (shouldInit !== false)
+            this.init();
+    }
 
+    init()
+    {
         this.dom = new this.template({ model: this });
         this.invalidate();
     }
