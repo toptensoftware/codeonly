@@ -243,6 +243,7 @@ function combine_selectors(a, b)
 
 export function processStyles(str)
 {
+    return str;
     let out = '';
 
     // Read tokens
