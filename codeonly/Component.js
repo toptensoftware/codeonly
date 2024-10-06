@@ -6,19 +6,16 @@ export class Component extends EventTarget
     {
         super();
         
-        if (this.constructor.templateConstructor)
-            this.template = this.constructor.templateConstructor;
-
         if (shouldInit !== false)
             this.init();
     }
 
-    static _templateConstructor;
-    static get templateConstructor()
+    static _compiledTemplate;
+    static get compiledTemplate()
     {
-        if (!this._templateConstructor)
-            this._templateConstructor = this.compileTemplate();
-        return this._templateConstructor
+        if (!this._compiledTemplate)
+            this._compiledTemplate = this.compileTemplate();
+        return this._compiledTemplate
     }
 
     static compileTemplate()
@@ -29,7 +26,7 @@ export class Component extends EventTarget
 
     init()
     {
-        this.dom = new this.template({ model: this });
+        this.dom = new this.constructor.compiledTemplate({ model: this });
         this.invalidate();
     }
 

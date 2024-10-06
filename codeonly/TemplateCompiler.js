@@ -309,7 +309,7 @@ export function compileTemplateCode(rootTemplate, copts)
             {
                 if (ni.template[key] === undefined)
                     continue;
-                    
+
                 // Emit the template node
                 let propTemplate = new TemplateNode(ni.template[key]);
                 emit_node(propTemplate);
@@ -617,15 +617,15 @@ export function compileTemplate(rootTemplate, compilerOptions)
     let templateFunction = new Function("refs", "helpers", "context", code.code);
 
     // Wrap it in a constructor function
-    let templateConstructor = function(context)
+    let compiledTemplate = function(context)
     {
         return templateFunction(code.refs, TemplateHelpers, context ?? {});
     }
 
     // Store meta data about the component on the function since we need this before 
     // construction
-    templateConstructor.isSingleRoot = code.isSingleRoot;
+    compiledTemplate.isSingleRoot = code.isSingleRoot;
 
-    return templateConstructor;
+    return compiledTemplate;
 }
 

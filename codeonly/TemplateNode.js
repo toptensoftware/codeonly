@@ -113,7 +113,7 @@ export class TemplateNode
             return this.childNodes.length == 1 && this.childNodes[0].isSingleRoot;
 
         if (this.isComponent)
-            return this.template.type.templateConstructor.isSingleRoot;
+            return this.template.type.compiledTemplate.isSingleRoot;
 
         if (this.isIntegrated)
             return this.integrated.isSingleRoot;
