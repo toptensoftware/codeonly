@@ -289,6 +289,24 @@ To conditionally set a class on an element,use the `class_` prefix:
 }
 ```
 
+To set class names with a hyphen, use camelCase:
+
+```js
+{ 
+    type: "div",
+    class_isSelected: true,
+}
+```
+
+or, a string property key:
+
+```js
+{ 
+    type: "div",
+    'class_is-selected': true,
+}
+```
+
 ### Dynamic Style Properties
 
 To dynamically set a style property on an element, use the `style_` prefix:
@@ -302,10 +320,35 @@ To dynamically set a style property on an element, use the `style_` prefix:
 }
 ```
 
+To set style names with hyphens, use camelCase:
+
+```js
+// <div style="text-align: center" >
+{ 
+    type: "div",
+    style_textAlign: "center",
+}
+```
+
+or, use a string property key
+
+```js
+// <div style="text-align: center" >
+{ 
+    type: "div",
+    'style_text-align': "center",
+}
+```
+
 ### Dynamically Hiding and Showing Elements
 
-The `show` attribute can be used to set an element to `display: none`:
+The `display` attribute can be used to contol the visibility of an element.
 
+Set `display` to:
+
+* `true` to remove any display style previously set by this attribute
+* `false` to set `display:none`
+* a string to set the `display` style explicitly.
 
 ```js
 // when isVisible returns true:
@@ -314,9 +357,26 @@ The `show` attribute can be used to set an element to `display: none`:
 //     <div style="display: none">
 { 
     type: "div",
-    show: c => isVisible,
+    display: c => isVisible,
 }
 ```
+
+Note the display attribute is smart enough to remember the previous
+display style setting:
+
+```js
+// when isVisible returns true:
+//     <div style="display: flex">
+// otherwise
+//     <div style="display: none">
+{ 
+    type: "div",
+    style_display: "flex",
+    display: c => isVisible,
+}
+```
+
+
 
 ### Conditionally Including Elements
 

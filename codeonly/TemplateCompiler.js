@@ -426,17 +426,21 @@ export function compileTemplateCode(rootTemplate, copts)
                 continue;
             }
 
-            if (key == "show")
+            if (key == "display")
             {
-                if (ni.template.show instanceof Function)
+                if (ni.template.display instanceof Function)
                 {
                     closure.addLocal(`${ni.name}_prev_display`);
                     format_dynamic(ni.template[key], (valueExpr) => `${ni.name}_prev_display = helpers.setNodeDisplay(${ni.name}, ${valueExpr}, ${ni.name}_prev_display)`);
                 }
                 else
                 {
-                    if (!ni.template.show)
+                    if (typeof(ni.template.display) == 'string')
+                        closure.create.append(`${ni.name}.style.display = '${ni.template.display}';`);
+                    else if (ni.template.display === false || ni.template.display === null || ni.template.display === undefined)
                         closure.create.append(`${ni.name}.style.display = 'none';`);
+                    else if (ni.template.display !== true)
+                        throw new Error("display property must be set to string, true, false, or null")
                 }
                 continue;
             }

@@ -256,6 +256,16 @@ test("Static Style", () => {
     assert.equal(r.rootNodes[0].getAttribute("style"), "background-color: red");
 });
 
+test("Static Style (named)", () => {
+
+    let r = Template.compile({
+        type: "DIV",
+        "style_background-color": "red",
+    })();
+
+    assert.equal(r.rootNodes[0].getAttribute("style"), "background-color: red");
+});
+
 test("Dynamic Style", () => {
 
     let val = "red";
@@ -276,23 +286,43 @@ test("Dynamic Style", () => {
 });
 
 
-test("Static Shown", () => {
+test("Static Display (false)", () => {
 
     let r = Template.compile({
         type: "DIV",
-        show: false,
+        display: false,
     })();
 
     assert.equal(r.rootNodes[0].getAttribute("style"), "display: none");
 });
 
-test("Dynamic Shown (with prior display set)", () => {
+test("Static Display (true)", () => {
+
+    let r = Template.compile({
+        type: "DIV",
+        display: true,
+    })();
+
+    assert.equal(r.rootNodes[0].getAttribute("style"), undefined);
+});
+
+test("Static Display (string)", () => {
+
+    let r = Template.compile({
+        type: "DIV",
+        display: "flex",
+    })();
+
+    assert.equal(r.rootNodes[0].getAttribute("style"), "display: flex");
+});
+
+test("Dynamic Display (with prior display set)", () => {
 
     let val = true;
     let r = Template.compile({
         type: "DIV",
         style: "display: flex",
-        show: () => val,
+        display: () => val,
     })();
 
     assert.equal(r.rootNodes[0].getAttribute("style"), "display: flex");
@@ -304,15 +334,23 @@ test("Dynamic Shown (with prior display set)", () => {
     val = true;
     r.update();
     assert.equal(r.rootNodes[0].getAttribute("style"), "display: flex");
+
+    val = "grid";
+    r.update();
+    assert.equal(r.rootNodes[0].getAttribute("style"), "display: grid");
+
+    val = true;
+    r.update();
+    assert.equal(r.rootNodes[0].getAttribute("style"), "display: flex");
 });
 
-test("Dynamic Shown (without prior display set)", () => {
+test("Dynamic Display (without prior display set)", () => {
 
     let val = true;
     let r = Template.compile({
         type: "DIV",
         style: "",
-        show: () => val,
+        display: () => val,
     })();
 
     assert.equal(r.rootNodes[0].getAttribute("style"), "");

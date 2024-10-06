@@ -81,7 +81,7 @@ export let TemplateHelpers = {
 
     setNodeDisplay(node, show, prev_display)
     {
-        if (show)
+        if (show === true)
         {
             // Null means the property didn't previously exist so remove it
             // Undefined means we've not looked at the property before so leave it alone
@@ -96,11 +96,18 @@ export let TemplateHelpers = {
             }
             return undefined;
         }
-        else
+        else if (show === false || show === null || show === undefined)
         {
             let prev = node.style.display;
             if (node.style.display != "none")
                 node.style.display = "none";
+            return prev ?? null;
+        }
+        else if (typeof(show) == 'string')
+        {
+            let prev = node.style.display;
+            if (node.style.display != show)
+                node.style.display = show;
             return prev ?? null;
         }
     },
