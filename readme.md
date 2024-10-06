@@ -2,7 +2,19 @@
 
 A simple, lightweight, code-only front-end Web framework.
 
+Unlike other front-end frameworks, CodeOnly is not reactive so there are
+no wrapper or proxy classes around your objects and everything is kept 
+as close to pure JavaScript as possible.
+
+Also, because there's no transpiling you can debug your code in the 
+browser exactly as you wrote it. (but you can still of course package
+it for distribution).
+
 ## Create a Component
+
+A component is the main way you work with CodeOnly.  A component
+includes a DOM template, logic code and an optional set of CSS style
+declarations.
 
 Most components will conform to this basic structure.
 
@@ -100,7 +112,7 @@ export function main()
 
 Each component has a template that declares the DOM elements associated with that component.
 
-Note that templates are declared as a static member of the component class.  This is because they're compiled and in would be inefficient to re-compile for each component instance.
+Note that templates are declared as a static member of the component class.  This is because they're compiled to JavaScript and would be inefficient to re-compile for each component instance.
 
 To declare a DOM element, use an object with a `type` property, prefix attributes with `attr_` and child elements using the `$` property.
 
@@ -288,7 +300,7 @@ To dynamically set a style property on an element, use the `style_` prefix:
 
 ### Dynamically Hiding and Showing Elements
 
-The `show` property can be used to set an element to `display: none`:
+The `show` attribute can be used to set an element to `display: none`:
 
 
 ```js
@@ -304,9 +316,9 @@ The `show` property can be used to set an element to `display: none`:
 
 ### Conditionally Including Elements
 
-The `if` property can be used to dynamically include or exclude an element from the DOM:
+The `if` attribute can be used to dynamically include or exclude an element from the DOM:
 
-(Note: as opposed to the `show` property which just hides an element, `if` completely excludes it from the DOM)
+(Note: while the `show` attribute just hides an element, `if` completely excludes it from the DOM)
 
 ```js
 {
@@ -443,10 +455,10 @@ gives:
 The `foreach` attributes supports the following sub-attributes:
 
 * `items` the set of items to be iterated over (or a callback to provide them)
-* `itemKey` a function to return a unique key for an item
-* `condition` a function that when returns false excludes the item
+* `itemKey` a callback function to return a unique key for an item
+* `condition` a callback function that indicates if an item should be included
 * `arraySensitive` set to true if the set of items should be updated when the component is updated (requires `itemKey`)
-* `indexSensitive` true if collection items should be updated when there position in the array (ie: context.index, see below) changes.
+* `indexSensitive` true if collection items should be updated when their position in the array changes (ie: set this to true if the template uses `context.index`, see below).
 * `itemSensitive` true if all collection items should be updated when the foreach block is updated.
 
 ```js
@@ -507,5 +519,50 @@ functions change from `(component) => ` to `(item, context) => ` where:
     - `context.outer` - the outer loop context (either an enclosing foreach loop context, or the component instance)
     - `context.model` - the current item
     - `context.key` - the current item's key
-    - `context.index` - the current items zero based index in the collection
+    - `context.index` - the current item's zero based index in the collection
+
+
+### Components in Templates
+
+To use a component in a template, set the `type` attribute to a constructor
+or class reference.
+
+eg: suppose you have a component called "MyButton", with a title property.
+
+```js
+class MyButton extends Component
+{
+    #title;
+    get title()
+    {
+        return this.#title;
+    }
+    set title()
+    {
+        this.#title = value;
+        invalidate();
+    }
+
+    // etc...
+}
+```
+
+To use this component in another component's template:
+
+```js
+{
+    type: "div",
+    $: [
+        { type: MyButton, title: "Button 1" },
+        { type: MyButton, title: "Button 2" },
+    ]
+}
+```
+
+Components support the `bind`, `export`, `if` and `foreach` attributes, 
+and events can be connected using the `on_` prefix (`Component` extends 
+`EventTarget` and can raise their own events).  All other properties
+are assigned directly to the component instance.
+
+
 
