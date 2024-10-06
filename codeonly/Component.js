@@ -23,6 +23,11 @@ export class Component extends EventTarget
         return Template.compile(this.template, { initOnCreate: false });
     }
 
+    static get isSingleRoot()
+    {
+        return this.compiledTemplate.isSingleRoot;
+    }
+
 
     init()
     {
@@ -114,11 +119,6 @@ export class Component extends EventTarget
         {
             throw new Error("Don't know how to watch that");
         }
-    }
-
-    static declareTemplate(componentClass, template)
-    {
-        componentClass.prototype.template = Template.compile(template, { initOnCreate: false });
     }
 
     static declareProperty(cls, name)

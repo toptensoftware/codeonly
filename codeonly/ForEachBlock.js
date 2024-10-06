@@ -197,7 +197,7 @@ export class ForEachBlock
     // Load initial items
     loadItems(items)
     {
-        this.itemsLoaded = false;
+        this.itemsLoaded = true;
 
         if (!items)
             items = [];

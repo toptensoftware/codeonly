@@ -123,15 +123,15 @@ class MyComponent extends Component
         this.wasDestroyed = true;
         super.destroy();
     }
-}
 
-Component.declareTemplate(MyComponent, {
-    childNodes: [
-        "apples",
-        "pears",
-        "bananas",
-    ]
-});
+    static template = {
+        childNodes: [
+            "apples",
+            "pears",
+            "bananas",
+        ]
+    }
+}
 
 
 test("Embedded Component", () => {

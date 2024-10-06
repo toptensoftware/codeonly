@@ -11,17 +11,17 @@ class TestComponent extends Component
         this.value = "Hello World";
         this.update();
     }
-}
 
-Component.declareTemplate(TestComponent, {
-    type:  "DIV",
-    childNodes: [
-        {
-            type: "DIV",
-            text: c => c.value,
-        }
-    ],
-});
+    static template = {
+        type:  "DIV",
+        childNodes: [
+            {
+                type: "DIV",
+                text: c => c.value,
+            }
+        ],
+    }
+}
 
 test("Instantiate Component", () => {
 
