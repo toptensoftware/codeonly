@@ -10,7 +10,7 @@ Also, because there's no transpiling you can debug your code in the
 browser exactly as you wrote it. (but you can still of course package
 it for distribution).
 
-## Create a Component
+## Creating a Component
 
 A component is the main way you work with CodeOnly.  A component
 includes a DOM template, logic code and an optional set of CSS style
@@ -577,7 +577,7 @@ component.
 
 Consider the following component which implements a custom anchor 
 link that has special click handling (eg: this could be a router link
-that invoke a routing mechanism rather than normal browser navigation)
+that invokes a custom routing mechanism rather than normal browser navigation)
 
 ```js
 export class MyLink extends Component
