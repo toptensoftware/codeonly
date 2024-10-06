@@ -263,8 +263,8 @@ export class ForEachBlock
             return;
         }
 
-        if (!this.arraySensitive)
-            return;
+        //if (!this.arraySensitive)
+        //    return;
 
         // Get keys for all items
         let tempCtx = { 

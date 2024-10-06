@@ -307,6 +307,9 @@ export function compileTemplateCode(rootTemplate, copts)
             // Compile value as a template
             if (slotNames.has(key))
             {
+                if (ni.template[key] === undefined)
+                    continue;
+                    
                 // Emit the template node
                 let propTemplate = new TemplateNode(ni.template[key]);
                 emit_node(propTemplate);
