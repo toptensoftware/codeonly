@@ -396,7 +396,7 @@ display style setting:
 
 The `if` attribute can be used to dynamically include or exclude an element from the DOM:
 
-(Note: while the `show` attribute just hides an element, `if` completely excludes it from the DOM)
+(Note: while the `show` attribute just hides an element, `if` completely excludes it)
 
 ```js
 {
@@ -411,7 +411,7 @@ The `if` attribute can be used to dynamically include or exclude an element from
 }
 ```
 
-You can also include one or more `elseif` and `else` blocks:
+You can also include one or more `elseif` blocks and an optional `else` block:
 
 ```js
 {
@@ -428,7 +428,7 @@ You can also include one or more `elseif` and `else` blocks:
             $: "Warning: ...",
         },
         {
-            else: null,
+            else: true,     // Value ignored
             type: "p",
             $: "All OK",
         }
@@ -440,9 +440,10 @@ Note: `if`, `elseif` and `else` conditional elements must all follow each other 
 
 ### Fragments
 
-If a template element doesn't have a type, it's considered a "fragment" element. Any child elements of the fragment will be included directly in the fragment's parent.
+If a template element doesn't have a type, it's considered a "fragment"  
+or multi-root element.  Any child elements of the fragment will be included directly in the fragment's parent.
 
-In this example, the `if` condition either includes or excludes all three paragraphs from the containing div:
+In this example, the one `if` condition either includes or excludes all three paragraphs from the containing div:
 
 ```js
 {
@@ -459,9 +460,9 @@ In this example, the `if` condition either includes or excludes all three paragr
 }
 ```
 
-Another way to think of fragments is as multi-root elements.
 
-## Element Binding
+
+## Accessing DOM Elements with Binding
 
 To access a DOM element from within the component use, use the `bind` attribute
 to attach the element reference to the component.
