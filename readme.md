@@ -12,7 +12,7 @@ it for distribution).
 
 ## Creating a Component
 
-A component is the core concept in CodeOnly and defines DOM (HTML) template, 
+A component is the core concept in CodeOnly and defines a DOM (HTML) template, 
 logic code and an optional set of CSS style declarations.
 
 By declaring code, template and styles in Javascript the entire
