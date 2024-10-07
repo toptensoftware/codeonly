@@ -98,16 +98,6 @@ test("ForEach Dynamic", () => {
         type: "DIV",
         childNodes: [
             {
-            /*
-                type: ForEach,
-                items: () => items,
-                condition: (item) => item,
-                template: {
-                    type: "DIV",
-                    text: (item) => item.text,
-                }
-            */
-
                 foreach: () => items,
                 type: "DIV",
                 text: x => x,

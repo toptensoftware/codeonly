@@ -129,6 +129,8 @@ export class ForEachBlock
             
         if (ins != 0)
             this.#insert(this.observableItems, null, index, ins);
+
+        this.#updateEmpty();
     }
 
     get rootNodes()
@@ -257,8 +259,8 @@ export class ForEachBlock
                 insert: multi_root_insert,
                 delete: multi_root_delete,
                 move: multi_root_move,
-                skip: () => {},
-                keep: patch_existing,
+            skip: () => {},
+            keep: patch_existing,
             }
         }
 
@@ -353,25 +355,25 @@ export class ForEachBlock
     #insert(newItems, newKeys, index, count)
     {
         if (this.itemConstructor.isSingleRoot)
-            this.#multi_root_insert(newItems, newKeys, index, count);
-        else
             this.#single_root_insert(newItems, newKeys, index, count);
+        else
+            this.#multi_root_insert(newItems, newKeys, index, count);
     }
 
     #delete(index, count)
     {
         if (this.itemConstructor.isSingleRoot)
-            this.#multi_root_delete(index, count);
-        else
             this.#single_root_delete(index, count);
+        else
+            this.#multi_root_delete(index, count);
     }
 
     #move(from, to, count)
     {
         if (this.itemConstructor.isSingleRoot)
-            this.#multi_root_move(from, to, count);
-        else
             this.#single_root_move(from, to, count);
+        else
+            this.#multi_root_move(from, to, count);
     }
 
     #multi_root_insert(newItems, newKeys, index, count)

@@ -40,11 +40,13 @@ class ArrayTraps
       del = 0;
       index = this.arr.length;
     }
-    if (!del || del < 0)
+    if (del === undefined)
+      del = this.arr.length - index;
+    if (del < 0)
       del = 0;
 
     let result = this.arr.splice(...arguments);
-    this.fire(index, del, arguments.length - 2);
+    this.fire(index, del, arguments.length > 2 ? arguments.length - 2 : 0);
     return result;
   }
   sort()

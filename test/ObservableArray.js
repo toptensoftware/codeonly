@@ -60,5 +60,8 @@ test("Events Test", () => {
 
     a[1] = "berries";
     assert.deepEqual(a, b);
+
+    a.splice(0),
+    assert.deepEqual(a, b);
 });
 
