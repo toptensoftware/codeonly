@@ -6,20 +6,19 @@ Unlike other front-end frameworks, CodeOnly is not reactive so there are
 no wrapper or proxy classes around your objects and everything is kept 
 as close to pure JavaScript as possible.
 
-Also, because there's no transpiling you can debug your code in the 
+Also, since there's no transpiling you can debug your code in the 
 browser exactly as you wrote it. (but you can still of course package
 it for distribution).
 
 ## Creating a Component
 
-A component is the main way you work with CodeOnly.  A component
-includes a DOM template, logic code and an optional set of CSS style
-declarations.
+A component is the core concept in CodeOnly and defines DOM (HTML) template, 
+logic code and an optional set of CSS style declarations.
 
 By declaring code, template and styles in Javascript the entire
 definition of a component can be collected into a single `.js` file.
 
-Most components will conform to following basic structure.
+Most components will conform to the following basic structure.
 
 ```js
 import { Component, Style } from "codeonly.js";
@@ -58,7 +57,7 @@ Style.declare(`
 
 ## Mounting Components
 
-To mount a component against the DOM, call the component's `mount` method passing an element or selector for where the component should be attached to the DOM:
+To attach a component to the document's DOM, call the component's `mount` method passing an element or selector indicating where the component should be mounted:
 
 eg: 
 
@@ -115,18 +114,21 @@ export function main()
 
 Each component has a template that declares the DOM elements associated with that component.
 
-Note that templates are declared as a static member of the component class.  This is because they're compiled to JavaScript and would be inefficient to re-compile for each component instance.  The first time an instance of a Component is constructed, 
-the template is compiled and re-used for all subsequence instances.
+Templates are declared as a static member of the component class.  This is because templates are compiled at runtime to JavaScript and would be inefficient to 
+re-compile for each component instance.  The template is compiled the first time 
+an instance of a Component is constructed and re-used for all subsequent instances.
 
-To declare a DOM element, use an object with a `type` property, prefix attributes with `attr_` and child elements using the `$` property.
+Declare a DOM elements in the template as objects.  The `type` property specifies 
+the tag type, attributes prefixed  with `attr_` set attributes on the element and
+and child elements are declared using the `$` property.  eg:
 
 ```javascript
 // <a href="/">Home</a>
 {
-    type: 'a',
-    attr_href: "/",
-    $: [
-        "Home", 
+    type: 'a',          // tag type
+    attr_href: "/",     // href attribute
+    $: [                // array of child nodes
+        "Home",         // A text node
     ]
 }
 ```
@@ -138,7 +140,7 @@ If an element only has a single child element the `$` property need not be an ar
 {
     type: 'a',
     attr_href: "/",
-    $: "Home", 
+    $: "Home",          // Only a single child so doesn't need to be an array
 }
 ```
 
@@ -165,7 +167,7 @@ Most settings in a template can be set dynamically by providing a callback:
 }
 ```
 
-Where `c` will be a reference to the component instance:
+Where `c` is a reference to the component instance:
 
 
 ```js
@@ -178,12 +180,13 @@ class MyComponent extends Component
 
     static template = {
         type: 'div',
-        class: c => c.divClass,
+        class: c => c.divClass,     // call the component instance
     }
 }
 ```
 
-To update a component when any of it's dynamic properties have changed, call either
+To update a component when any of its dynamic properties have changed, 
+call either:
 
 * `update()` to update the DOM immediately, or
 * `invalidate()` to update the DOM on the next animation frame.
@@ -216,7 +219,13 @@ class MyComponent extends Component
 
 ### Event Handlers
 
-To connect event handlers to elements in the template, use the `on_` prefix:
+To connect event handlers to elements in the template, use the `on_` prefix. 
+The callback will be passed two parameters:
+
+1. the component instance
+2. the event object
+
+eg: 
 
 ```javascript
 class MyButton extends Component
@@ -259,12 +268,17 @@ import { Html } from 'codeonly.js';
 }
 ```
 
-Note, to include whitespace between elements just include the whitespace in the template:
+
+### Whitespace Between Elements
+
+Templates don't include any whitespace between HTML elements.  Often this
+doesn't matter, but when it does, simply include the spaces in the template:
 
 ```js
 {
     type: "div",
     $: [
+        // Without spaces, these buttons would have no gaps between them
         { type: "button", $: "Button 1" },
         " ",
         { type: "button", $: "Button 2" },
@@ -276,7 +290,7 @@ Note, to include whitespace between elements just include the whitespace in the 
 
 ### Dynamic Boolean Classes
 
-To conditionally set a class on an element,use the `class_` prefix:
+To conditionally set or remove a class on an element, use the `class_` prefix:
 
 ```js
 // when isSelected is true:
@@ -289,7 +303,7 @@ To conditionally set a class on an element,use the `class_` prefix:
 }
 ```
 
-To set class names with a hyphen, use camelCase:
+To set class names that contain hyphens, use camelCase:
 
 ```js
 { 
@@ -309,7 +323,7 @@ or, a string property key:
 
 ### Dynamic Style Properties
 
-To dynamically set a style property on an element, use the `style_` prefix:
+To dynamically change a style property on an element, use the `style_` prefix:
 
 ```js
 // when textColor returns 'red':
@@ -320,7 +334,7 @@ To dynamically set a style property on an element, use the `style_` prefix:
 }
 ```
 
-To set style names with hyphens, use camelCase:
+To set style names that contain hyphens, use camelCase:
 
 ```js
 // <div style="text-align: center" >
@@ -330,7 +344,7 @@ To set style names with hyphens, use camelCase:
 }
 ```
 
-or, use a string property key
+or, use a string property key:
 
 ```js
 // <div style="text-align: center" >
