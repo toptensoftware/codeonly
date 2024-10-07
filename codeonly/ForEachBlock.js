@@ -230,6 +230,7 @@ export class ForEachBlock
         {
             // Patch existing items and quit
             this.#patch_existing(0, this.itemDoms.length);
+            this.#updateEmpty();
             return;
         }
 
@@ -333,6 +334,10 @@ export class ForEachBlock
                 this.emptyDom = this.emptyConstructor();
                 if (this.tailSentinal.parentNode)
                     this.tailSentinal.before(...this.emptyDom.rootNodes);
+            }
+            if (this.emptyDom)
+            {
+                this.emptyDom.update();
             }
         }
         else
