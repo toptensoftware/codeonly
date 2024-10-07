@@ -524,17 +524,27 @@ The `foreach` attributes supports the following sub-attributes:
 * `arraySensitive` set to true if the set of items should be updated when the component is updated (requires `itemKey`)
 * `indexSensitive` true if collection items should be updated when their position in the array changes (ie: set this to true if the template uses `context.index`, see below).
 * `itemSensitive` true if all collection items should be updated when the foreach block is updated.
+* `empty` template items to show when the items array is empty.
 
 ```js
 static template = {
     type: "section"
     $: {
+        // This describes the "foreach" block
         foreach: {
             items: c => items, 
             itemKey: i => i.id,     // provide a unique value for each item
             indexSensitive: true,   // true because we use ctx.index
             arraySensitive: true,   // because we want to be able to update the list
+
+            // This will be used if the list is empty
+            empty: {
+                type: "div",
+                $: "Nothing to see here",
+            }
         },
+
+        // This describes what to repeat for each item
         type: "div",
         id: i => i.id,
         // See below about the (i,ctx) callback parameters
