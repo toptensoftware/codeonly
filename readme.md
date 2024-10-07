@@ -68,7 +68,7 @@ eg:
 // Main entry point into the application
 export function main()
 {
-    // Mount the root "Main" component on #main
+    // Mount the root "Application" component on #main
     new Application().mount("#main");
 
     // Other app initialization goes here
