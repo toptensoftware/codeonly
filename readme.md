@@ -118,9 +118,9 @@ Templates are declared as a static member of the component class.  This is becau
 re-compile for each component instance.  The template is compiled the first time 
 an instance of a Component is constructed and re-used for all subsequent instances.
 
-Declare a DOM elements in the template as objects.  The `type` property specifies 
-the tag type, attributes prefixed  with `attr_` set attributes on the element and
-and child elements are declared using the `$` property.  eg:
+Declare DOM elements in the template as objects.  The `type` property specifies 
+the tag type, properties prefixed  with `attr_` set the elements' attributes and
+child elements are declared with the `$` property.  eg:
 
 ```javascript
 // <a href="/">Home</a>
