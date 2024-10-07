@@ -496,7 +496,7 @@ export class MyComponent extends Component
         type: "section"
         $: {
             foreach: {
-                items: c => items, 
+                items: c => c.items, 
             },
             type: "div",
             id: i => i.id,
@@ -584,6 +584,65 @@ functions change from `(component) => ` to `(item, context) => ` where:
     - `context.model` - the current item
     - `context.key` - the current item's key
     - `context.index` - the current item's zero based index in the collection
+
+
+### ForEach Elements with ObservableArrays
+
+Normally the `foreach` component runs a diff algorithm to work out what needs 
+to be updated in the DOM.  This works well and is very efficient, but
+not as efficient as using CodeOnly's `ObservableArray`.
+
+When the items provided to a `foreach` block is an `ObservableArray` any
+changes to the array are reflected immediately in the DOM by monitoring
+the array's contents as they change.
+
+```js
+import { Component, ObservableArray } from "codeonly.js";
+
+export class MyComponent extends Component
+{
+    #items = new ObservableArray();
+
+    get items()
+    {
+        return this.#items;
+    }
+
+    someMethod()
+    {
+        // Any changes to the items collection are reflected
+        // immediately in the DOM
+        this.#items.push(
+            { text: "new item 1" },
+            { text: "new item 2" },
+        );
+    }
+
+    static template = {
+        type: "section"
+        $: {
+            foreach: c => c.items, 
+            type: "div",
+            $: i => i.text,
+        }
+    }
+}
+```
+
+Note the following when using an `ObservableArray`:
+
+* the `foreach.itemKey` method isn't used
+* the `context.itemKey` property will be `undefined`
+* the `foreach.condition` callback isn't supported
+* changes to array are reflected in the DOM immediately and not
+  delayed through the `invalidate` mechanism.
+* returning a different observable array instance will reload
+  the entire list (destroy + recreate the DOM) and start
+  monitoring the new observable array.
+* the `itemSensitive` and `indexSensitive` properties are supported
+  but require the component to be updated (ie: a change to the 
+  ObservableArray item set doesn't trigger existing item updates).
+* the `arraySensitive` property is ignored.
 
 
 ### Components in Templates

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Template, html } from "../codeonly/codeonly.js";
+import { Template, ObservableArray } from "../codeonly/codeonly.js";
 import "./mockdom.js";
 
 
@@ -108,6 +108,36 @@ test("ForEach Dynamic", () => {
                 }
             */
 
+                foreach: () => items,
+                type: "DIV",
+                text: x => x,
+            }
+        ]
+    })();
+
+
+    assert_foreach_content(r, items, actual, expected);
+
+    function actual()
+    {
+        return r.rootNodes[0].childNodes.slice(1, -1).map(x => x.innerText);
+    }
+
+    function expected()
+    {
+        return items;
+    }
+});
+
+test("ForEach Observable", () => {
+
+    let items = new ObservableArray();
+    items.push("A", "B", "C");
+
+    let r = Template.compile({
+        type: "DIV",
+        childNodes: [
+            {
                 foreach: () => items,
                 type: "DIV",
                 text: x => x,

@@ -32,8 +32,20 @@ class ArrayTraps
   }
   splice(index, del)
   {
-    this.arr.splice(...arguments);
+    // Make sure fired range is valid
+    if (index < 0)
+      index += this.arr.length;
+    if (index >= this.arr.length)
+    {
+      del = 0;
+      index = this.arr.length;
+    }
+    if (!del || del < 0)
+      del = 0;
+
+    let result = this.arr.splice(...arguments);
     this.fire(index, del, arguments.length - 2);
+    return result;
   }
   sort()
   {
@@ -95,6 +107,10 @@ class ArrayHandler
 
   ["get"](target, name)
   {
+    if (name == "underlying")
+      return this.traps.arr;
+    if (name == "isObservable")
+      return true;
     let trap = this.traps.__gettrap(name);
     if (trap)
       return trap;

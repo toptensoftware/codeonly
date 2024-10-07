@@ -118,20 +118,17 @@ export class ForEachBlock
 
         if (options.initOnCreate)
         {
-            this.loadItems(this.resolveItems());
+            this.update();
         }
     }
 
-    resolveItems()
+    onObservableUpdate(index, del, ins)
     {
-        if (this.items instanceof Function)
-        {
-            return this.items.call(this.outer.model, this.outer.model, this.outer);
-        }
-        else
-        {
-            return this.items;
-        }
+        if (del != 0)
+            this.#delete(index, del);
+            
+        if (ins != 0)
+            this.#insert(this.observableItems, null, index, ins);
     }
 
     get rootNodes()
@@ -157,138 +154,82 @@ export class ForEachBlock
 
     update()
     {
-        this.updateItems(this.resolveItems());
-    }
-
-    destroy()
-    {
-        for (let i=0; i<this.itemDoms.length; i++)
+        // Resolve the items collection
+        let newItems;
+        if (this.items instanceof Function)
         {
-            this.itemDoms[i].destroy();
+            newItems = this.items.call(this.outer.model, this.outer.model, this.outer);
         }
-    }
-
-    insertEmpty()
-    {
-        if (!this.emptyDom && this.emptyConstructor)
+        else
         {
-            this.emptyDom = this.emptyConstructor();
-            if (this.tailSentinal.parentNode)
-                this.tailSentinal.before(...this.emptyDom.rootNodes);
+            newItems = this.items;
         }
-    }
 
-    removeEmpty()
-    {
-        if (this.emptyDom)
+        // Disconnect old observable items?
+        if (this.observableItems != null && this.observableItems != newItems)
         {
-            if (this.tailSentinal.parentNode)
+            this.observableItems.removeListener(this._onObservableUpdate);
+        }
+
+        // Connect new observableItems
+        if (Array.isArray(newItems) && newItems.isObservable)
+        {
+            // Different instance?
+            if (this.observableItems != newItems)
             {
-                for (var n of this.emptyDom.rootNodes)
-                {
-                    n.remove();
-                }
+                // Connect listener
+                this._onObservableUpdate = this.onObservableUpdate.bind(this);
+                this.observableItems = newItems;
+                this.observableItems.addListener(this._onObservableUpdate);
+
+                // Reload items
+                this.#delete(0, this.itemDoms.length);
+                this.itemsLoaded = false;
             }
-            this.emptyDom.destroy();
-            this.emptyDom = null;
         }
-    }
 
-    // Load initial items
-    loadItems(items)
-    {
-        this.itemsLoaded = true;
-
-        if (!items)
-            items = [];
-
-        // Construct all items
-        for (let index=0; index<items.length; index++)
+        // Run condition and key generation (except if using observable)
+        let newKeys = null;
+        if (!this.observableItems)
         {
-            // Get item
-            let item = items[index];
-
-            // Setup item context
-            let itemCtx = {
-                outer: this.outer,
-                model: item,
+            // Get keys for all items
+            let tempCtx = { 
+                outer: this.outer 
             };
 
-            // Test condition
-            if (this.condition && !this.condition.call(item, item, itemCtx))
-                continue;
-
-            // Setup key
-            if (this.itemKey)
+            // Filter out conditional items
+            if (this.condition)
             {
-                itemCtx.key = this.itemKey.call(item, item, itemCtx);
-            }
-            else
-            {
-                itemCtx.key = item;
+                newItems = newItems.filter((item) => {
+                    tempCtx.model = item;
+                    return this.condition.call(item, item, tempCtx);
+                });
             }
 
-            // Deliberately don't set index field until after itemKey called
-            itemCtx.index = index;
-
-            // Construct the item
-            let itemDom = this.itemConstructor(itemCtx);
-
-            // Add to collections
-            this.itemDoms.push(itemDom);
+            // Generate keys
+            newKeys = this.itemKey ? newItems.map((item) => {
+                tempCtx.item = item;
+                return this.itemKey.call(item, item, tempCtx);
+            }) : newItems;
         }
 
-        if (this.itemDoms.length == 0)
-        {
-            this.insertEmpty();
-        }
-    }
-
-    // Update items
-    updateItems(newItems)
-    {
-        // If not array sensitive, don't bother diffing
-        if (this.itemsLoaded && !this.arraySensitive)
+        // Items not yet loaded?
+        if (!this.itemsLoaded)
         {
             this.itemsLoaded = true;
-            
-            // If item's are sensitive then update them
-            if (this.itemSensitive)
-            {
-                for (let i=0; i<this.itemDoms; i++)
-                {
-                    this.itemDoms[i].update();
-                }
-            }
+            this.#insert(newItems, newKeys, 0, newItems.length);
+            this.#updateEmpty();
             return;
         }
 
-        //if (!this.arraySensitive)
-        //    return;
-
-        // Get keys for all items
-        let tempCtx = { 
-            outer: this.outer 
-        };
-
-        // Filter out conditional items
-        if (this.condition)
+        // If not array sensitive or using an observable items array
+        // then don't bother diffing
+        if (!this.arraySensitive || this.observableItems)
         {
-            newItems = newItems.filter((item) => {
-                tempCtx.model = item;
-                return this.condition.call(item, item, tempCtx);
-            });
+            // Patch existing items and quit
+            this.#patch_existing(0, this.itemDoms.length);
+            return;
         }
-
-        // Remove empty mode nodes
-        if (newItems.length > 0)
-            this.removeEmpty();
-
-        // Generate keys
-        let newKeys = this.itemKey ? newItems.map((item) => {
-            tempCtx.item = item;
-            return this.itemKey.call(item, item, tempCtx);
-        }) : newItems;
 
         // Do we need to update existing items?
         let needCoverage = this.itemSensitive || this.indexSensitive;
@@ -327,36 +268,138 @@ export class ForEachBlock
             handlers[o.op].call(this, o);
         }
 
-        // Remove empty mode nodes
-        if (newItems.length == 0)
-            this.insertEmpty();
+        this.#updateEmpty();
         
         function multi_root_insert(op)
         {
-            let index = op.index;
-            let count = op.count;
-            let newNodes = [];
-            for (let i=0; i<count; i++)
+            this.#multi_root_insert(newItems, newKeys, op.index, op.count);
+        }
+
+        function multi_root_delete(op)
+        {
+            this.#multi_root_delete(op.index, op.count);
+        }
+
+        function multi_root_move(op)
+        {
+            this.#multi_root_move(op.from, op.to, op.count);
+        }
+
+        function single_root_insert(op)
+        {
+            this.#single_root_insert(newItems, newKeys, op.index, op.count);
+        }
+
+        function single_root_delete(op)
+        {
+            this.#single_root_delete(op.index, op.count);
+        }
+
+        function single_root_move(op)
+        {
+            this.#single_root_move(op.from, op.to, op.count);
+        }
+
+        function patch_existing(op)
+        {
+            this.#patch_existing(op.index, op.count);
+        }
+    }
+
+    destroy()
+    {
+        if (this.observableItems != null)
+        {
+            this.observableItems.removeListener(this._onObservableUpdate);
+            this.observableItems = null;
+        }
+
+        for (let i=0; i<this.itemDoms.length; i++)
+        {
+            this.itemDoms[i].destroy();
+        }
+
+        this.itemDoms = null;
+    }
+
+    #updateEmpty()
+    {
+        if (this.itemDoms.length == 0)
+        {
+            if (!this.emptyDom && this.emptyConstructor)
             {
-                // Setup item context
-                let itemCtx = {
-                    outer: this.outer,
-                    model: newItems[index + i],
-                    key: newKeys[index + i],
-                    index: index + i,
-                };
-
-                // Construct the item
-                let itemDom = this.itemConstructor(itemCtx);
-
-                // Add to item collection
-                this.itemDoms.splice(index + i, 0, itemDom);
-
-                // Build list of nodes to be inserted
-                newNodes.push(...itemDom.rootNodes);
+                this.emptyDom = this.emptyConstructor();
+                if (this.tailSentinal.parentNode)
+                    this.tailSentinal.before(...this.emptyDom.rootNodes);
             }
+        }
+        else
+        {
+            if (this.emptyDom)
+            {
+                if (this.tailSentinal.parentNode)
+                {
+                    for (var n of this.emptyDom.rootNodes)
+                    {
+                        n.remove();
+                    }
+                }
+                this.emptyDom.destroy();
+                this.emptyDom = null;
+            }
+        }
+    }
 
-            // Insert the nodes
+    #insert(newItems, newKeys, index, count)
+    {
+        if (this.itemConstructor.isSingleRoot)
+            this.#multi_root_insert(newItems, newKeys, index, count);
+        else
+            this.#single_root_insert(newItems, newKeys, index, count);
+    }
+
+    #delete(index, count)
+    {
+        if (this.itemConstructor.isSingleRoot)
+            this.#multi_root_delete(index, count);
+        else
+            this.#single_root_delete(index, count);
+    }
+
+    #move(from, to, count)
+    {
+        if (this.itemConstructor.isSingleRoot)
+            this.#multi_root_move(from, to, count);
+        else
+            this.#single_root_move(from, to, count);
+    }
+
+    #multi_root_insert(newItems, newKeys, index, count)
+    {
+        let newNodes = [];
+        for (let i=0; i<count; i++)
+        {
+            // Setup item context
+            let itemCtx = {
+                outer: this.outer,
+                model: newItems[index + i],
+                key: newKeys?.[index + i],
+                index: index + i,
+            };
+
+            // Construct the item
+            let itemDom = this.itemConstructor(itemCtx);
+
+            // Add to item collection
+            this.itemDoms.splice(index + i, 0, itemDom);
+
+            // Build list of nodes to be inserted
+            newNodes.push(...itemDom.rootNodes);
+        }
+
+        // Insert the nodes
+        if (this.tailSentinal.parentNode)
+        {
             let insertBefore;
             if (index + count < this.itemDoms.length)
             {
@@ -368,54 +411,61 @@ export class ForEachBlock
             }
             insertBefore.before(...newNodes);
         }
+    }
 
-        function multi_root_delete(op)
+    #multi_root_delete(index, count)
+    {
+        // Destroy the items
+        let isAttached = this.tailSentinal.parentNode != null;
+        for (let i=0; i<count; i++)
         {
-            let index = op.index;
-            let count = op.count;
-
-            // Destroy the items
-            for (let i=0; i<count; i++)
+            // Remove child nodes
+            if (isAttached)
             {
-                // Remove child nodes
                 let children = this.itemDoms[index + i].rootNodes;
                 for (let j = 0; j<children.length; j++)
                 {
                     children[j].remove();
                 }
-
-                // Destroy the item
-                this.itemDoms[index + i].destroy();
             }
 
-            // Splice arrays
-            this.itemDoms.splice(index, count);
+            // Destroy the item
+            this.itemDoms[index + i].destroy();
         }
 
-        function multi_root_move(op)
+        // Splice arrays
+        this.itemDoms.splice(index, count);
+    }
+
+    #multi_root_move(from, to, count)
+    {
+        // Collect and remove DOM nodes
+        let nodes = [];
+        for (let i=0; i<count; i++)
         {
-            // Collect and remove DOM nodes
-            let nodes = [];
-            for (let i=0; i<op.count; i++)
-            {
-                nodes.push(...this.itemDoms[op.from + i].rootNodes);
-            }
+            nodes.push(...this.itemDoms[from + i].rootNodes);
+        }
+
+        // Remove items
+        let items = this.itemDoms.splice(from, count);
+
+        // Re-insert items
+        this.itemDoms.splice(to, 0, ...items);
+
+        // Update DOM
+        if (this.tailSentinal.parentNode != null)
+        {
+            // Remove nodes
             for (let i=0; i<nodes.length; i++)
             {
                 nodes[i].remove();
             }
 
-            // Remove items
-            let items = this.itemDoms.splice(op.from, op.count);
-
-            // Re-insert items
-            this.itemDoms.splice(op.to, 0, ...items);
-
             // Insert the nodes
             let insertBefore;
-            if (op.to + op.count < this.itemDoms.length)
+            if (to + count < this.itemDoms.length)
             {
-                insertBefore = this.itemDoms[op.to + op.count].rootNodes[0];
+                insertBefore = this.itemDoms[to + count].rootNodes[0];
             }
             else
             {
@@ -423,33 +473,36 @@ export class ForEachBlock
             }
             insertBefore.before(...nodes);
         }
+    }
 
-        function single_root_insert(op)
+
+
+    #single_root_insert(newItems, newKeys, index, count)
+    {
+        let newNodes = [];
+        for (let i=0; i<count; i++)
         {
-            let index = op.index;
-            let count = op.count;
-            let newNodes = [];
-            for (let i=0; i<count; i++)
-            {
-                // Setup item context
-                let itemCtx = {
-                    outer: this.outer,
-                    model: newItems[index + i],
-                    key: newKeys[index + i],
-                    index: index + i,
-                };
+            // Setup item context
+            let itemCtx = {
+                outer: this.outer,
+                model: newItems[index + i],
+                key: newKeys?.[index + i],
+                index: index + i,
+            };
 
-                // Construct the item
-                let item_closure = this.itemConstructor(itemCtx);
+            // Construct the item
+            let item_closure = this.itemConstructor(itemCtx);
 
-                // Add to item collection
-                this.itemDoms.splice(index + i, 0, item_closure);
+            // Add to item collection
+            this.itemDoms.splice(index + i, 0, item_closure);
 
-                // Build list of nodes to be inserted
-                newNodes.push(item_closure.rootNode);
-            }
+            // Build list of nodes to be inserted
+            newNodes.push(item_closure.rootNode);
+        }
 
-            // Insert the nodes
+        // Insert the nodes
+        if (this.tailSentinal.parentNode)
+        {
             let insertBefore;
             if (index + count < this.itemDoms.length)
             {
@@ -461,84 +514,90 @@ export class ForEachBlock
             }
             insertBefore.before(...newNodes);
         }
+    }
 
-        function single_root_delete(op)
+    #single_root_delete(index, count)
+    {
+        // Destroy the items
+        let isAttached = this.tailSentinal.parentNode != null;
+        for (let i=0; i<count; i++)
         {
-            let index = op.index;
-            let count = op.count;
-            // Destroy the items
-            for (let i=0; i<count; i++)
+            // Remove child nodes
+            if (isAttached)
             {
-                // Remove child nodes
                 this.itemDoms[index + i].rootNode.remove();
-
-                // Destroy the item
-                this.itemDoms[index + i].destroy();
             }
 
-            // Splice arrays
-            this.itemDoms.splice(index, count);
+            // Destroy the item
+            this.itemDoms[index + i].destroy();
         }
 
-        function single_root_move(op)
+        // Splice arrays
+        this.itemDoms.splice(index, count);
+    }
+
+    #single_root_move(from, to, count)
+    {
+        // Collect and remove DOM nodes
+        let nodes = [];
+        for (let i=0; i<count; i++)
         {
-            // Collect and remove DOM nodes
-            let nodes = [];
-            for (let i=0; i<op.count; i++)
-            {
-                nodes.push(this.itemDoms[op.from + i].rootNode);
-            }
+            nodes.push(this.itemDoms[from + i].rootNode);
+        }
+
+        // Remove items
+        let items = this.itemDoms.splice(from, count);
+
+        // Re-insert items
+        this.itemDoms.splice(to, 0, ...items);
+
+        // Update DOM
+        if (this.tailSentinal.parentNode)
+        {
+            // Remove nodes
             for (let i=0; i<nodes.length; i++)
             {
                 nodes[i].remove();
             }
 
-            // Remove items
-            let items = this.itemDoms.splice(op.from, op.count);
-
-            // Re-insert items
-            this.itemDoms.splice(op.to, 0, ...items);
-
-            // Insert the nodes
+            // Insert nodes
             let insertBefore;
-            if (op.to + op.count < this.itemDoms.length)
+            if (to + count < this.itemDoms.length)
             {
-                insertBefore = this.itemDoms[op.to + op.count].rootNodes[0];
+                insertBefore = this.itemDoms[to + count].rootNodes[0];
             }
             else
             {
                 insertBefore = this.tailSentinal;
             }
             insertBefore.before(...nodes);
-
         }
+    }
 
-        function patch_existing(op)
+    #patch_existing(index, count)
+    {
+        if (this.itemSensitive)
         {
-            if (this.itemSensitive)
+            // If item sensitive, always update index and item
+            for (let i=index, end = index + count; i<end; i++)
             {
-                // If item sensitive, always update index and item
-                for (let i=op.index, end = op.index + op.count; i<end; i++)
+                let item = this.itemDoms[i];
+                item.context.index = i;
+                item.update();
+            }
+        }
+        else if (this.indexSensitive)
+        {
+            // If index sensitive, only update when index changes
+            for (let i=index, end = index + count; i<end; i++)
+            {
+                let item = this.itemDoms[i];
+                if (item.context.index != i)
                 {
-                    let item = this.itemDoms[i];
                     item.context.index = i;
                     item.update();
                 }
             }
-            else if (this.indexSensitive)
-            {
-                // If index sensitive, only update when index changes
-                for (let i=op.index, end = op.index + op.count; i<end; i++)
-                {
-                    let item = this.itemDoms[i];
-                    if (item.context.index != i)
-                    {
-                        item.context.index = i;
-                        item.update();
-                    }
-                }
-            }
         }
-
     }
 }
