@@ -122,13 +122,13 @@ export class IfBlock
                 templates.splice(i, 1);
                 i--;
             }
-            else if (t.else)
+            else if (t.else !== undefined)
             {
                 if (!ifBlock)
                     throw new Error("template has 'else' without a preceeding condition");
 
                 ifBlock.branches.push({
-                    condition: t.else,
+                    condition: true,
                     template: t,
                 });
                 delete t.else;
