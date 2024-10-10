@@ -981,3 +981,115 @@ and `main` elements is provided by the derived `MyDialog` class
 </dialog>
 ```
 
+
+## Update Manager
+
+The `UpdateManager` class provides an easy way to fire object granularity
+update notifications.
+
+For example, suppose you have a list of `Post` objects displayed in a list
+using a set of `PostView` components.  When something about a `Post` changes
+we need a way to notify the assocated `PostView` instance to invalidate or
+update itself.
+
+To set this up, the `PostView` component needs to listen to the update manager
+for notifications.
+
+```js
+import { Component, updateManager } from "codeonly.js";
+
+class PostView extends Component
+{
+    #post;
+    set post(value)
+    {
+        // Remove old listener (redundant if this.#post is null or undefined)
+        updateManager.removeListener(this.#post, this.invalidate);
+
+        // Store new object
+        this.#post = value;
+
+        // Add new listener.  When post object fires update notification
+        // this component will be invalidated and DOM eventually updated
+        updateManager.addListener(this.#post, this.invalidate);
+    }
+
+    destroy()
+    {
+        // This is optional but prevents additional update callbacks
+        // once this PostView has been removed from the DOM.
+        updateManager.removeListener(this.#post, this.update);
+    }
+}
+```
+
+Now, when something about a `Post` changes, we fire the notification
+
+```js
+import { updateManager } from "codeonly.js";
+
+class Post
+{
+    #text;
+    get text()
+    {
+        return this.#text;
+    }
+    set text(value)
+    {
+        // Store new text
+        this.#text = value;
+
+        // Notify all components showing this post
+        updateManager.fire(this);
+    }
+}
+```
+
+
+Some notes about the above:
+
+* `updateManager` is the default instance of the `UpdateManager` class.  You
+  can create additional instances if you like (`new UpdateManager()`) but in general
+  this shouldn't be necessary.
+* Calls to `addListener` and `removeListener` methods are ignored if the passed 
+  source object is `null` or `undefined`.
+* The `Component.update()` and `Component.invalidate()` methods are already pre-bound
+  to the `Component` instance.  ie: don't do this: `addListener(this.#post, this.update.bind(this))`.
+* Because the `updateManager` uses a `WeakMap` to track source objects, there's
+  no risk of `Post` objects not getting collected.
+* To prevent unnecessary updates on components removed from the DOM, the Component overrides
+  `destroy` and removes the listener.
+
+Also note, the update manager can be used with plain objects.  eg: suppose
+you're getting a Post update from a network event:
+
+```js
+// Assume _postMap is a map of post ids to JSON objects and updatedPost is
+// a JSON object received from a network event.
+
+// Find the original post object
+let post = _postMap.get(updatedPost.id);
+if (post)
+{
+    // Update it
+    Object.assign(post, updatedPost);
+
+    // Invalidate any watching component views (or other callbacks)
+    updateManager.fire(post);
+}
+
+```
+
+Also note, any parameters passed to the `fire` method are passed on 
+to the event listeners:
+
+```js
+updateManager.addListener(post, (obj, p1) => {
+    // obj = the source object
+    // p1 = "param1"
+});
+
+updateManager.fire(post, "param1");
+
+```

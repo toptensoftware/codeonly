@@ -5,6 +5,10 @@ export class Component extends EventTarget
     constructor(shouldInit)
     {
         super();
+
+        // Bind these so they can be passed directly to update callbacks.
+        this.update = this.update.bind(this);
+        this.invalidate = this.invalidate.bind(this);
         
         if (shouldInit !== false)
             this.init();
