@@ -1,5 +1,3 @@
-import { processStyles } from "./processStyles.js";
-
 let pendingStyles = [];
 let styleNode = null;
 
@@ -7,7 +5,7 @@ export class Style
 {
     static declare(css)
     {
-        pendingStyles.push(processStyles(css));
+        pendingStyles.push(css);
         requestAnimationFrame(mountStyles);
     }
 }
