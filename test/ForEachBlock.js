@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
 import { Template, ForEachBlock } from "../codeonly/codeonly.js";
-import "./mockdom.js";
+import "./mockdom/mockdom.js";
 
 function assert_foreach_content(r, items, actual, expected)
 {

@@ -1,5 +1,5 @@
 import { strict as assert } from "node:assert";
-import { tokenizer } from "../codeonly/tokenizer.js";
+import { tokenizer } from "./tokenizer.js";
 
 class HTMLClassList
 {

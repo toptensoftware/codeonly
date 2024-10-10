@@ -1,7 +1,6 @@
 import { strict as assert } from "node:assert";
-import { tokenizer } from "../codeonly/tokenizer.js";
 import { test } from "node:test";
-import { parseHtml } from "./mockdom.js";
+import { parseHtml } from "./mockdom/mockdom.js";
 
 
 test("text node", () => {

@@ -97,34 +97,6 @@ export class Component extends EventTarget
         return this;
     }
 
-    watch(obj, eventName)
-    {
-        if (!this._boundInvalidate)
-            this._boundInvalidate = this.invalidate.bind(this);
-        if (this._watching)
-            this._watching = [];
-
-        if (eventName)
-        {
-            obj.addEventListener(eventName, this._boundInvalidate);
-            this._watching.push(() => {
-                obj.removeEventListener(eventName, this._boundInvalidate);
-            });
-
-        }
-        else if (obj.watch)
-        {
-            let unwatch = obj.watch(this._boundInvalidate);
-            if (!(unwatch instanceof Function))
-                throw new Error("watch function didn't return a function to remove watch");
-            this._watching.push(unwatch);
-        }
-        else
-        {
-            throw new Error("Don't know how to watch that");
-        }
-    }
-
     static declareProperty(cls, name)
     {
         let storeName = "_" + name;

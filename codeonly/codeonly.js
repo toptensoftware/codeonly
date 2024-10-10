@@ -7,7 +7,6 @@ export * from "./EmbedSlot.js";
 export * from "./IfBlock.js";
 export * from "./ForEachBlock.js";
 export * from "./Html.js";
-export * from "./EventEmitter.js";
 export * from "./Transition.js";
 export * from "./ObservableArray.js";
 export * from "./UpdateManager.js";

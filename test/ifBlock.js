@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
 import { Template, IfBlock } from "../codeonly/codeonly.js";
-import "./mockdom.js";
+import "./mockdom/mockdom.js";
 
 test("IfBlock", () => {
 
