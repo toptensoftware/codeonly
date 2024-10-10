@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { ObservableArray } from "../codeonly/codeonly.js";
+import { ObservableArray } from "../codeonly.js";
 
 
 test("Events Test", () => {

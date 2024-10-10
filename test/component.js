@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Component, Template } from "../codeonly/codeonly.js";
+import { Component, Template } from "../codeonly.js";
 import "./mockdom/mockdom.js";
 
 class TestComponent extends Component

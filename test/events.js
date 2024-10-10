@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Template, html } from "../codeonly/codeonly.js";
+import { Template, html } from "../codeonly.js";
 import "./mockdom/mockdom.js";
 
 
