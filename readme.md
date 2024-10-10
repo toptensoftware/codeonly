@@ -840,8 +840,8 @@ Component re-templating is a technique where the template of a component
 is modified by the component before it's compiled.
 
 Normally the `Component.compileTemplate` method compiles the component's 
-static `template` property as is.  By overriding this method on a component
-we can adjust the template before compilation.
+static `template` property as is, but by overriding this method we can 
+adjust the template before it's compiled.
 
 ```js
 class MyComponent extends Component
@@ -862,7 +862,7 @@ class MyComponent extends Component
 }
 ```
 
-Consider for example a dialog class where you want to maintain the same 
+Consider, for example, a dialog class where you want to maintain the same 
 frame around every dialog's content, but have different content in the main
 body.
 
@@ -894,6 +894,7 @@ class Dialog extends Component
     {
         let wrapperTemplate = {
             type: "dialog",
+            class: "dialog",
             id: this.template.id,                   // From the derived class template
             $: {
                 type: "form",
@@ -922,6 +923,13 @@ class Dialog extends Component
         return Template.compile(wrapperTemplate, { initOnCreate: false });
     }
 }
+
+// Styling common to all dialogs
+Style.declare(`
+dialog.dialog
+{
+}
+`);
 ```
 
 Now, we can create a dialog:
@@ -945,10 +953,10 @@ class MyDialog extends Dialog
 let dlg = new MyDialog();
 dlg.showModal();
 
+// Styling specific to this dialog class
 Style.declare(`
 #my-dialog
 {
-    /* styling specific to this dialog class */
 }
 `);
 ```
@@ -958,7 +966,7 @@ are provided automatically by the base `Dialog` class, but the content of the `h
 and `main` elements is provided by the derived `MyDialog` class
 
 ```html
-<dialog id="my-dialog">
+<dialog class="dialog" id="my-dialog">
     <form method="dialog">
         <header>
             My Dialog
