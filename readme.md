@@ -984,16 +984,52 @@ and `main` elements is provided by the derived `MyDialog` class
 
 ## Update Manager
 
-The `UpdateManager` class provides an easy way to fire object granularity
-update notifications.
+The `UpdateManager` class provides an easy way to fire object update notifications.
 
-For example, suppose you have a list of `Post` objects displayed in a list
+```js
+class UpdateManager
+{
+    // Adds a listener for sourceObject
+    addListener(sourceObject, callback);
+
+    // Removes a previously added listener for sourceObject
+    removeListener(sourceObject, callback);
+
+    // Fires an event to all sourceObject to listeners
+    fire(sourceObject, ...params);
+}
+```
+
+For example, suppose we have a set of `Post` objects displayed in a list
 using a set of `PostView` components.  When something about a `Post` changes
 we need a way to notify the assocated `PostView` instance to invalidate or
 update itself.
 
-To set this up, the `PostView` component needs to listen to the update manager
-for notifications.
+First, we have the `Post` object fire a notification when it changes:
+
+```js
+import { updateManager } from "codeonly.js";
+
+class Post
+{
+    #text;
+    get text()
+    {
+        return this.#text;
+    }
+    set text(value)
+    {
+        // Store new text
+        this.#text = value;
+
+        // Notify all components showing this post
+        updateManager.fire(this);
+    }
+}
+```
+
+Second, the `PostView` component needs to listen to the update manager
+for notifications of when its associated `Post` changes:
 
 ```js
 import { Component, updateManager } from "codeonly.js";
@@ -1023,29 +1059,6 @@ class PostView extends Component
 }
 ```
 
-Now, when something about a `Post` changes, we fire the notification
-
-```js
-import { updateManager } from "codeonly.js";
-
-class Post
-{
-    #text;
-    get text()
-    {
-        return this.#text;
-    }
-    set text(value)
-    {
-        // Store new text
-        this.#text = value;
-
-        // Notify all components showing this post
-        updateManager.fire(this);
-    }
-}
-```
-
 
 Some notes about the above:
 
@@ -1059,14 +1072,15 @@ Some notes about the above:
 * Because the `updateManager` uses a `WeakMap` to track source objects, there's
   no risk of `Post` objects not getting collected.
 * To prevent unnecessary updates on components removed from the DOM, the Component overrides
-  `destroy` and removes the listener.
+  `destroy` and removes its listener.
 
-Also note, the update manager can be used with plain objects.  eg: suppose
-you're getting a Post update from a network event:
+Also note, the update manager can be used with plain objects.  For example, assume
+our Post objects are plain JSON objects (ie: not implemented as a class like above) and
+we receive a network update that a post has changed
 
 ```js
-// Assume _postMap is a map of post ids to JSON objects and updatedPost is
-// a JSON object received from a network event.
+// A map of post.id => plain JavaScript object
+_postMap = new Map();
 
 // Find the original post object
 let post = _postMap.get(updatedPost.id);
@@ -1075,7 +1089,7 @@ if (post)
     // Update it
     Object.assign(post, updatedPost);
 
-    // Invalidate any watching component views (or other callbacks)
+    // Update anyone interested in changes to this post object
     updateManager.fire(post);
 }
 
@@ -1091,5 +1105,4 @@ updateManager.addListener(post, (obj, p1) => {
 });
 
 updateManager.fire(post, "param1");
-
 ```
