@@ -10,3 +10,4 @@ export * from "./Html.js";
 export * from "./EventEmitter.js";
 export * from "./Transition.js";
 export * from "./ObservableArray.js";
+export * from "./UpdateManager.js";
