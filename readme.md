@@ -832,3 +832,141 @@ Note:
   `slots` property on the component class.  The template compiler
   needs to generate special code for embed slots and needs to up front
   which properties are templates.
+
+
+## Component Re-templating
+
+Component re-templating is a technique where the template of a component
+is modified by the component before it's compiled.
+
+Normally the `Component.compileTemplate` method compiles the component's 
+static `template` property as is.  By overriding this method on a component
+we can adjust the template before compilation.
+
+```js
+class MyComponent extends Component
+{
+    // Called by Component the first time
+    // an instance of this class is constructed
+    static compileTemplate()
+    {
+        // Set up the modified template, lifting settings
+        // from derived class template available on `this.template`
+        let modifiedTemplate = {
+            // ... whatever ...
+        };
+
+        // Now compile the modified template
+        return Template.compile(modifiedTemplate, { initOnCreate: false });
+    }
+}
+```
+
+Consider for example a dialog class where you want to maintain the same 
+frame around every dialog's content, but have different content in the main
+body.
+
+eg:
+
+```js
+class Dialog extends Component
+{
+    showModal()
+    {
+        // `this.dom` represents the instantiated template
+        // - for single-root templates, the root node is
+        //   available as this.dom.rootNode
+        // - for multi-root templates, the root notes are
+        //   available as this.dom.rootNotes
+
+        // Add dialog to the document and show it
+        document.body.appendChild(this.dom.rootNode);
+        this.dom.rootNode.showModal();
+
+        // Remove from document when closed
+        this.dom.rootNode.addEventListener("close", () => {
+            this.dom.rootNode.remove();
+        });
+    }
+
+    // Override to wrap template in dialog frame
+    static compileTemplate()
+    {
+        let wrapperTemplate = {
+            type: "dialog",
+            id: this.template.id,                   // From the derived class template
+            $: {
+                type: "form",
+                $: [
+                    {
+                        type: "header",
+                        $: this.template.title,     // From the derived class template
+                    },
+                    {
+                        type: "main",
+                        $: this.template.content,   // From the derived class template
+                    },
+                    {
+                        type: "footer",
+                        $: {
+                            type: "button",
+                            $: "Close",
+                        }
+                    },
+                ]
+            }
+        };
+
+        // Compile the wrapped template
+        return Template.compile(wrapperTemplate, { initOnCreate: false });
+    }
+}
+```
+
+Now, we can create a dialog:
+
+```js
+class MyDialog extends Dialog
+{
+    static template = {
+        title: "My Dialog",
+        id: "my-dialog",
+        content: {
+            type: "p",
+            $: "Hello World",
+        }
+    }
+}
+
+// Show dialog
+let dlg = new MyDialog();
+dlg.showModal();
+
+Style.declare(`
+#my-dialog
+{
+    /* styling specific to this dialog class */
+}
+`);
+```
+
+Notice how the enclosing `dialog`, `form`, `header`, `main` and `footer` elements
+are provided automatically by the base `Dialog` class, but the content of the `header`
+and `main` elements is provided by the derived `MyDialog` class
+
+```html
+<dialog id="my-dialog">
+    <form>
+        <header>
+            My Dialog
+        </header>
+        <main>
+            <p>Hello World</p>
+        </main>
+        <footer>
+            <button>Close</button>
+        </footer>
+    </form>
+</dialog>
+```
+
