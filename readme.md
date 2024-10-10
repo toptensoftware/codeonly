@@ -876,8 +876,8 @@ class Dialog extends Component
         // `this.dom` represents the instantiated template
         // - for single-root templates, the root node is
         //   available as this.dom.rootNode
-        // - for multi-root templates, the root notes are
-        //   available as this.dom.rootNotes
+        // - for multi-root templates, the root nodes are
+        //   available as this.dom.rootNodes
 
         // Add dialog to the document and show it
         document.body.appendChild(this.dom.rootNode);
@@ -897,6 +897,7 @@ class Dialog extends Component
             id: this.template.id,                   // From the derived class template
             $: {
                 type: "form",
+                attr_method: "dialog",
                 $: [
                     {
                         type: "header",
@@ -928,6 +929,8 @@ Now, we can create a dialog:
 ```js
 class MyDialog extends Dialog
 {
+    // This template will be "re-templated" by base Dialog
+    // to wrap it in <dialog>, <form> etc... before compilation
     static template = {
         title: "My Dialog",
         id: "my-dialog",
@@ -956,7 +959,7 @@ and `main` elements is provided by the derived `MyDialog` class
 
 ```html
 <dialog id="my-dialog">
-    <form>
+    <form method="dialog">
         <header>
             My Dialog
         </header>
