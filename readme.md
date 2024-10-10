@@ -1037,6 +1037,10 @@ import { Component, updateManager } from "codeonly.js";
 class PostView extends Component
 {
     #post;
+    get post()
+    {
+        return this.#post;
+    }
     set post(value)
     {
         // Remove old listener (redundant if this.#post is null or undefined)
@@ -1056,6 +1060,11 @@ class PostView extends Component
         // once this PostView has been removed from the DOM.
         updateManager.removeListener(this.#post, this.update);
     }
+
+    static template = {
+        type: "div",
+        $: c => c.post.text,
+    };
 }
 ```
 
