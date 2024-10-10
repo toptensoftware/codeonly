@@ -296,26 +296,3 @@ export function diff(oldArray, newArray, compareEqual)
     return ops;
     
 }
-
-/*
-
-let a = [1,2,3,4,5];
-let b = [1,4,3,2,5];
-let r = [...a];
-let ops = diff(a, b);
-for (let o of ops)
-{
-    console.log(o);
-    if (o.op == 'insert')
-    {
-        r.splice(o.index, 0, ...b.slice(o.index, o.index + o.count));
-    }
-    else if (o.op == 'delete')
-    {
-        r.splice(o.index, o.count);
-    }
-};
-assert.deepStrictEqual(r, b);
-
-console.log("OK");
-*/
