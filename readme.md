@@ -140,7 +140,7 @@ Each component has a template that declares the DOM elements associated with tha
 
 Templates are declared as a static member of the component class.  This is because templates are compiled at runtime to JavaScript and would be inefficient to 
 re-compile for each component instance.  The template is compiled the first time 
-an instance of a Component is constructed and re-used for all subsequent instances.
+an instance of a component is constructed and re-used for all subsequent instances.
 
 Declare HTML elements in the template as objects.  
 
@@ -448,7 +448,7 @@ display style setting:
 
 The `if` attribute can be used to dynamically include or exclude an element from the DOM:
 
-(Note: while the `show` attribute just hides an element, `if` completely excludes it)
+(Note: while the `display` attribute just hides an element, `if` completely excludes it)
 
 ```js
 {
@@ -492,7 +492,7 @@ Note: `if`, `elseif` and `else` conditional elements must all follow each other 
 
 ### Fragments
 
-If a template element doesn't have a type, it's considered a "fragment"  
+If a template element doesn't have a type, it's considered a "fragment" 
 or multi-root element.  Any child elements of the fragment will be included directly in the fragment's parent.
 
 In this example, the one `if` condition either includes or excludes all three paragraphs from the containing div:
@@ -761,8 +761,12 @@ To use this component in another component's template:
 
 Components support the `bind`, `export`, `if` and `foreach` attributes, 
 and events can be connected using the `on_` prefix (`Component` extends 
-`EventTarget` and can raise their own events).  All other properties
-are assigned directly to the component instance.
+`EventTarget` and can raise their own events).  
+
+The `$` property on a component reference is a short-cut alias for a 
+component property called `content`.
+
+All other properties are assigned directly to the component instance.
 
 
 
@@ -818,11 +822,14 @@ links with special click handling.
 }
 ```
 
-But, suppose we now wanted a link with this click behaviour but
-for an image?  The class only supports setting a text title.
+But, how do we show an image in a `MyLink` when it only supports 
+setting a text title?
 
-We can modify the above class to support embedding arbitary
-embedded content with the built it `EmbedSlot` component:
+We can modify the above class to support embedding arbitary content 
+with the built in `EmbedSlot` component:
+
+(either import `EmbedSlot` and use the class directly, or set the type 
+to `embed-slot`)
 
 
 ```js
@@ -836,7 +843,7 @@ export class MyLink extends Component
         on_click: c => c.on_click(ev),
         $: {
             // EmbedSlot lets outer content be embedded here
-            type: EmbedSlot,            
+            type: "embed-slot",            
             // Make this slot available as 'content' property on the component
             bind: "content",            
             // Use this if the content slot isn't used.
@@ -884,6 +891,8 @@ Note:
   `slots` property on the component class.  The template compiler
   needs to generate special code for embed slots and needs to up front
   which properties are templates.
+* Because `$` is an alias for a component's `content` property, we
+  could have used `$: [...]` instead of `content: [...]`.
 
 
 ### About the `$` Property
