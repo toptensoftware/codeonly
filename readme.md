@@ -118,9 +118,15 @@ Templates are declared as a static member of the component class.  This is becau
 re-compile for each component instance.  The template is compiled the first time 
 an instance of a Component is constructed and re-used for all subsequent instances.
 
-Declare DOM elements in the template as objects.  The `type` property specifies 
-the tag type, properties prefixed  with `attr_` set the elements' attributes and
-child elements are declared with the `$` property.  eg:
+Declare HTML elements in the template as objects.  
+
+* The `type` property specifies the tag type
+* Properties prefixed  with `attr_` set the elements' attributes
+* Inner Text/HTML is declared with the `text` property
+* Child elements are declared with the `childNodes` property
+* `$` can be used as an alias for the `text` or the `childNodes` properties.
+
+eg:
 
 ```javascript
 // <a href="/">Home</a>
@@ -133,14 +139,16 @@ child elements are declared with the `$` property.  eg:
 }
 ```
 
-If an element only has a single child element the `$` property need not be an array:
+If an element only has a single child element the `$` or `childNodes` property need not be an array:
 
 ```javascript
 // <a href="/">Home</a>
 {
     type: 'a',
     attr_href: "/",
-    $: "Home",          // Only a single child so doesn't need to be an array
+    $: { // Only a single child so doesn't need to be an array
+        type: "div"
+    }
 }
 ```
 
@@ -217,6 +225,8 @@ class MyComponent extends Component
 }
 ```
 
+
+
 ### Event Handlers
 
 To connect event handlers to elements in the template, use the `on_` prefix. 
@@ -246,13 +256,13 @@ class MyButton extends Component
 
 ### Text and Raw HTML Text
 
-To create text elements, use a string instead of an object in the template:
+To create text elements, use the `text` property:
 
 ```js
 // <div>This is my &lt;Div^gt;</div>
 {
     type: "div",
-    $: "This is my <Div>",
+    text: "This is my <Div>",
 }
 ```
 
@@ -264,9 +274,27 @@ import { Html } from 'codeonly.js';
 // <div><span class="myclass">Span</span></div>
 {
     type: "div",
-    $: Html.raw('<span class="myclass">Span</span>'),
+    text: Html.raw('<span class="myclass">Span</span>'),
 }
 ```
+
+Since inner text can also be expressed as child nodes, the
+`$` property can also be used to set the text of an element:
+
+```js
+{
+    type: "div",
+    $: "inner text",
+}
+```
+
+Caveat: when using a callback for the inner text of an element,
+the `text` property is slightly more efficient than the `$` property.
+
+ie: use `text: c => c.text` in preference to `$: c => c.text` for 
+performance critical applications.  
+
+When the value is not a callback, the two approaches are identical.
 
 
 ### Whitespace Between Elements
@@ -832,6 +860,92 @@ Note:
   `slots` property on the component class.  The template compiler
   needs to generate special code for embed slots and needs to up front
   which properties are templates.
+
+
+### About the `$` Property
+
+The `$` property is a special property for setting the inner content.
+
+For HTML elements, if the `$` property is a string or raw HTML string 
+then `$` is an alias for the `text` property:
+
+```js
+{
+    type: 'div',
+    $: "content"
+}
+```
+
+is the same as
+
+```js
+{
+    type: 'div',
+    text: "content"
+}
+```
+
+Similarly, `$: Html.raw("...")` is the same as `text: Html.raw("...")`;
+
+Note, this only applies for non-callback strings and this:
+
+```js
+{
+    type: 'div',
+    $: c => c.title,
+}
+```
+
+is equivalent to:
+
+```js
+{
+    type: 'div',
+    childNode: [ c => c.title ],
+}
+```
+
+Since the `text` property is slightly more efficent, when using
+callbacks for inner text values it's preferrable to use the `text` 
+property directly:
+
+```js
+{
+    type: 'div',
+
+    // This is preferable
+    text: c => c.title,
+
+    // to this:
+    $: c => c.title,
+}
+```
+
+For HTML elements any non-string value of `$` is an alias for the `childNodes` property.
+
+For components, the `$` property is an alias for a property called
+`content`:
+
+ie: 
+
+```js
+{
+    type: MyComponent,
+    $: "Hello World",
+}
+```
+
+is equivalent to:
+
+```js
+{
+    type: MyComponent,
+    content: "Hello World",
+}
+```
+
+Of course the meaning of a property `content` is completely
+up to your component.
 
 
 ## Component Re-templating

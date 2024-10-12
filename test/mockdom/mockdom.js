@@ -230,6 +230,8 @@ class HTMLNode
 
     get innerText()
     {
+        if (!this.childNodes)
+            return "";
         let buf = "";
         for (let ch of this.childNodes)
         {

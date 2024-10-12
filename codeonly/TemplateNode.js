@@ -67,6 +67,16 @@ export class TemplateNode
             this.integrated = this.template.type.integrate(this.template);
         }
 
+        // If $ is a string or HtmlString convert to text property
+        if (this.kind == 'element' && template.$ && !template.text)
+        {
+            if (typeof(template.$) == 'string' || template.$ instanceof HtmlString)
+            {
+                template.text = template.$;
+                delete template.$;
+            }
+        }
+
         // Recurse child nodes
         if (this.kind == 'element' || this.kind == 'fragment')
         {
