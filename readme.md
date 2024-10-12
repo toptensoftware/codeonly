@@ -1,18 +1,42 @@
 # CodeOnly
 
-A simple, lightweight, code-only front-end Web framework.
+A simple, lightweight, code-only, tooling-free front-end Web framework.
 
 Unlike other front-end frameworks, CodeOnly is not reactive so there are
 no wrapper or proxy classes around your objects and everything is kept 
 as close to pure JavaScript as possible.
 
-Also, since there's no transpiling you can debug your code in the 
-browser exactly as you wrote it. (but you can still of course package
-it for distribution).
+CodeOnly is also tool-free: no cross compiling, transpiling, packaging, 
+bundling.  No waiting for tooling and you can debug your code in the 
+browser exactly as you wrote it.
+
+Of course, CodeOnly is compatible with bundling for production distribution 
+so you get the best of both worlds.
+
+
+
+## Installation
+
+CodeOnly is available from the GitHub repository:
+
+https://github.com/toptensoftware/codeonly
+
+Or, as an NPM package:
+
+```
+npm install --save github:toptensoftware/codeonly
+```
+
+If using as a NPM package and your back-end server is written
+in ExpressJS, [bundle-free](https://github.com/toptensoftware/bundle-free)
+is a simple middleware that lets you reference NPM modules directly
+from the front-end client and works great with CodeOnly.
+
+
 
 ## Creating a Component
 
-A component is the core concept in CodeOnly and defines a DOM (HTML) template, 
+A component is the core concept in CodeOnly and defines a DOM template, 
 logic code and an optional set of CSS style declarations.
 
 By declaring code, template and styles in Javascript the entire
@@ -21,7 +45,7 @@ definition of a component can be collected into a single `.js` file.
 Most components will conform to the following basic structure.
 
 ```js
-import { Component, Style } from "codeonly.js";
+import { Component, Style } from "@toptensoftware/codeonly.js";
 
 // Each component is implemented as class
 // extending `Component`
@@ -650,7 +674,7 @@ changes to the array are reflected immediately in the DOM by monitoring
 the array's contents as they change.
 
 ```js
-import { Component, ObservableArray } from "codeonly.js";
+import { Component, ObservableArray } from "@toptensoftware/codeonly.js";
 
 export class MyComponent extends Component
 {
@@ -1122,7 +1146,7 @@ update itself.
 First, we have the `Post` object fire a notification when it changes:
 
 ```js
-import { updateManager } from "codeonly.js";
+import { updateManager } from "@toptensoftware/codeonly.js";
 
 class Post
 {
@@ -1146,7 +1170,7 @@ Second, the `PostView` component needs to listen to the update manager
 for notifications of when its associated `Post` changes:
 
 ```js
-import { Component, updateManager } from "codeonly.js";
+import { Component, updateManager } from "@toptensoftware/codeonly.js";
 
 class PostView extends Component
 {
