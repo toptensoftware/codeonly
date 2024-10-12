@@ -2,16 +2,13 @@ import { Template } from "./Template.js";
 
 export class Component extends EventTarget
 {
-    constructor(shouldInit)
+    constructor()
     {
         super();
 
         // Bind these so they can be passed directly to update callbacks.
         this.update = this.update.bind(this);
         this.invalidate = this.invalidate.bind(this);
-        
-        if (shouldInit !== false)
-            this.init();
     }
 
     static _compiledTemplate;
@@ -24,7 +21,7 @@ export class Component extends EventTarget
 
     static compileTemplate()
     {
-        return Template.compile(this.template, { initOnCreate: false });
+        return Template.compile(this.template);
     }
 
     static get isSingleRoot()
@@ -33,10 +30,17 @@ export class Component extends EventTarget
     }
 
 
-    init()
+    #dom;
+    get dom()
     {
-        this.dom = new this.constructor.compiledTemplate({ model: this });
-        this.invalidate();
+        if (!this.#dom)
+            this.#dom = new this.constructor.compiledTemplate({ model: this });
+        return this.#dom;
+    }
+
+    get isSingleRoot() 
+    { 
+        return this.dom.isSingleRoot; 
     }
 
     get rootNode() 
@@ -46,15 +50,12 @@ export class Component extends EventTarget
 
         return this.dom.rootNode;
     }
+
     get rootNodes() 
     { 
         return this.dom.rootNodes; 
     }
 
-    get isSingleRoot() 
-    { 
-        return this.dom.isSingleRoot; 
-    }
 
     invalidate()
     {
@@ -76,15 +77,11 @@ export class Component extends EventTarget
 
     destroy()
     {
-        // Remove all tracked watchers
-        if (this._watching)
+        if (this.#dom)
         {
-            for (let unwatch of this._watching)
-                unwatch();
+            this.#dom.destroy();
+            this.#dom = null;
         }
-
-        // Destroy the DOM
-        this.dom.destroy();
     }
 
     mount(el)
@@ -97,13 +94,11 @@ export class Component extends EventTarget
         return this;
     }
 
-    static declareProperty(cls, name)
+    unmount()
     {
-        let storeName = "_" + name;
-        Object.defineProperty(cls.prototype, name, {
-            get() { return this[storeName]; },
-            set(value) { this[storeName] = value; this.invalidate(); }
-        });
+        if (!this.#dom)
+            return;
+        this.rootNodes.forEach(x => x. remove());
     }
 }
 
