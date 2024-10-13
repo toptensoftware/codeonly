@@ -10,13 +10,15 @@ export class EmbedSlot
             isSingleRoot: false,
             wantsUpdate: true,
             data: { 
-                content: template.content 
+                content: template.content,
+                ownsContent: template.ownsContent ?? true,
             },
             nodes: template.placeholder ? [ new TemplateNode(template.placeholder) ] : [],
         }
 
         delete template.content;
         delete template.placeholder;
+        delete template.ownsContent;
 
         return retv;
     }
@@ -78,6 +80,7 @@ export class EmbedSlot
         this.#headSentinal = document.createTextNode("");
         this.#tailSentinal = document.createTextNode("");
         this.#nodes = [];
+        this.#ownsContent = options.ownsContent ?? true;
 
         if (options.data.content instanceof Function && !options.initOnCreate)
         {
