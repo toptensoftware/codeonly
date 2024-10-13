@@ -80,7 +80,7 @@ export class EmbedSlot
         this.#headSentinal = document.createTextNode("");
         this.#tailSentinal = document.createTextNode("");
         this.#nodes = [];
-        this.#ownsContent = options.ownsContent ?? true;
+        this.#ownsContent = options.data.ownsContent ?? true;
 
         if (options.data.content instanceof Function && !options.initOnCreate)
         {
