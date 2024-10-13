@@ -1,6 +1,6 @@
 {
   "name": "@toptensoftware/codeonly",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "A simple, lightweight, code-only front-end Web framework.",
   "main": "./codeonly.js",
   "type": "module",
