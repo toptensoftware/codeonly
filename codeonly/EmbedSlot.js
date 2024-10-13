@@ -79,7 +79,7 @@ export class EmbedSlot
         this.#tailSentinal = document.createTextNode("");
         this.#nodes = [];
 
-        if (this.#content instanceof Function && !options.initOnCreate)
+        if (options.data.content instanceof Function && !options.initOnCreate)
         {
             // Just store content and we'll load it on next update
             this.#content = options.data.content;
@@ -103,6 +103,18 @@ export class EmbedSlot
     get isSingleRoot()
     {
         return false;
+    }
+
+    // When ownsContent to false old content
+    // wont be `destroy()`ed
+    #ownsContent = true;
+    get ownsContent()
+    {
+        return this.#ownsContent;
+    }
+    set ownsContent(value)
+    {
+        this.#ownsContent = value;
     }
 
     get content()
@@ -151,7 +163,8 @@ export class EmbedSlot
             }
         }
         this.#nodes = [];
-        this.#resolvedContent?.destroy?.();
+        if (this.#ownsContent)
+            this.#resolvedContent?.destroy?.();
 
         // Insert new content
         this.#resolvedContent = value;
@@ -203,6 +216,7 @@ export class EmbedSlot
 
     destroy()
     {
-        this.#resolvedContent?.destroy?.();
+        if (this.#ownsContent)
+            this.#resolvedContent?.destroy?.();
     }
 }
