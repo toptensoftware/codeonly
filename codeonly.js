@@ -10,3 +10,4 @@ export * from "./codeonly/Html.js";
 export * from "./codeonly/Transition.js";
 export * from "./codeonly/ObservableArray.js";
 export * from "./codeonly/UpdateManager.js";
+export * from "./codeonly/urlPattern.js";
