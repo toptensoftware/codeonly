@@ -29,12 +29,17 @@ export class Component extends EventTarget
         return this.compiledTemplate.isSingleRoot;
     }
 
+    init()
+    {
+        if (!this.#dom)
+            this.#dom = new this.constructor.compiledTemplate({ model: this });
+    }
 
     #dom;
     get dom()
     {
         if (!this.#dom)
-            this.#dom = new this.constructor.compiledTemplate({ model: this });
+            this.init();
         return this.#dom;
     }
 
