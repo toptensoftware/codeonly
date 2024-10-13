@@ -166,6 +166,7 @@ export class ForEachBlock
         {
             newItems = this.items;
         }
+        newItems = newItems ?? [];
 
         // Disconnect old observable items?
         if (this.observableItems != null && this.observableItems != newItems)
