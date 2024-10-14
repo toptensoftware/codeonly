@@ -1,0 +1,12 @@
+---
+projectTitle: CodeOnly
+projectSubTitle: "v0.0.8"
+projectUrlPrefix: /codeonly/
+prismLanguages:
+  - javascript
+  - markup
+navTree:
+  - text: CodeOnly
+    subItems:
+      - text: Overview|.
+---
