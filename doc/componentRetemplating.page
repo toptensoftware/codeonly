@@ -3,7 +3,7 @@ title: "Component Re-templating"
 subtitle: "A simple, lightweight, code-only front-end Web framework."
 projectTitle: CodeOnly
 ---
-# Component Re-templatingX
+# Component Re-templating
 
 Component re-templating is a technique where the template of a component
 is modified by the component before it's compiled.
