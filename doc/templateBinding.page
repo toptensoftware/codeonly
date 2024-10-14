@@ -1,10 +1,10 @@
 
 ---
-title: "Binding"
+title: "Binding (bind)"
 subtitle: "A simple, lightweight, code-only front-end Web framework."
 projectTitle: CodeOnly
 ---
-# Binding
+# Binding (bind)
 
 To access a DOM element from within the component use, use the `bind` attribute
 to attach the element reference to the component.

@@ -22,11 +22,11 @@ navTree:
       - text: Text and Raw HTML Text|templateText
       - text: Dynamic Boolean Classes|templateBooleanClasses
       - text: Dynamic Boolean Styles|templateBooleanStyles
-      - text: Hiding and Showing Elements|templateDisplay
-      - text: Conditionally Including Items|templateIf
+      - text: Hiding and Showing Elements (display)|templateDisplay
+      - text: Conditionally Including Items (if)|templateIf
       - text: Fragments|templateFragments
-      - text: Binding|templateBinding
-      - text: Repeating Elements|templateForEach
+      - text: Binding (bind)|templateBinding
+      - text: Repeating Elements (foreach)|templateForEach
       - text: Using Components in Templates|templateComponents
       - text: Embed Slots|templateEmbedSlots
       - text: The Content ($) Property|templateContentProperty

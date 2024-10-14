@@ -1,9 +1,9 @@
 ---
-title: "Conditionally Including Items"
+title: "Conditionally Including Items (if)"
 subtitle: "A simple, lightweight, code-only front-end Web framework."
 projectTitle: CodeOnly
 ---
-# Conditionally Including Items
+# Conditionally Including Items (if)
 
 The `if` attribute can be used to dynamically include or exclude an element from the DOM:
 

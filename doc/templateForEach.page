@@ -3,7 +3,7 @@ title: "Repeating Elements (foreach)"
 subtitle: "A simple, lightweight, code-only front-end Web framework."
 projectTitle: CodeOnly
 ---
-# ForEach Elements
+# Repeating Elements (foreach)
 
 Elements can be repeated using the `foreach` directive and two methods
 for updates are supported - Array Diffing and using ObservableArrays.

@@ -1,9 +1,9 @@
 ---
-title: "Hiding and Showing Elements"
+title: "Hiding and Showing Elements (display)"
 subtitle: "A simple, lightweight, code-only front-end Web framework."
 projectTitle: CodeOnly
 ---
-# Hiding and Showing Elements
+# Hiding and Showing Elements (display)
 
 The `display` attribute can be used to contol the visibility of an element.
 
