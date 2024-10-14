@@ -9,4 +9,30 @@ navTree:
   - text: CodeOnly
     subItems:
       - text: Overview|.
+      - text: Installation|installation
+  - text: Components
+    subItems:
+      - text: Components|component
+      - text: Mounting|componentMount
+      - text: Re-templating|componentRetemplating
+  - text: Templates
+    subItems:
+      - text: Templates|template
+      - text: Dynamic Properties|templateDynamic
+      - text: Text and Raw HTML Text|templateText
+      - text: Dynamic Boolean Classes|templateBooleanClasses
+      - text: Dynamic Boolean Styles|templateBooleanStyles
+      - text: Hiding and Showing Elements|templateDisplay
+      - text: Conditionally Including Items|templateIf
+      - text: Fragments|templateFragments
+      - text: Binding|templateBinding
+      - text: Repeating Elements|templateForEach
+      - text: Using Components in Templates|templateComponents
+      - text: Embed Slots|templateEmbedSlots
+      - text: The Content ($) Property|templateContentProperty
+  - text: Utilities
+    subItems:
+      - text: Html Utilities|html
+      - text: UpdateManager|updateManager
+      - text: urlPattern|urlPattern
 ---

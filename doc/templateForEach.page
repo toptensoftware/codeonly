@@ -1,0 +1,189 @@
+---
+title: "Repeating Elements (foreach)"
+subtitle: "A simple, lightweight, code-only front-end Web framework."
+projectTitle: CodeOnly
+---
+# ForEach Elements
+
+Elements can be repeated using the `foreach` directive and two methods
+for updates are supported - Array Diffing and using ObservableArrays.
+
+## Array Diffing
+
+To repeat elements, use the `foreach` attribute:
+
+```js
+export class MyComponent extends Component
+{
+    #items = [
+        { id: "a", text: "Apples" },
+        { id: "b", text: "Pears" },
+        { id: "c", text: "Bananas" },
+    ];
+
+    get items()
+    {
+        return this.#items;
+    }
+
+    static template = {
+        type: "section"
+        $: {
+            foreach: {
+                items: c => c.items, 
+            },
+            type: "div",
+            id: i => i.id,
+            $: i => i.text,
+        }
+    }
+}
+```
+
+gives:
+
+```html
+<section>
+    <div id="a">Apples</div>
+    <div id="b">Pears</div>
+    <div id="c">Bananas</div>
+</section>
+```
+
+The `foreach` attributes supports the following sub-attributes:
+
+* `items` the set of items to be iterated over (or a callback to provide them)
+* `itemKey` a callback function to return a unique key for an item
+* `condition` a callback function that indicates if an item should be included
+* `arraySensitive` set to true if the set of items should be updated when the component is updated (requires `itemKey`)
+* `indexSensitive` true if collection items should be updated when their position in the array changes (ie: set this to true if the template uses `context.index`, see below).
+* `itemSensitive` true if all collection items should be updated when the foreach block is updated.
+* `empty` template items to show when the items array is empty.
+
+```js
+static template = {
+    type: "section"
+    $: {
+        // This describes the "foreach" block
+        foreach: {
+            items: c => items, 
+            itemKey: i => i.id,     // provide a unique value for each item
+            indexSensitive: true,   // true because we use ctx.index
+            arraySensitive: true,   // because we want to be able to update the list
+
+            // This will be used if the list is empty
+            empty: {
+                type: "div",
+                $: "Nothing to see here",
+            }
+        },
+
+        // This describes what to repeat for each item
+        type: "div",
+        id: i => i.id,
+        // See below about the (i,ctx) callback parameters
+        $: (i,ctx) => `#${ctx.index+1}: ${i.text}`,
+    }
+}
+```
+
+gives:
+
+```html
+<section>
+    <div id="a">#1: Apples</div>
+    <div id="b">#2: Pears</div>
+    <div id="c">#3: Bananas</div>
+</section>
+```
+
+Further, because we've marked it `arraySensitive` and `indexSensitive` we can do this:
+
+```js
+// Method in the component...
+addItem()
+{
+    this.#items.splice(0, 0, { id: "d", text: "berries" });
+    this.invalidate();
+}
+```
+
+producing this:
+
+```html
+<section>
+    <div id="d">#1: Berries</div>
+    <div id="a">#2: Apples</div>
+    <div id="b">#3: Pears</div>
+    <div id="c">#4: Bananas</div>
+</section>
+```
+
+When an element has a `foreach` attribute, the parameters to any dynamic callback
+functions change from `(component) => ` to `(item, context) => ` where:
+
+* `item` is the value of the item in the foreach.items collection
+* `context` a context that describes other attributes of the loop iteration:
+    - `context.outer` - the outer loop context (either an enclosing foreach loop context, or the component instance)
+    - `context.model` - the current item
+    - `context.key` - the current item's key
+    - `context.index` - the current item's zero based index in the collection
+
+
+## ForEach Elements with ObservableArrays
+
+Normally the `foreach` component runs a diff algorithm to work out what needs 
+to be updated in the DOM.  This works well and is very efficient, but
+not as efficient as using CodeOnly's `ObservableArray`.
+
+When the items provided to a `foreach` block is an `ObservableArray` any
+changes to the array are reflected immediately in the DOM by monitoring
+the array's contents as they change.
+
+```js
+import { Component, ObservableArray } from "@toptensoftware/codeonly.js";
+
+export class MyComponent extends Component
+{
+    #items = new ObservableArray();
+
+    get items()
+    {
+        return this.#items;
+    }
+
+    someMethod()
+    {
+        // Any changes to the items collection are reflected
+        // immediately in the DOM
+        this.#items.push(
+            { text: "new item 1" },
+            { text: "new item 2" },
+        );
+    }
+
+    static template = {
+        type: "section"
+        $: {
+            foreach: c => c.items, 
+            type: "div",
+            $: i => i.text,
+        }
+    }
+}
+```
+
+Note the following when using an `ObservableArray`:
+
+* the `foreach.itemKey` method isn't used
+* the `context.itemKey` property will be `undefined`
+* the `foreach.condition` callback isn't supported
+* changes to array are reflected in the DOM immediately and not
+  delayed through the `invalidate` mechanism.
+* returning a different observable array instance will reload
+  the entire list (destroy + recreate the DOM) and start
+  monitoring the new observable array.
+* the `itemSensitive` and `indexSensitive` properties are supported
+  but require the component to be updated (ie: a change to the 
+  ObservableArray item set doesn't trigger existing item updates).
+* the `arraySensitive` property is ignored.

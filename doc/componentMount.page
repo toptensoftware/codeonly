@@ -1,0 +1,59 @@
+---
+title: "Mounting Components"
+subtitle: "A simple, lightweight, code-only front-end Web framework."
+projectTitle: CodeOnly
+---
+## Mounting Components
+
+To attach a component to the document's DOM, call the component's `mount` method passing an element or selector indicating where the component should be mounted:
+
+eg: 
+
+`main.js`
+
+```js
+// Main entry point into the application
+export function main()
+{
+    // Mount the root "Application" component on #main
+    new Application().mount("#main");
+
+    // Other app initialization goes here
+    //  eg: setup router, load initial content etc...
+}
+```
+
+`index.html`
+
+```js
+<html>
+<head>
+<meta name="viewport" content="initial-scale=1">
+<link rel="icon" href="favicon.svg">
+<style>
+:root
+{
+    /* 
+    It's a good idea to set anything that
+    might affect initial load flicker here
+    rather that in Style.declare code blocks
+    */
+    color-scheme: dark;
+    font-family: sans-serif;
+}
+</style>
+</head>
+<body>
+    <!-- This is where the Main component
+         will be mounted --> 
+    <div id="main"></div>
+    
+    <script type="module">  
+        // Call main method to mount the component
+        import { main } from "/main.js";
+        main();
+    </script>
+</body>
+</html>
+
+```

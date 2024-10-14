@@ -1,0 +1,43 @@
+---
+title: "Hiding and Showing Elements"
+subtitle: "A simple, lightweight, code-only front-end Web framework."
+projectTitle: CodeOnly
+---
+# Hiding and Showing Elements
+
+The `display` attribute can be used to contol the visibility of an element.
+
+Set `display` to:
+
+* `true` to remove any display style previously set by this attribute
+* `false` to set `display:none`
+* a string to set the `display` style explicitly.
+
+```js
+// when isVisible returns true:
+//     <div style="">
+// otherwise
+//     <div style="display: none">
+{ 
+    type: "div",
+    display: c => isVisible,
+}
+```
+
+Note the display attribute is smart enough to remember the previous
+display style setting:
+
+```js
+// when isVisible returns true:
+//     <div style="display: flex">
+// otherwise
+//     <div style="display: none">
+{ 
+    type: "div",
+    style_display: "flex",
+    display: c => isVisible,
+}
+```
+
+
+

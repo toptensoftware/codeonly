@@ -1,0 +1,51 @@
+---
+title: "Conditionally Including Items"
+subtitle: "A simple, lightweight, code-only front-end Web framework."
+projectTitle: CodeOnly
+---
+# Conditionally Including Items
+
+The `if` attribute can be used to dynamically include or exclude an element from the DOM:
+
+(Note: while the `display` attribute just hides an element, `if` completely excludes it)
+
+```js
+{
+    type: "div",
+    $: [
+        {
+            if: c => showError,
+            type: "p",
+            $: "Failed: ...",
+        }
+    ]
+}
+```
+
+You can also include one or more `elseif` blocks and an optional `else` block:
+
+```js
+{
+    type: "div",
+    $: [
+        {
+            if: c => showError,
+            type: "p",
+            $: "Error: ...",
+        },
+        {
+            elseif: c => showWarning,
+            type: "p",
+            $: "Warning: ...",
+        },
+        {
+            else: true,     // Value ignored
+            type: "p",
+            $: "All OK",
+        }
+    ]
+}
+```
+
+Note: `if`, `elseif` and `else` conditional elements must all follow each other consecutively in the containing array.
+

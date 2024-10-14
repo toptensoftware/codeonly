@@ -1,0 +1,49 @@
+---
+title: "Components"
+subtitle: "A simple, lightweight, code-only front-end Web framework."
+projectTitle: CodeOnly
+---
+## Components
+
+A component is the core concept in CodeOnly and defines a DOM template, 
+logic code and an optional set of CSS style declarations.
+
+By declaring code, template and styles in Javascript the entire
+definition of a component can be collected into a single `.js` file.
+
+Most components will conform to the following basic structure.
+
+```js
+import { Component, Style } from "@toptensoftware/codeonly.js";
+
+// Each component is implemented as class
+// extending `Component`
+export class MyComponent extends Component
+{
+    constructor()
+    {
+        super();
+    }
+
+    // This defines the DOM template
+    // for this component
+    static template = {
+        type: "div",
+        class: "mycomponent",
+        $: [
+            // Child elements here
+            "Hello World, from my component"
+        ]
+    }
+}
+
+
+// Declare component specific styles here
+Style.declare(`
+.mycomponent 
+{
+    background-color: red;
+}
+`);
+
+```
