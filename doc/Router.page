@@ -5,8 +5,11 @@ projectTitle: CodeOnly
 ---
 # Router Class
 
-CodeOnly includes a simple, but flexible URL routing class designed for use
+CodeOnly includes a simple, but flexible URL router designed for use
 in single-page apps.
+
+The router requires the History API and provides normal web-history
+style routing (not hash based routing).
 
 ## Router Class and Singleton Instance
 
@@ -318,6 +321,6 @@ router to navigate back:
 
 Note: if the initial page loaded by the app was the dialog, the `back`
 function doesn't have anywhere to go back to.  The router detects this
-case and instead navigates to the home page (as indicated by the 
-`router.prefix`).
+case and instead navigates to the home page - as indicated by the 
+`router.prefix` if set, otherwise `/`.
 
