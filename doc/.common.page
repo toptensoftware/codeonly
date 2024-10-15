@@ -15,7 +15,7 @@ navTree:
       - text: Components|component
       - text: Mounting|componentMount
       - text: Re-templating|componentRetemplating
-      - text: busy Property|componentBusy
+      - text: loading Property|componentLoading
   - text: Templates
     subItems:
       - text: Templates|template

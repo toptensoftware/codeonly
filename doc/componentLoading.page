@@ -1,0 +1,24 @@
+---
+title: "Component loading Property"
+subtitle: "A simple, lightweight, code-only front-end Web framework."
+projectTitle: CodeOnly
+---
+# Component `loading` Property
+
+When working with async data requests in single page apps, it's common
+for a component to need to mark itself as loading while making data
+requests.
+
+To support this the Component implements a boolean `loading` property
+that can be used in templates to show a spinner or other indicator.
+
+When the value of the `loading` property is changed, the component is
+automatically invalidated for update.
+
+## `loaded` Event
+
+The `loaded` event is fired after the first update when the `loading` 
+property was true but is now false.
+
+This event is used by the Router to determine when a page load is
+complete and view state (eg: scroll position) can be restored.

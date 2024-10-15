@@ -110,6 +110,13 @@ export class Component extends EventTarget
     {
         this.invalid = false;
         this.dom.update();
+
+        // Fire loaded event
+        if (this.#wasLoading && !this.#loading)
+        {
+            this.#wasLoading = false;
+            this.dispatchEvent(new Event("loaded"));
+        }
     }
 
     destroy()
@@ -138,20 +145,21 @@ export class Component extends EventTarget
         this.rootNodes.forEach(x => x. remove());
     }
 
-    static busySymbol = Symbol("busy");
-    get busy()
+    #loading = false;
+    #wasLoading = false;
+    get loading()
     {
-        return this[Component.busySymbol] ?? false;
+        return this.#loading
     }
-    set busy(value)
+    set loading(value)
     {
-        if (value == this.busy)
+        if (value == this.#loading)
             return;
-        this[Component.busySymbol] = value;
+        this.#loading = value;
+        if (value)
+            this.#wasLoading = true;
         this.invalidate();
     }
 
+    static template = {};
 }
-
-
-
