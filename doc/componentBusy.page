@@ -1,0 +1,17 @@
+---
+title: "Component busy Property"
+subtitle: "A simple, lightweight, code-only front-end Web framework."
+projectTitle: CodeOnly
+---
+## Component `busy` Property
+
+When working with async data requests in single page apps, it's common
+for a component to need to mark itself as busy while making data
+requests.
+
+To support this the Component implements a boolean `busy` property
+that can be used in templates to show a spinner or other indicator.
+
+When the value of the `busy` property is changed, the component is
+automatically invalidated for update.
+

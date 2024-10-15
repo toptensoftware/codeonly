@@ -72,6 +72,11 @@ class ArrayTraps
     if (del != 0 || ins != 0)
       this.listeners.forEach(x => x(index, del, ins));
   }
+  touch(index)
+  {
+    if (index >=0 && index < this.arr.length)
+      this.listeners.forEach(x => x(index, 0, 0));
+  }
 
   __gettrap(name)
   {
@@ -122,7 +127,11 @@ class ArrayHandler
 
 export function ObservableArray()
 {
-  let arr = [];
+  let arr = [...arguments];
   return new Proxy(arr, new ArrayHandler(arr));
 }
 
+ObservableArray.from = function(other)
+{
+    return new ObservableArray(...Array.from(other));
+}

@@ -1,4 +1,5 @@
 import { Template } from "./Template.js";
+import { nextFrame } from "./nextFrame.js";
 
 export class Component extends EventTarget
 {
@@ -61,6 +62,7 @@ export class Component extends EventTarget
         return this.dom.rootNodes; 
     }
 
+    static nextFrameOrder = -100;
 
     invalidate()
     {
@@ -110,7 +112,19 @@ export class Component extends EventTarget
         this.rootNodes.forEach(x => x. remove());
     }
 
-    static nextFrameOrder = -100;
+    static busySymbol = Symbol("busy");
+    get busy()
+    {
+        return this[Component.busySymbol] ?? false;
+    }
+    set busy(value)
+    {
+        if (value == this.busy)
+            return;
+        this[Component.busySymbol] = value;
+        this.invalidate();
+    }
+
 }
 
 

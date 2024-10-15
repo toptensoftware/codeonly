@@ -15,6 +15,7 @@ navTree:
       - text: Components|component
       - text: Mounting|componentMount
       - text: Re-templating|componentRetemplating
+      - text: busy Property|componentBusy
   - text: Templates
     subItems:
       - text: Templates|template
@@ -36,4 +37,6 @@ navTree:
       - text: UpdateManager Class|updateManager
       - text: urlPattern Function|urlPattern
       - text: nextFrame Function|nextFrame
+      - text: ObservableArray Class|observableArray
 ---
+

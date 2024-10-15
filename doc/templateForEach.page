@@ -134,7 +134,7 @@ functions change from `(component) => ` to `(item, context) => ` where:
 
 Normally the `foreach` component runs a diff algorithm to work out what needs 
 to be updated in the DOM.  This works well and is very efficient, but
-not as efficient as using CodeOnly's `ObservableArray`.
+not as efficient as using CodeOnly's [`ObservableArray`](observableArray).
 
 When the items provided to a `foreach` block is an `ObservableArray` any
 changes to the array are reflected immediately in the DOM by monitoring

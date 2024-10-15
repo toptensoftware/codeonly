@@ -65,3 +65,31 @@ test("Events Test", () => {
     assert.deepEqual(a, b);
 });
 
+
+
+
+test("Initial Data", () => {
+    let arr = new ObservableArray("apples", "pears", "bananas");
+    assert.deepStrictEqual(arr, ["apples", "pears", "bananas"]);
+});
+
+test("From", () => {
+    let arr = ObservableArray.from(["apples", "pears", "bananas"]);
+    assert.deepStrictEqual(arr, ["apples", "pears", "bananas"]);
+});
+
+test("touch", () => {
+
+    let arr = new ObservableArray("apples", "pears", "bananas");
+
+    let touched;
+    arr.addListener((index, del, ins) => {
+        if (del == 0 && ins == 0)
+            touched = index;
+    });
+
+    arr.touch(1);
+    assert.equal(touched, 1);
+
+
+});
