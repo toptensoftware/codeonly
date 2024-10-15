@@ -6,7 +6,7 @@ projectTitle: CodeOnly
 # ObservableArray Class
 
 The observable array class provides a way to manage an array of items and
-received callback notifications when the content of the array changes.
+receive callback notifications when the content of the array changes.
 
 The API to ObservableArray is exactly the same as the standard JavaScript
 Array with the following additions:
@@ -70,7 +70,7 @@ arr[1].text = "berries";    // This doesn't modify the array, so no notification
 arr.touch(1);               // ... but we can force one with `touch`
 ```
 
-Out listener just needs to check for this special case:
+The listener just needs to check for this special case:
 
 ```js
 function myListener(index, del, ins) => 
