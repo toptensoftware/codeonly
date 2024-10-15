@@ -44,19 +44,19 @@ export function patchArray(target, source, compare_key, patch_item)
 
 * `target` - the target array to be updates
 * `source` - the source array that the target will be made to match
-* `compare_key(a, b)` - a callback to compare two objects for key equality.
-* `compare_deep(a, b, index)` - an option callback to perform deep updates on equivalent key items
+* `compare_key(a, b)` - a callback to compare two objects for equal identity
+* `patch_items(a, b, index)` - an optional callback to perform deep updates items with equal identity
 
 The `compare_key` callback should compare objects for identity equality (eg: same 
-object key).  Mismatched key comparisons result in insertions and deletions in the 
+object primary key).  Mis-matched key comparisons result in insertions and deletions in the 
 target array.
 
-The `compare_deep` callback, if specified, is called for every pair of items that 
-matched the key comparison.  Provides a way to deep comparison of equivalent identity
-items and in-place patching.  This callback will often use `deepEqual` or `didUpdateObject`
+The `patch_item` callback, if specified, is called for each pair of items that 
+matched the key comparison.  This provides a way to perform deep updates of items with 
+equivalent identity.  This callback will often use `deepEqual` or `patchObject`
 to perform deep array patching.
 
-If `patch_item` returns true and `target` is an ObservableArray, `target.touch()` will be 
+If `patch_item` returns true and `target` is an `ObservableArray`, `target.touch()` will be 
 called to mark the object as modified.
 
 ```js
