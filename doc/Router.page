@@ -13,7 +13,7 @@ style routing (not hash based routing).
 
 ## Router Class and Singleton Instance
 
-The `Router` class is the class that implements the router functionality;
+The `Router` class implements the router functionality;
 
 ```js
 import { Router } from "@toptensoftware/codeonly"
@@ -24,8 +24,8 @@ let router = new Router();
 // Use router...
 ```
 
-However since you only ever need one instance, CodeOnly includes a built-in
-singleton `router`.
+However since you only ever need one instance, there is a built-in
+singleton instance available as `router`.
 
 ```js
 import { router } from "@toptensoftware/codeonly"
@@ -33,23 +33,24 @@ import { router } from "@toptensoftware/codeonly"
 // Use router...
 ```
 
-## Router, Route Handler, Route Terms
+## Router Framework
 
-The following terms describe the router framework:
+Routing involves the following participants:
 
-* `Router` - the main router class responsible for navigation and working
+* Router instance - the main router instance responsible for navigation and working
   with the browser's History API.
-* `Route Handler` - a object registered with the Router to provide URL
+* Route handlers - objects registered with the Router to provide URL
   matching and handling.
-* `Route` - an object that represents the currently matched URL and includes
-  information like the URL, the associated handler and any other data the 
+* Route instances - an object that represents the currently matched URL and includes
+  information like the URL, the associated handler, state and any other data the 
   handler wishes to associate with the route.
-
+* Router listener - listens to navigation events from the Router and updates
+  the DOM with the newly navigated to page.
 
 
 ## Registering Route Handlers
 
-Route handlers should be registered using the `register` method which expects
+Route handlers are registered using the Router's `register` function which expects
 an object with properties that control the route handler's behaviour:
 
 ```js
@@ -71,7 +72,7 @@ router.register({
 
 ## Registering Navigation Listeners
 
-Once a route has been matched, it's up to you application to do something with
+Once a route has been matched, it's up to your application to do something with
 that matched route by listening to the "navigate" event.
 
 ```js
@@ -94,7 +95,8 @@ The `router` class instance supports the following methods and properties:
 * `back` - starts backward navigation to the previous page, or if there is
   no previous page to the home page.
 * `register` - registers a route handler
-* `prefix` - an path prefix if the application is mounted in a sub-path.
+* `prefix` - an path prefix if the application is mounted in a sub-path (set this
+  before calling the `start` method
 * `start` - starts the router, connecting to window and history events and
   performing the initial page navigation for the starting URL.
 
@@ -108,7 +110,10 @@ properties are supported:
   route handler to match against.  If not specified, the `match` function will
   be called for all URLs.
 
-* `match(route)` - a callback to be invoked once pattern is matched (or always
+  If the pattern is a string, it's first converted to a RegExp using the `urlPattern` 
+  function.
+
+* `match(route)` - a callback that is invoked once the pattern has been matched (or always
   if pattern is not specified).  `route` will be the Route object partially constructed
   and will have the `url`, `originalUrl`, `match` and `state` parameters set.
 
@@ -117,7 +122,7 @@ properties are supported:
   information and objects to the route (eg: the page component instance to show).
 
   If the match function returns `null`, router navigation is canceled and the navigation
-  is left to the browser to do out-of-page navigation.
+  passed back to the browser to do page load navigation.
 
 * `leave(route)` - a callback invoked when navigating away from any route matched
   by this handler.
@@ -133,30 +138,27 @@ representing the current route with the following properties:
 
 * `url` - the matched url
 * `originalUrl` - the original full URL before the prefix was stripped
-* `match` - the regular expression match that matched the handler's pattern
-* `handler` - the route handler that matched the url
-* `state` - and previously saved history state
+* `match` - the result of running the pattern RegExp against the URL
+* `handler` - the route handler that matched the URL
+* `state` - any previously saved history state
 
-Further the route handler can attach any additional information to the route
+Also, the route handler can attach any additional information to the route
 object as required.
 
-In the above examples, note how the `/about` route handler create an 
-`AboutPageComponent` instance and stored it on the route object.  This component
-instance was then picked up by the `navigate` listener elsewhere in the app
-and was loaded into an `EmbedSlot`.
-
-This approach allows separation of route matching and handling with actual
-placing matched components into the main DOM.
+In the above examples, note how the `/about` route handler creates an 
+`AboutPageComponent` instance and stores it on the route object.  This component
+instance is then picked up by the `navigate` listener elsewhere in the app
+and loaded into an `EmbedSlot`.
 
 
 ## Not Found Page
 
 To handle URL's not recognized by your app, you should register
-a Not Found page.
+a "Not Found" page.
 
-Notice the registered handler doesn't have a pattern (ie: it matches
+Notice this handler doesn't have a pattern (ie: it matches
 anything) and the `order` property is set high enough to be matched
-after all other routes have failed.
+after all other routes have failed to match.
 
 ```js
 router.register({
@@ -171,22 +173,22 @@ router.register({
 
 ## Creating Links to Routes
 
-The router listens for any clicks on `<a...` tags with a `href` that
-starts with a `/` and, if set, matches `router.prefix`.
+The router listens for any clicks on `<a ...></a>` tags with a `href` that
+starts with a `/` and, if set, matches the `router.prefix`.
 
-Routes starting with anything else will be ignored by the router and normal
-page navigation will take place.
+All other clicks on links will be ignored by the router and normal
+page load navigation will take place.
 
 
 
 ## Reverting to Browser Navigation
 
-If you have links that link look like in-page links but are actually 
-out-of-page links, to prevent them loading the not found page (as described
-above) you can create a route handler that returns `null`.
+If you have links that look like in-app links but are actually out-of-page 
+links, you can force an page load navigation by returning `null` from a route
+handler's `match` function.
 
-eg: suppose want `/admin` to exit the single page app and for normal browser 
-navigation to load a separate page.
+eg: suppose want `/admin` to leave the single page and instead to page-load 
+navigation:
 
 ```js
 router.register({
@@ -232,8 +234,11 @@ router.register({
 
 ```
 
-Next, listen for the navigate event and load the created page into
-the main content area of your app:
+Next, listen for the "navigate" event and load the created page into
+the main content area of your app.
+
+Also, call the router's `start` method to hook up event handlers and
+do the initial page navigation.
 
 ```js
 import { Component, router } from `@toptensoftware/codeonly`
@@ -271,12 +276,13 @@ class Application extends Component
 
 ```
 
+That's it for simple page navigation.
 
 
 ## Routes to Modal Dialogs
 
 In additional to regular page navigation, the router can also be used
-for routes that show modal dialogs.
+for routes that present as modal dialogs.
 
 Firstly, the match function should create and show the modal dialog:
 
@@ -294,10 +300,11 @@ router.register({
 });
 ```
 
-Notice how the `match` function doesn't set the `page` property of the
-route.  So the Application shouldn't try to load a page in this case.  
-This is why the "navigate" event listener above checks if the route's 
-`page` property is set before loading it into the router slot.
+Notice how the `match` function doesn't set the `page` property on the
+route and the Application shouldn't try to load the page in this case.  
+
+(This is why the "navigate" event listener above checks if the route's 
+`page` property is set before loading it into the router slot).
 
 As is, this will handle forward and back navigation to/from the dialog
 however we need to also handle the case where the user explicitly closes
