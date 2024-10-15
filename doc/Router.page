@@ -37,8 +37,8 @@ import { router } from "@toptensoftware/codeonly"
 
 Routing involves the following participants:
 
-* Router instance - the main router instance responsible for navigation and working
-  with the browser's History API.
+* Router - the router itself responsible for handling browser navigation events 
+  and mapping them to routes.
 * Route handlers - objects registered with the router to provide URL
   matching and handling.
 * Route instances - an object that represents a matched URL and includes
@@ -146,7 +146,7 @@ representing the current route with the following properties:
 * `match` - the result of running the pattern RegExp against the URL
 * `handler` - the route handler that matched the URL
 * `state` - any previously saved history state
-* `viewState` - and previously captured view state information
+* `viewState` - any previously captured view state information
 
 The route handler can attach any additional information to the route
 object as required.  Although not required, typically, by convention
