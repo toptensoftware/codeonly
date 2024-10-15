@@ -64,14 +64,18 @@ export class Component extends EventTarget
 
     invalidate()
     {
+        // Already invalid?
         if (this.invalid)
             return;
 
+        // Mark
         this.invalid = true;
-        requestAnimationFrame(() => {
+
+        // Request callback
+        nextFrame(() => {
             if (this.invalid)
                 this.update();
-        });
+        }, Component.nextFrameOrder);       // So DOM updates happen before user nextFrame callbacks
     }
 
     update()
@@ -105,6 +109,8 @@ export class Component extends EventTarget
             return;
         this.rootNodes.forEach(x => x. remove());
     }
+
+    static nextFrameOrder = -100;
 }
 
 

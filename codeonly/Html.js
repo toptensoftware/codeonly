@@ -32,11 +32,6 @@ export class Html
         return new HtmlString(text);
     }
 
-    static nextFrame(callback)
-    {
-        requestAnimationFrame(() => requestAnimationFrame(callback));
-    }
-
     static encode(str)
     {
         if (str === null || str === undefined)

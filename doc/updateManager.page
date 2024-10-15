@@ -1,9 +1,9 @@
 ---
-title: "UpdateManager"
+title: "UpdateManager Class"
 subtitle: "A simple, lightweight, code-only front-end Web framework."
 projectTitle: CodeOnly
 ---
-# Update Manager
+# UpdateManager Class
 
 The `UpdateManager` class provides an easy way to fire object update notifications.
 

@@ -1,9 +1,9 @@
 ---
-title: "Html Utilities"
+title: "Html Class"
 subtitle: "A simple, lightweight, code-only front-end Web framework."
 projectTitle: CodeOnly
 ---
-# Html Utilities
+# Html Class
 
 The `Html` class provides utilities functions for use in templates:
 

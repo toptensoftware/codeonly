@@ -1,0 +1,52 @@
+---
+title: "nextFrame Function"
+subtitle: "A simple, lightweight, code-only front-end Web framework."
+projectTitle: CodeOnly
+---
+# nextFrame Function
+
+The `nextFrame` function invokes a callback on the next update cycle.
+
+```js
+import { nextFrame} from "@toptensoftware/codeonly"
+
+nextFrame(() => { /* do something */ });
+```
+
+`nextFrame` is implemented using the standard browser `requestAnimationFrame` function.
+
+## Callback Order
+
+The order of callbacks can be controlled by passing a second parameter.
+
+```js
+nextFrame(callback, order);
+```
+
+* Callbacks with a lower `order` will be called first.
+* Callbacks with the same `order` will be called in undefined order. 
+* If the `order` parameter is not specified, `0` is used.
+
+## Component.invalidate() and Update Order
+
+The `Component.invalidate()` function uses `nextFrame` with an order of 
+`Component.nextFrameOrder` (-100) to register pending DOM updates.
+
+This ensures that `nextFrame` callbacks that don't specify an order
+will be invoked after the DOM updates have completed.
+
+
+## postNextFrame Function
+
+The `postNextFrame` function notifies a callback as soon as all pending
+`nextFrame` callbacks have been invoked.
+
+If there are currently no pending `nextFrame` callbacks, the callback will
+be invoked immediately and synchronously (ie: before `postNextFrame` returns).
+
+If there are currently pending `nextFrame` callbacks, the callback will 
+be invoked immediately after they've been dispatched.
+
+This function lets you perform actions either immediately, or after any
+pending `nextFrame` callbacks.
+

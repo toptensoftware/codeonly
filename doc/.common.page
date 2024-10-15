@@ -32,7 +32,8 @@ navTree:
       - text: The Content ($) Property|templateContentProperty
   - text: Utilities
     subItems:
-      - text: Html Utilities|html
-      - text: UpdateManager|updateManager
-      - text: urlPattern|urlPattern
+      - text: Html Class|html
+      - text: UpdateManager Class|updateManager
+      - text: urlPattern Function|urlPattern
+      - text: nextFrame Function|nextFrame
 ---

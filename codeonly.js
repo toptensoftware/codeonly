@@ -11,3 +11,4 @@ export * from "./codeonly/Transition.js";
 export * from "./codeonly/ObservableArray.js";
 export * from "./codeonly/UpdateManager.js";
 export * from "./codeonly/urlPattern.js";
+export * from "./codeonly/nextFrame.js";
