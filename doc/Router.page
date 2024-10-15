@@ -47,7 +47,7 @@ The following terms describe the router framework:
 ## Registering Route Handlers
 
 Route handlers should be registered using the `register` method which expects
-and object with properties that control the route handler's behaviour:
+an object with properties that control the route handler's behaviour:
 
 ```js
 router.register({
@@ -68,10 +68,8 @@ router.register({
 
 ## Registering Navigation Listeners
 
-Once a route has been matched, it's up to you application to do something in
-the app with that matched route.
-
-To listen for route navigation, use the "navigate" event
+Once a route has been matched, it's up to you application to do something with
+that matched route by listening to the "navigate" event.
 
 ```js
 router.addEventListener("navigate", () => {
@@ -115,6 +113,9 @@ properties are supported:
   returning `true`.  When matching, a route handler will typically assign additional
   information and objects to the route (eg: the page component instance to show).
 
+  If the match function returns `null`, router navigation is canceled and the navigation
+  is left to the browser to do out-of-page navigation.
+
 * `leave(route)` - a callback invoked when navigating away from any route matched
   by this handler.
 
@@ -143,6 +144,53 @@ and was loaded into an `EmbedSlot`.
 
 This approach allows separation of route matching and handling with actual
 placing matched components into the main DOM.
+
+
+## Not Found Page
+
+To handle URL's not recognized by your app, you should register
+a Not Found page.
+
+Notice the registered handler doesn't have a pattern (ie: it matches
+anything) and the `order` property is set high enough to be matched
+after all other routes have failed.
+
+```js
+router.register({
+    match: (r) => {
+        r.page = new NotFoundPage(r.url);
+        return true;
+    },
+    order: 1000,
+});
+```
+
+
+## Creating Links to Routes
+
+The router listens for any clicks on `<a...` tags with a `href` that
+starts with a `/` and, if set, matches `router.prefix`.
+
+Routes starting with anything else will be ignored by the router and normal
+page navigation will take place.
+
+
+
+## Reverting to Browser Navigation
+
+If you have links that link look like in-page links but are actually 
+out-of-page links, to prevent them loading the not found page (as described
+above) you can create a route handler that returns `null`.
+
+eg: suppose want `/admin` to exit the single page app and for normal browser 
+navigation to load a separate page.
+
+```js
+router.register({
+    pattern: "/admin"
+    match: (r) => null,         // null means cancel router and pass to browser.
+});
+```
 
 
 
@@ -220,24 +268,6 @@ class Application extends Component
 
 ```
 
-## Not Found Page
-
-To handle URL's not recognized by your app, you should register
-a Not Found page.
-
-Notice the registered handler doesn't have a pattern (ie: it matches
-anything) and the `order` property is set high enough to be matched
-after all other routes have failed.
-
-```js
-router.register({
-    match: (r) => {
-        r.page = new NotFoundPage(r.url);
-        return true;
-    },
-    order: 1000,
-});
-```
 
 
 ## Routes to Modal Dialogs
