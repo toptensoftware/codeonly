@@ -124,13 +124,20 @@ export class ForEachBlock
 
     onObservableUpdate(index, del, ins)
     {
-        if (del != 0)
-            this.#delete(index, del);
-            
-        if (ins != 0)
-            this.#insert(this.observableItems, null, index, ins);
+        if (ins == 0 && del == 0)
+        {
+            this.#patch_existing(index, 1);
+        }
+        else
+        {
+            if (del != 0)
+                this.#delete(index, del);
+                
+            if (ins != 0)
+                this.#insert(this.observableItems, null, index, ins);
 
-        this.#updateEmpty();
+            this.#updateEmpty();
+        }
     }
 
     get rootNodes()
