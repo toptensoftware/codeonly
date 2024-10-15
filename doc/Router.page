@@ -74,33 +74,33 @@ The following properties are supported:  All are optional except
 for the `match` method.
 
 * `pattern` - an optional `RegExp` or string specifying a URL pattern for this
-  route handler to match against.  If not specified, the `match` function will
-  be called for all URLs.
+    route handler to match against.  If not specified, the `match` function will
+    be called for all URLs.
 
-  If the pattern is a string, it's converted to a RegExp using the [`urlPattern`](utilities#urlpattern-function)
-  function.
+    If the pattern is a string, it's converted to a RegExp using the [`urlPattern`](utilities#urlpattern-function)
+    function.
 
 * `match(route)` - a callback that is invoked once the pattern has been matched (or always
-  if pattern is not specified).  
+    if pattern is not specified).  
   
-  `route` will be a partially constructed route object
-  with the `url`, `originalUrl`, `match`, `viewState` and `state` parameters set.
+    `route` will be a partially constructed route object
+    with the `url`, `originalUrl`, `match`, `viewState` and `state` parameters set.
 
-  The `match` function can reject the match by returning `false`, or accept it by
-  returning `true`.  When matching, a route handler will typically set additional properties on the route (eg: the page component instance to show).
+    The `match` function can reject the match by returning `false`, or accept it by
+    returning `true`.  When matching, a route handler will typically set additional properties on the route (eg: the page component instance to show).
 
-  If the match function returns `null`, router navigation is canceled and the navigation
-  passed back to the browser to do page load navigation.
+    If the match function returns `null`, router navigation is canceled and the navigation
+    passed back to the browser to do page load navigation.
 
 * `leave(route)` - a callback invoked when navigating away from any route matched
-  by this handler.
+    by this handler.
 
 * `order` - an optional numeric value indicating the order this route handler
-  should be matched in comparison to others.  Defaults to `0` if not specified.
+    should be matched in comparison to others.  Defaults to `0` if not specified.
 
 * `captureViewState` - a function that returns a JSON serializable object representing
-  the current view state (eg: scroll position).  See below for more information
-  about view state restoration.
+    the current view state (eg: scroll position).  See below for more information
+    about view state restoration.
 
 * `restoreViewState` - a function that restores a previously captured view state.
 
@@ -128,12 +128,12 @@ The `router` class instance supports the following methods and properties:
 * `current` - the route object of the currently matched URL
 * `navigate` - starts forward navigation to a new in-app page
 * `back` - starts backward navigation to the previous page, or if there is
-  no previous page to the home page.
+    no previous page to the home page.
 * `register` - registers a route handler
 * `prefix` - a path prefix if the application is mounted in a sub-path (set this
-  before calling the `start` method)
+    before calling the `start` method)
 * `start` - starts the router, connecting to window and history events and
-  performing the initial page navigation for the starting URL.
+    performing the initial page navigation for the starting URL.
 
 
 ## The Route Object
@@ -313,11 +313,11 @@ position - which it the router handles automatically for most use cases,
 but this process can be customized.
 
 * When route is left, the router calls the route handler's `captureViewState`
-method.  This method should capture the current view state and
-return it as JSON serializable object.
+    method.  This method should capture the current view state and
+    return it as JSON serializable object.
 
 * When a route is returned to, the router calls the handler's `restoreViewState`
-to restore any previously saved view state.
+    to restore any previously saved view state.
 
 If the handler doesn't define the `captureViewState` nor `restoreViewState`
 methods, they're automatically mapped to `DocumentScrollPosition.get()` and 
@@ -328,10 +328,10 @@ There are several ways to customize view state restoration:
 
 * Supply your own implementations of the capture and restore view state methods
 * Supply your own implementation of `captureViewState`, but leave 
-  `restoreViewState` unset (or set to null) and use the `route.viewState` view 
-  to restore the view. (eg: from inside the `match` call).
+    `restoreViewState` unset (or set to null) and use the `route.viewState` view 
+    to restore the view. (eg: from inside the `match` call).
 * Set both `captureViewState` and `restoreViewState` to null to disable
-  view state restoration.
+    view state restoration.
 
 ## View State Restoration with Async Data Loads
 
@@ -351,9 +351,9 @@ has a `.loading` property set to true it delays the call to
 In other words to support view state restoration with async data load:
 
 * use the `page` property of the `route` object to represent the page to 
-  be loaded.
+    be loaded.
 * before returning from `match` make sure the page's `loading` property
-  is set to true.
+    is set to true.
 
 
 
