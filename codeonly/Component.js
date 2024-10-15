@@ -74,10 +74,36 @@ export class Component extends EventTarget
         this.invalid = true;
 
         // Request callback
-        nextFrame(() => {
-            if (this.invalid)
-                this.update();
-        }, Component.nextFrameOrder);       // So DOM updates happen before user nextFrame callbacks
+        Component.invalidate(this);
+    }
+
+    validate()
+    {
+        if (this.invalid)
+            this.update();
+    }
+
+    static _invalidComponents = [];
+    static invalidate(component)
+    {
+        // Add component to list requiring validation
+        this._invalidComponents.push(component);
+
+        // If it's the first, set up a nextFrame callback
+        if (this._invalidComponents.length == 1)
+        {
+            nextFrame(() => {
+                // Process invalid components.
+                // NB: new components invalidated while validating original
+                //     set of components will be added to end of array 
+                //     and also updated this frame.
+                for (let i=0; i<this._invalidComponents.length; i++)
+                {
+                    this._invalidComponents[i].validate();
+                }
+                this._invalidComponents = [];
+            }, Component.nextFrameOrder);
+        }
     }
 
     update()

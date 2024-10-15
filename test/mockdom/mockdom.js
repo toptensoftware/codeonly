@@ -561,7 +561,28 @@ export function parseHtml(str)
 }
 
 
+let animationFrames = null;
 globalThis.document = new Document();
-globalThis.requestAnimationFrame = function(callback) { callback() };
+globalThis.requestAnimationFrame = function(callback) 
+{ 
+    if (animationFrames == null)
+        callback() 
+    else
+        animationFrames.push(callback);
+};
+globalThis.blockAnimationFrames = function()
+{
+    if (animationFrames === null)
+        animationFrames = [];
+}
+globalThis.dispatchAnimationFrames = function()
+{
+    if (animationFrames != null)
+    {
+        let temp = animationFrames;
+        animationFrames = [];
+        temp.forEach(x => x());
+    }
+}
 globalThis.Node = HTMLNode;
 
