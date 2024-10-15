@@ -1,0 +1,293 @@
+---
+title: "Router Class"
+subtitle: "A simple, lightweight, code-only front-end Web framework."
+projectTitle: CodeOnly
+---
+# Router Class
+
+CodeOnly includes a simple, but flexible URL routing class designed for use
+in single-page apps.
+
+## Router Class and Singleton Instance
+
+The `Router` class is the class that implements the router functionality;
+
+```js
+import { Router } from "@toptensoftware/codeonly"
+
+// Create router
+let router = new Router();
+
+// Use router...
+```
+
+However since you only ever need one instance, CodeOnly includes a built-in
+singleton `router`.
+
+```js
+import { router } from "@toptensoftware/codeonly"
+
+// Use router...
+```
+
+## Router, Route Handler, Route Terms
+
+The following terms describe the router framework:
+
+* `Router` - the main router class responsible for navigation and working
+  with the browser's History API.
+* `Route Handler` - a object registered with the Router to provide URL
+  matching and handling.
+* `Route` - an object that represents the currently matched URL and includes
+  information like the URL, the associated handler and any other data the 
+  handler wishes to associate with the route.
+
+
+
+## Registering Route Handlers
+
+Route handlers should be registered using the `register` method which expects
+and object with properties that control the route handler's behaviour:
+
+```js
+router.register({
+    // The URL pattern this route handler matches
+    pattern: "/about",
+
+    // A handler called if pattern matches
+    match: (route) => {
+
+        // Create component for this object
+        route.page = new AboutPageComponent();
+
+        // Return true to confirm match of this route
+        return true;
+    }
+});
+```
+
+## Registering Navigation Listeners
+
+Once a route has been matched, it's up to you application to do something in
+the app with that matched route.
+
+To listen for route navigation, use the "navigate" event
+
+```js
+router.addEventListener("navigate", () => {
+
+    // Load navigated page into router slot
+    if (router.current.page)
+        this.routerSlot.content = router.current.page;
+
+});
+```
+
+
+## The Router Object
+
+The `router` class instance supports the following methods and properties:
+
+* `current` - the route object of the currently matched URL
+* `navigate` - starts forward navigation to a new page
+* `back` - starts backward navigation to the previous page, or if there is
+  no previous page to the home page.
+* `register` - registers a route handler
+* `prefix` - an path prefix if the application is mounted in a sub-path.
+* `start` - starts the router, connecting to window and history events and
+  performing the initial page navigation for the starting URL.
+
+
+## The Route Handler
+
+Route handlers are objects you register with the Router.  The following
+properties are supported:
+
+* `pattern` - an optional `RegExp` or string specifying a URL pattern for this
+  route handler to match against.  If not specified, the `match` function will
+  be called for all URLs.
+
+* `match(route)` - a callback to be invoked once pattern is matched (or always
+  if pattern is not specified).  `route` will be the Route object partially constructed
+  and will have the `url`, `originalUrl`, `match` and `state` parameters set.
+
+  The `match` function can reject the match by returning `false`, or accept it by
+  returning `true`.  When matching, a route handler will typically assign additional
+  information and objects to the route (eg: the page component instance to show).
+
+* `leave(route)` - a callback invoked when navigating away from any route matched
+  by this handler.
+
+* `order` - an optional numeric value indicating the order this route handler
+  should be matched in comparison to others.  Defaults to `0` if not specified.
+
+
+## The Route Object
+
+Once a URL is matched to a route handler, a `route` object is created
+representing the current route with the following properties:
+
+* `url` - the matched url
+* `originalUrl` - the original full URL before the prefix was stripped
+* `match` - the regular expression match that matched the handler's pattern
+* `handler` - the route handler that matched the url
+* `state` - and previously saved history state
+
+Further the route handler can attach any additional information to the route
+object as required.
+
+In the above examples, note how the `/about` route handler create an 
+`AboutPageComponent` instance and stored it on the route object.  This component
+instance was then picked up by the `navigate` listener elsewhere in the app
+and was loaded into an `EmbedSlot`.
+
+This approach allows separation of route matching and handling with actual
+placing matched components into the main DOM.
+
+
+
+## Typical Setup
+
+The following describes a typical setup for using the router.
+
+Firstly, create a component for each of your pages and register a route handler 
+for it:
+
+```js
+import { Component, router } from `@toptensoftware/codeonly`
+
+// A component for the product page
+class ProductPage extends Component
+{
+    constructor(product_id)
+    {
+    }
+    // etc...
+}
+
+// Register route handler
+router.register({
+    pattern: "/product/:productId",
+    match: (route) => {
+
+        // Create new product page
+        route.page = new ProductPage(route.groups.productId);
+
+        // Indicate we've matched this route
+        return true;
+
+    },
+});
+
+```
+
+Next, listen for the navigate event and load the created page into
+the main content area of your app:
+
+```js
+import { Component, router } from `@toptensoftware/codeonly`
+
+// Main application instance mounted to DOM
+class Application extends Component
+{
+    constructor()
+    {
+        // Listen for navigate event
+        router.addEventListener("navigate", () => {
+
+            // Load navigated page into router embed slot
+            this.routerSlot.content = router.current.page;
+
+        });
+
+        // Start the router (connect to window and history 
+        // navigation events, do initial page navigation).
+        router.start();
+    }
+
+
+    static template = {
+        type: "main",
+        $: [
+            { 
+                // Router pages will be loaded here
+                type: "embed-slot", 
+                bind: "routerSlot",
+            },
+        ]
+    };
+}
+
+```
+
+## Not Found Page
+
+To handle URL's not recognized by your app, you should register
+a Not Found page.
+
+Notice the registered handler doesn't have a pattern (ie: it matches
+anything) and the `order` property is set high enough to be matched
+after all other routes have failed.
+
+```js
+router.register({
+    match: (r) => {
+        r.page = new NotFoundPage(r.url);
+        return true;
+    },
+    order: 1000,
+});
+```
+
+
+## Routes to Modal Dialogs
+
+In additional to regular page navigation, the router can also be used
+for routes that show modal dialogs.
+
+Firstly, the match function should create and show the modal dialog:
+
+```js
+router.register({
+    pattern: "/product-photo-popup/:productIdd",
+    match: (r) => {
+        r.modal = new ProductPhotoDialog(r.match.groups.productId);
+        r.modal.showModal();
+        return true;
+    },
+    leave: (r) => {
+        r.modal.close();
+    },
+});
+```
+
+Notice how the `match` function doesn't set the `page` property of the
+route.  So the Application shouldn't try to load a page in this case.  
+This is why the "navigate" event listener above checks if the route's 
+`page` property is set before loading it into the router slot.
+
+As is, this will handle forward and back navigation to/from the dialog
+however we need to also handle the case where the user explicitly closes
+the dialog via a button or Escape key.
+
+Your dialog probably already has a `close` listener to remove the 
+dialog from the DOM when it's closed. At this point, we just check
+if the current route refers to this dialog, and if so, tell the 
+router to navigate back:
+
+```js
+    this.dom.rootNode.addEventListener("close", () => {
+
+        // If we're the current router item this means
+        // we were closed by the UI (escape key) and not
+        // by navigating backwards.  Do the back navigation
+        // now to go back to where we came.
+        if (router.current.modal == this)
+            router.back();
+```
+
+Note: if the initial page loaded by the app was the dialog, the `back`
+function doesn't have anywhere to go back to.  The router detects this
+case and instead navigates to the home page (as indicated by the 
+`router.prefix`).
+
