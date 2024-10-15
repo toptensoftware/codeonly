@@ -4,13 +4,14 @@ export class DocumentScrollPosition
     static get()
     {
         return { 
-            top: document.documentElement.scrollTop,
-            left: document.documentElement.scrollLeft,
+            top: window.pageYOffset || document.documentElement.scrollTop,
+            left: window.pageXOffset || document.documentElement.scrollLeft,
         }
     }
     static set(value)
     {
-        document.documentElement.scrollTop = value.top; 
-        document.documentElement.scrollLeft = value.left;
+        if (!value)
+            return;
+        window.scrollTo(value.left, value.top);
     }
 }
