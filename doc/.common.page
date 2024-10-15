@@ -35,7 +35,7 @@ navTree:
     subItems:
       - text: Html Class|html
       - text: UpdateManager Class|updateManager
-      - text: urlPattern Function|urlPattern
+      - text: Utility Functions|utilities
       - text: nextFrame Function|nextFrame
       - text: ObservableArray Class|observableArray
 ---

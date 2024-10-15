@@ -1,11 +1,13 @@
 import { diff } from "./diff.js";
 
-export function patchArray(target, source, compare_key, compare_deep)
+export function patchArray(target, source, compare_key, patch_item)
 {
     let ops = diff(target, source, compare_key);
 
-    if (compare_deep)
+    if (patch_item)
     {
+        let isObservableTarget = target.isObservable;
+
         // Deep
         let pos = 0;
         for (let i=0; i < ops.length; i++)
@@ -32,7 +34,10 @@ export function patchArray(target, source, compare_key, compare_deep)
         {
             for (let i=from; i<to; i++)
             {
-                compare_deep(target[i], source[i], i);
+                if (!patch_item(target[i], source[i], i) && isObservableTarget)
+                {
+                    target.touch(i);
+                }
             }
         }
     }

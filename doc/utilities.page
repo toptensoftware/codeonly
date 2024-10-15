@@ -1,0 +1,109 @@
+---
+title: "Utility Functions"
+subtitle: "A simple, lightweight, code-only front-end Web framework."
+projectTitle: CodeOnly
+---
+# Utility Functions
+
+Various utility functions.
+
+## deepEqual Function
+
+Deeply compares two objects, returning true if the same.
+
+```js
+export function deepEqual(a, b)
+```
+
+## patchObject Function
+
+Similar to `updateObject` but returns true if anything was changed.
+
+```js
+export function patchObject(target, source)
+```
+
+
+## htmlEncode Function
+
+HTML encodes a string.
+
+```js
+export function htmlEncode(str)
+```
+
+
+## patchArray Function
+
+Updates `target` array to match `source` array.  Can be used with an
+ObservableArray target to generate updates for a `ForEach` block.
+
+```js
+export function patchArray(target, source, compare_key, patch_item)
+```
+
+* `target` - the target array to be updates
+* `source` - the source array that the target will be made to match
+* `compare_key(a, b)` - a callback to compare two objects for key equality.
+* `compare_deep(a, b, index)` - an option callback to perform deep updates on equivalent key items
+
+The `compare_key` callback should compare objects for identity equality (eg: same 
+object key).  Mismatched key comparisons result in insertions and deletions in the 
+target array.
+
+The `compare_deep` callback, if specified, is called for every pair of items that 
+matched the key comparison.  Provides a way to deep comparison of equivalent identity
+items and in-place patching.  This callback will often use `deepEqual` or `didUpdateObject`
+to perform deep array patching.
+
+If `patch_item` returns true and `target` is an ObservableArray, `target.touch()` will be 
+called to mark the object as modified.
+
+```js
+
+let target = new ObservableArray();
+let source = [...objects];
+
+patchArray(target, source, 
+    (a, b) => a.id == b.id,
+    (a, b) => patchObject(a, b)
+);
+```
+
+
+## updateObject Function
+
+Similar to `Object.assign` except instead of merging over the target object
+any properties in `target`, that don't exist in the `source` are deleted, making
+`target` and `source` the same.
+
+```js
+export function updateObject(target, source)
+```
+
+
+## urlPattern Function
+
+The `urlPattern` function can be used to convert an URL matching pattern to a 
+regular expression.
+
+```js
+export function urlPattern(pattern)
+```
+
+eg: 
+
+```js
+let rx = new RegExp(urlPattern("/foo/:id"));
+
+let match = "/foo/bar".match(rx);
+if (match)
+{
+    let id = match.groups.id;
+}
+```
+
+For more examples, see the [unit tests](https://github.com/toptensoftware/codeonly/blob/main/test/urlPattern.js).
+
+
+

@@ -14,3 +14,5 @@ export * from "./codeonly/urlPattern.js";
 export * from "./codeonly/nextFrame.js";
 export * from "./codeonly/patchArray.js";
 export * from "./codeonly/deepEqual.js";
+export * from "./codeonly/updateObject.js";
+export * from "./codeonly/htmlEncode.js";
