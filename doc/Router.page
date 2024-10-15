@@ -13,7 +13,7 @@ style routing (not hash based routing).
 
 ## Router Class and Singleton Instance
 
-The `Router` class implements the router functionality;
+The router functionality is implemented by the `Router` class:
 
 ```js
 import { Router } from "@toptensoftware/codeonly"
@@ -39,13 +39,13 @@ Routing involves the following participants:
 
 * Router instance - the main router instance responsible for navigation and working
   with the browser's History API.
-* Route handlers - objects registered with the Router to provide URL
+* Route handlers - objects registered with the router to provide URL
   matching and handling.
-* Route instances - an object that represents the currently matched URL and includes
+* Route instances - an object that represents a matched URL and includes
   information like the URL, the associated handler, state and any other data the 
   handler wishes to associate with the route.
 * Router listener - listens to navigation events from the Router and updates
-  the DOM with the newly navigated to page.
+  the DOM with the newly navigated to route.
 
 
 ## Registering Route Handlers
@@ -70,6 +70,41 @@ router.register({
 });
 ```
 
+The following properties are supported:  All are optional except
+for the `match` method.
+
+* `pattern` - an optional `RegExp` or string specifying a URL pattern for this
+  route handler to match against.  If not specified, the `match` function will
+  be called for all URLs.
+
+  If the pattern is a string, it's converted to a RegExp using the [`urlPattern`](utilities#urlpattern-function)
+  function.
+
+* `match(route)` - a callback that is invoked once the pattern has been matched (or always
+  if pattern is not specified).  
+  
+  `route` will be a partially constructed route object
+  with the `url`, `originalUrl`, `match`, `viewState` and `state` parameters set.
+
+  The `match` function can reject the match by returning `false`, or accept it by
+  returning `true`.  When matching, a route handler will typically set additional properties on the route (eg: the page component instance to show).
+
+  If the match function returns `null`, router navigation is canceled and the navigation
+  passed back to the browser to do page load navigation.
+
+* `leave(route)` - a callback invoked when navigating away from any route matched
+  by this handler.
+
+* `order` - an optional numeric value indicating the order this route handler
+  should be matched in comparison to others.  Defaults to `0` if not specified.
+
+* `captureViewState` - a function that returns a JSON serializable object representing
+  the current view state (eg: scroll position).  See below for more information
+  about view state restoration.
+
+* `restoreViewState` - a function that restores a previously captured view state.
+
+
 ## Registering Navigation Listeners
 
 Once a route has been matched, it's up to your application to do something with
@@ -91,44 +126,14 @@ router.addEventListener("navigate", () => {
 The `router` class instance supports the following methods and properties:
 
 * `current` - the route object of the currently matched URL
-* `navigate` - starts forward navigation to a new page
+* `navigate` - starts forward navigation to a new in-app page
 * `back` - starts backward navigation to the previous page, or if there is
   no previous page to the home page.
 * `register` - registers a route handler
-* `prefix` - an path prefix if the application is mounted in a sub-path (set this
-  before calling the `start` method
+* `prefix` - a path prefix if the application is mounted in a sub-path (set this
+  before calling the `start` method)
 * `start` - starts the router, connecting to window and history events and
   performing the initial page navigation for the starting URL.
-
-
-## The Route Handler
-
-Route handlers are objects you register with the Router.  The following
-properties are supported:
-
-* `pattern` - an optional `RegExp` or string specifying a URL pattern for this
-  route handler to match against.  If not specified, the `match` function will
-  be called for all URLs.
-
-  If the pattern is a string, it's first converted to a RegExp using the `urlPattern` 
-  function.
-
-* `match(route)` - a callback that is invoked once the pattern has been matched (or always
-  if pattern is not specified).  `route` will be the Route object partially constructed
-  and will have the `url`, `originalUrl`, `match` and `state` parameters set.
-
-  The `match` function can reject the match by returning `false`, or accept it by
-  returning `true`.  When matching, a route handler will typically assign additional
-  information and objects to the route (eg: the page component instance to show).
-
-  If the match function returns `null`, router navigation is canceled and the navigation
-  passed back to the browser to do page load navigation.
-
-* `leave(route)` - a callback invoked when navigating away from any route matched
-  by this handler.
-
-* `order` - an optional numeric value indicating the order this route handler
-  should be matched in comparison to others.  Defaults to `0` if not specified.
 
 
 ## The Route Object
@@ -141,14 +146,17 @@ representing the current route with the following properties:
 * `match` - the result of running the pattern RegExp against the URL
 * `handler` - the route handler that matched the URL
 * `state` - any previously saved history state
+* `viewState` - and previously captured view state information
 
-Also, the route handler can attach any additional information to the route
-object as required.
+The route handler can attach any additional information to the route
+object as required.  Although not required, typically, by convention
+a route handler will set a `.page` property to the component that
+implements the route's view.
 
 In the above examples, note how the `/about` route handler creates an 
-`AboutPageComponent` instance and stores it on the route object.  This component
-instance is then picked up by the `navigate` listener elsewhere in the app
-and loaded into an `EmbedSlot`.
+`AboutPageComponent` instance and stores it in the route's `page` property.
+This component instance is then picked up by the `navigate` listener 
+elsewhere in the app and loaded into an `EmbedSlot`.
 
 
 ## Not Found Page
@@ -173,7 +181,7 @@ router.register({
 
 ## Creating Links to Routes
 
-The router listens for any clicks on `<a ...></a>` tags with a `href` that
+The router listens for any clicks on anchor elements with a `href` that
 starts with a `/` and, if set, matches the `router.prefix`.
 
 All other clicks on links will be ignored by the router and normal
@@ -184,11 +192,11 @@ page load navigation will take place.
 ## Reverting to Browser Navigation
 
 If you have links that look like in-app links but are actually out-of-page 
-links, you can force an page load navigation by returning `null` from a route
+links, you can force page load navigation by returning `null` from a route
 handler's `match` function.
 
-eg: suppose want `/admin` to leave the single page and instead to page-load 
-navigation:
+eg: suppose want `/admin` to leave the single page app and load a separate
+page.
 
 ```js
 router.register({
@@ -201,10 +209,15 @@ router.register({
 
 ## Typical Setup
 
-The following describes a typical setup for using the router.
+The following shows a typical setup for using the router.
 
-Firstly, create a component for each of your pages and register a route handler 
-for it:
+Firstly, create a component for each of your pages and register a 
+route handler for it.  
+
+If your page requests async data, set its `loading` property before 
+returning from the `match` function.   This prevents the router from 
+trying to restore the scroll position until the page data is loaded.
+See below for more about view state restoration.
 
 ```js
 import { Component, router } from `@toptensoftware/codeonly`
@@ -214,7 +227,19 @@ class ProductPage extends Component
 {
     constructor(product_id)
     {
+        this.product_id = product_id;
+        this.load();
     }
+
+    async load()
+    {
+        // Set loading flag to prevent scroll position
+        // restoration until initial load is complete
+        this.loading = true;
+        let data = await api.getProduct(this.product_id);
+        this.loading = false;
+    }
+
     // etc...
 }
 
@@ -224,7 +249,7 @@ router.register({
     match: (route) => {
 
         // Create new product page
-        route.page = new ProductPage(route.groups.productId);
+        route.page = new ProductPage(route.match.groups.productId);
 
         // Indicate we've matched this route
         return true;
@@ -235,9 +260,7 @@ router.register({
 ```
 
 Next, listen for the "navigate" event and load the created page into
-the main content area of your app.
-
-Also, call the router's `start` method to hook up event handlers and
+the main content area of your app.  Also, call the router's `start` method to hook up event handlers and
 do the initial page navigation.
 
 ```js
@@ -279,12 +302,82 @@ class Application extends Component
 That's it for simple page navigation.
 
 
+## View State Restoration
+
+View state restoration refers to the ability to capture and restore
+information about the current page that typically isn't included in 
+the URL.
+
+The most common kind of view state data is the current document scroll 
+position - which it the router handles automatically for most use cases, 
+but this process can be customized.
+
+* When route is left, the router calls the route handler's `captureViewState`
+method.  This method should capture the current view state and
+return it as JSON serializable object.
+
+* When a route is returned to, the router calls the handler's `restoreViewState`
+to restore any previously saved view state.
+
+If the handler doesn't define the `captureViewState` nor `restoreViewState`
+methods, they're automatically mapped to `DocumentScrollPosition.get()` and 
+`DocumentScrollPosition.set(value)` which simply capture and restore the current 
+document scroll position.
+
+There are several ways to customize view state restoration:
+
+* Supply your own implementations of the capture and restore view state methods
+* Supply your own implementation of `captureViewState`, but leave 
+  `restoreViewState` unset (or set to null) and use the `route.viewState` view 
+  to restore the view. (eg: from inside the `match` call).
+* Set both `captureViewState` and `restoreViewState` to null to disable
+  view state restoration.
+
+## View State Restoration with Async Data Loads
+
+Often a single page app will need to asynchronously load data from a
+server when loading a new page.  In this case,  view state restoration needs
+to be delayed until that initial data load has completed.
+
+This is supported automatically by the router by the convention of using
+`route.page` to hold a page component for the navigated to page and using
+the page's `loading` property to indicate if the page has loaded.
+
+After the router fires the `navigate` event to load the new page, it
+checks if the route has a `.page` property.  If it does and if the page
+has a `.loading` property set to true it delays the call to 
+`restoreViewState` until the page's `loaded` event is fired.
+
+In other words to support view state restoration with async data load:
+
+* use the `page` property of the `route` object to represent the page to 
+  be loaded.
+* before returning from `match` make sure the page's `loading` property
+  is set to true.
+
+
+
+## View State Restoration and Silent Page Refreshes
+
+If a page instance is cached and re-used for multiple routes or when 
+returning to a previously loaded page, that page might already have
+data loaded and view state restoration usually doesn't need to be 
+delayed.  
+
+However, if the page needs to silently refresh itself when it comes back 
+into view, consider not setting the `loading` property during the refresh 
+data request - this will both allow the view state restoration to complete 
+immediately and also prevent spinners and other UI feedback during the 
+silent background refresh.
+
+
 ## Routes to Modal Dialogs
 
 In additional to regular page navigation, the router can also be used
 for routes that present as modal dialogs.
 
-Firstly, the match function should create and show the modal dialog:
+Firstly, the `match` function should create and show the modal dialog and 
+the `leave` method should close the dialog:
 
 ```js
 router.register({
@@ -301,10 +394,7 @@ router.register({
 ```
 
 Notice how the `match` function doesn't set the `page` property on the
-route and the Application shouldn't try to load the page in this case.  
-
-(This is why the "navigate" event listener above checks if the route's 
-`page` property is set before loading it into the router slot).
+route. (Make sure your `navigate` event handler is ready for this).
 
 As is, this will handle forward and back navigation to/from the dialog
 however we need to also handle the case where the user explicitly closes
