@@ -195,7 +195,7 @@ If you have links that look like in-app links but are actually out-of-page
 links, you can force page load navigation by returning `null` from a route
 handler's `match` function.
 
-eg: suppose want `/admin` to leave the single page app and load a separate
+eg: suppose `/admin` should leave the single page app and load a separate
 page.
 
 ```js
@@ -215,9 +215,9 @@ Firstly, create a component for each of your pages and register a
 route handler for it.  
 
 If your page requests async data, set its `loading` property before 
-returning from the `match` function.   This prevents the router from 
+returning from the `match` function to prevent the router from 
 trying to restore the scroll position until the page data is loaded.
-See below for more about view state restoration.
+(See below for more about view state restoration)
 
 ```js
 import { Component, router } from `@toptensoftware/codeonly`
@@ -275,7 +275,8 @@ class Application extends Component
         router.addEventListener("navigate", () => {
 
             // Load navigated page into router embed slot
-            this.routerSlot.content = router.current.page;
+            if (router.current.page != null)
+                this.routerSlot.content = router.current.page;
 
         });
 
@@ -309,15 +310,15 @@ information about the current page that typically isn't included in
 the URL.
 
 The most common kind of view state data is the current document scroll 
-position - which it the router handles automatically for most use cases, 
+position - which the router handles automatically for most use cases, 
 but this process can be customized.
 
-* When route is left, the router calls the route handler's `captureViewState`
-    method.  This method should capture the current view state and
-    return it as JSON serializable object.
+* When a route is left, the router calls the handler's `captureViewState`
+    method which should capture the current view state and return it as 
+    JSON serializable object.
 
 * When a route is returned to, the router calls the handler's `restoreViewState`
-    to restore any previously saved view state.
+    passing the previously captured state.
 
 If the handler doesn't define the `captureViewState` nor `restoreViewState`
 methods, they're automatically mapped to `DocumentScrollPosition.get()` and 
@@ -326,7 +327,7 @@ document scroll position.
 
 There are several ways to customize view state restoration:
 
-* Supply your own implementations of the capture and restore view state methods
+* Supply your own implementations of the capture and restore view state methods.
 * Supply your own implementation of `captureViewState`, but leave 
     `restoreViewState` unset (or set to null) and use the `route.viewState` view 
     to restore the view. (eg: from inside the `match` call).
