@@ -90,6 +90,9 @@ Patch.updateInArray(array, predicate, value)
 
 ## Patch.update_different Function
 
+This function is intended to be used as a direct argument for the `Patch.array`
+function's `patch_item` parameter.
+
 Deeply compares two objects.
 
 * If they're the same returns `false`
@@ -102,6 +105,9 @@ Patch.update_different(target, source)
 
 ## Patch.replace_different Function
 
+This function is intended to be used as a direct argument for the `Patch.array`
+function's `patch_item` parameter.
+
 Deeply compares two objects.
 
 * If they're the same, returns `false`
@@ -113,6 +119,9 @@ Patch.update_different(target, source)
 
 ## Patch.replace_always Function
 
+This function is intended to be used as a direct argument for the `Patch.array`
+function's `patch_item` parameter.
+
 Always returns the source object
 
 ```js
@@ -121,6 +130,9 @@ Patch.replace_always(target, source)
 
 
 ## Patch.update_always Function
+
+This function is intended to be used as a direct argument for the `Patch.array`
+function's `patch_item` parameter.
 
 Replaces all the target object's properties with the source object 
 properties and returns `true`.
