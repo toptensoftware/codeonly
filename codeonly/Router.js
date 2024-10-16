@@ -121,6 +121,16 @@ export class Router extends EventTarget
         return true;
     }
 
+    replace(url)
+    {
+        this.#current.url = url;
+        if (this.prefix)
+            url = this.prefix + url;
+        this.#current.originalUrl = url;
+        this.#current.match = this.#current.handler.pattern?.match(this.#current.url);
+        window.history.replaceState(this.#current.state, null, url);
+    }
+
     load(url, state)
     {
         // Match url
