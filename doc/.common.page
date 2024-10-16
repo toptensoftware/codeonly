@@ -40,5 +40,8 @@ navTree:
       - text: ObservableArray Class|observableArray
       - text: Patch Class|Patch
       - text: Router Class|Router
+  - text: Miscellaneous
+    subItems:
+      - text: Debug Directives|debugDirectives
 ---
 

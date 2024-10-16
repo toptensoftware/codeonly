@@ -561,12 +561,26 @@ export function compileTemplateCode(rootTemplate, copts)
 
         if (key == "debug_create")
         {
-            closure.create.append("debugger;");
+            if (typeof(ni.template[key] === 'function'))
+            {
+                closure.create.append(`if (${format_callback(refs.length)})`);
+                closure.create.append(`  debugger;`);
+                refs.push(ni.template[key]);
+            }
+            else if (ni.template[key])
+                closure.create.append("debugger;");
             return true;
         }
         if (key == "debug_update")
         {
-            closure.update.append("debugger;");
+            if (typeof(ni.template[key] === 'function'))
+            {
+                closure.update.append(`if (${format_callback(refs.length)})`);
+                closure.update.append(`  debugger;`);
+                refs.push(ni.template[key]);
+            }
+            else if (ni.template[key])
+                closure.update.append("debugger;");
             return true;
         }
 
