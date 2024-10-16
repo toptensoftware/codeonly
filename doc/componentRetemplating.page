@@ -26,7 +26,7 @@ class MyComponent extends Component
         };
 
         // Now compile the modified template
-        return Template.compile(modifiedTemplate, { initOnCreate: false });
+        return Template.compile(modifiedTemplate);
     }
 }
 ```
@@ -89,7 +89,7 @@ class Dialog extends Component
         };
 
         // Compile the wrapped template
-        return Template.compile(wrapperTemplate, { initOnCreate: false });
+        return Template.compile(wrapperTemplate);
     }
 }
 

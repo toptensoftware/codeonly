@@ -296,3 +296,29 @@ export function diff(oldArray, newArray, compareEqual)
     return ops;
     
 }
+
+export function diff_keys(oldKeys, newKeys, covered)
+{
+    let ops = diff(oldKeys, newKeys);
+    if (covered)
+    {
+        let index = 0;
+        for (let i=0; i<ops.length; i++)
+        {
+            if (ops[i].index > index)
+            {
+                ops.splice(i, 0, { op: "keep", index, count: ops[i].index - index });
+                i++;                
+            }
+            if (ops[i].op == 'insert')
+                index = ops[i].index + ops[i].count;
+            else
+                index = ops[i].index;
+        }
+        if (index < newKeys.length)
+        {
+            ops.push({ op: "keep", index, count: newKeys.length - index});
+        }
+    }
+    return ops;
+}

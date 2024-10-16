@@ -1,4 +1,4 @@
-import { diff_keys } from "./diff_keys.js";
+import { diff_keys } from "./diff.js";
 import { Template } from "./Template.js";
 import { TemplateNode } from "./TemplateNode.js";
 
@@ -51,6 +51,9 @@ export class ForEachBlock
 
         if (template.foreach instanceof Function || Array.isArray(template.foreach))
         {
+            // Declared as an array all options default:
+            //    foreach: <array>
+            //    foreach: () => anything
             newTemplate = {
                 type: ForEachBlock,
                 template: template,
@@ -60,6 +63,8 @@ export class ForEachBlock
         }
         else
         {
+            // Declared as an object, with options maybe
+            //    foreach: { items: }
             newTemplate = Object.assign({}, template.foreach, {
                 type: ForEachBlock,
                 template: template,
@@ -257,8 +262,6 @@ export class ForEachBlock
             handlers = {
                 insert: single_root_insert,
                 delete: single_root_delete,
-                move: single_root_move,
-                skip: () => {},
                 keep: patch_existing,
             }
         }
@@ -267,9 +270,7 @@ export class ForEachBlock
             handlers = {
                 insert: multi_root_insert,
                 delete: multi_root_delete,
-                move: multi_root_move,
-            skip: () => {},
-            keep: patch_existing,
+                keep: patch_existing,
             }
         }
 
@@ -291,11 +292,6 @@ export class ForEachBlock
             this.#multi_root_delete(op.index, op.count);
         }
 
-        function multi_root_move(op)
-        {
-            this.#multi_root_move(op.from, op.to, op.count);
-        }
-
         function single_root_insert(op)
         {
             this.#single_root_insert(newItems, newKeys, op.index, op.count);
@@ -304,11 +300,6 @@ export class ForEachBlock
         function single_root_delete(op)
         {
             this.#single_root_delete(op.index, op.count);
-        }
-
-        function single_root_move(op)
-        {
-            this.#single_root_move(op.from, op.to, op.count);
         }
 
         function patch_existing(op)
@@ -381,14 +372,6 @@ export class ForEachBlock
             this.#multi_root_delete(index, count);
     }
 
-    #move(from, to, count)
-    {
-        if (this.itemConstructor.isSingleRoot)
-            this.#single_root_move(from, to, count);
-        else
-            this.#multi_root_move(from, to, count);
-    }
-
     #multi_root_insert(newItems, newKeys, index, count)
     {
         let newNodes = [];
@@ -452,46 +435,6 @@ export class ForEachBlock
         this.itemDoms.splice(index, count);
     }
 
-    #multi_root_move(from, to, count)
-    {
-        // Collect and remove DOM nodes
-        let nodes = [];
-        for (let i=0; i<count; i++)
-        {
-            nodes.push(...this.itemDoms[from + i].rootNodes);
-        }
-
-        // Remove items
-        let items = this.itemDoms.splice(from, count);
-
-        // Re-insert items
-        this.itemDoms.splice(to, 0, ...items);
-
-        // Update DOM
-        if (this.tailSentinal.parentNode != null)
-        {
-            // Remove nodes
-            for (let i=0; i<nodes.length; i++)
-            {
-                nodes[i].remove();
-            }
-
-            // Insert the nodes
-            let insertBefore;
-            if (to + count < this.itemDoms.length)
-            {
-                insertBefore = this.itemDoms[to + count].rootNodes[0];
-            }
-            else
-            {
-                insertBefore = this.tailSentinal;
-            }
-            insertBefore.before(...nodes);
-        }
-    }
-
-
-
     #single_root_insert(newItems, newKeys, index, count)
     {
         let newNodes = [];
@@ -549,44 +492,6 @@ export class ForEachBlock
 
         // Splice arrays
         this.itemDoms.splice(index, count);
-    }
-
-    #single_root_move(from, to, count)
-    {
-        // Collect and remove DOM nodes
-        let nodes = [];
-        for (let i=0; i<count; i++)
-        {
-            nodes.push(this.itemDoms[from + i].rootNode);
-        }
-
-        // Remove items
-        let items = this.itemDoms.splice(from, count);
-
-        // Re-insert items
-        this.itemDoms.splice(to, 0, ...items);
-
-        // Update DOM
-        if (this.tailSentinal.parentNode)
-        {
-            // Remove nodes
-            for (let i=0; i<nodes.length; i++)
-            {
-                nodes[i].remove();
-            }
-
-            // Insert nodes
-            let insertBefore;
-            if (to + count < this.itemDoms.length)
-            {
-                insertBefore = this.itemDoms[to + count].rootNodes[0];
-            }
-            else
-            {
-                insertBefore = this.tailSentinal;
-            }
-            insertBefore.before(...nodes);
-        }
     }
 
     #patch_existing(newItems, index, count)

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { diff_keys } from "../codeonly/diff_keys.js";
+import { diff_keys } from "../codeonly/diff.js";
 
 function run_str_diff(oldKeys, newKeys)
 {
@@ -24,7 +24,7 @@ function run_diff(oldKeys, newKeys)
     run_diff_uncovered([...oldKeys], [...newKeys]);
 }
 
-function run_diff_covered(oldKeys, newKeys)
+function run_diff_uncovered(oldKeys, newKeys)
 {
     let r = [...oldKeys];
     let ops = diff_keys(oldKeys,newKeys, false);
@@ -59,7 +59,7 @@ function run_diff_covered(oldKeys, newKeys)
 }
 
 
-function run_diff_uncovered(oldKeys, newKeys)
+function run_diff_covered(oldKeys, newKeys)
 {
     let r = oldKeys.map(x => ({ key: x, touched: 0 }));
     let ops = diff_keys(oldKeys,newKeys, true);

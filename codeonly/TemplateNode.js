@@ -169,7 +169,7 @@ export class TemplateNode
 
     // Returns a string describing all the child DOM nodes
     // as a sequence of spread variables.
-    spreadChildDomNodes(initOnCreate)
+    spreadChildDomNodes()
     {
         return Array.from(enumChildNodes(this)).filter(x => x.length > 0).join(", ");
 

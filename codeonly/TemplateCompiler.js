@@ -486,7 +486,7 @@ export function compileTemplateCode(rootTemplate, copts)
         // Add all the child nodes to this node
         if (ni.childNodes?.length)
         {
-            closure.create.append(`${ni.name}.append(${ni.spreadChildDomNodes(copts.initOnCreate)});`);
+            closure.create.append(`${ni.name}.append(${ni.spreadChildDomNodes()});`);
         }
         closure.current_xmlns = save_xmlns;
     }
