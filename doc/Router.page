@@ -372,6 +372,47 @@ immediately and also prevent spinners and other UI feedback during the
 silent background refresh.
 
 
+## Page Titles
+
+The Router doesn't include any built in support for document page titles
+but it's pretty easy to build it yourself.
+
+Just have the route handler add a `title` property to the route when it
+matches:
+
+```js
+router.register({
+    pattern: "/product/:productId",
+    match: (route) => {
+        route.page = new ProductPage(route.match.groups.productId);
+        route.title = `Product ${route.match.groups.productId}`;
+        return true;
+    },
+});
+```
+
+Update the `document.title` in your navigation handler:
+
+```js
+router.addEventListener("navigate", () => {
+
+    if (router.current.page)
+        this.routerSlot.content = router.current.page;
+
+    // Update document title
+    if (router.current.title)
+        document.title = `${router.current.title} - My CodeOnly Site`;
+    else
+        document.title = "My CodeOnly Site";
+
+});
+```
+
+Now, visiting `/product/prod-123` will set the document title
+of "prod-123 - My CodeOnly Site" and any routes that don't have a 
+title will display just the site name.
+
+
 ## Routes to Modal Dialogs
 
 In additional to regular page navigation, the router can also be used
