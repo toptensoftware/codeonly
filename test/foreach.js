@@ -231,7 +231,7 @@ test("ForEach with Conditional Items", () => {
 
 });
 
-test("ForEach Array Inensitive", () => {
+test("ForEach Array Insensitive", () => {
 
     let items = [ "A", "B", "C" ];
 
@@ -242,6 +242,7 @@ test("ForEach Array Inensitive", () => {
                 foreach: {
                     items: () => items,
                     arraySensitive: false,
+                    itemSensitive: false,
                 },
                 type: "DIV",
                 text: (x, ctx) => `${x}${ctx.index}`,

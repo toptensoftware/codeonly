@@ -163,12 +163,12 @@ export function compileTemplateCode(rootTemplate, copts)
         closure.addLocal(ni.name);
         if (ni.nodes.length == 1)
         {
-            closure.create.append(`${ni.name} = refs[${refs.length}].cloneNode();`);
+            closure.create.append(`${ni.name} = refs[${refs.length}].cloneNode(true);`);
             refs.push(ni.nodes[0]);
         }
         else
         {
-            closure.create.append(`${ni.name} = refs[${refs.length}].map(x => x.cloneNode());`);
+            closure.create.append(`${ni.name} = refs[${refs.length}].map(x => x.cloneNode(true));`);
             refs.push(ni.nodes);
         }
     }
@@ -556,6 +556,17 @@ export function compileTemplateCode(rootTemplate, copts)
             // Add listener
             closure.create.append(`${listener_name} = helpers.addEventListener(model, ${ni.name}, ${JSON.stringify(eventName)}, refs[${refs.length}]);`);
             refs.push(ni.template[key]);
+            return true;
+        }
+
+        if (key == "debug_create")
+        {
+            closure.create.append("debugger;");
+            return true;
+        }
+        if (key == "debug_update")
+        {
+            closure.update.append("debugger;");
             return true;
         }
 

@@ -1,9 +1,10 @@
 import { HtmlString } from "./HtmlString.js";
 
-export let TemplateHelpers = {
+export class TemplateHelpers 
+{
     // Create either a text node from a string, or
     // a SPAN from an HtmlString
-    createTextNode(text)
+    static createTextNode(text)
     {
         if (text instanceof HtmlString)
         {
@@ -15,11 +16,11 @@ export let TemplateHelpers = {
         {
             return document.createTextNode(text);
         }
-    },
+    }
 
     // Set either the inner text of an element to a string
     // or the inner html to a HtmlString
-    setElementText(node, text)
+    static setElementText(node, text)
     {
         if (text instanceof HtmlString)
         {
@@ -29,11 +30,11 @@ export let TemplateHelpers = {
         {
             node.innerText = text;
         }
-    },
+    }
 
     // Set a node to text or HTML, replacing the 
     // node if it doesn't match the supplied text.
-    setNodeText(node, text)
+    static setNodeText(node, text)
     {
         if (text instanceof HtmlString)
         {
@@ -59,27 +60,27 @@ export let TemplateHelpers = {
             node.replaceWith(newNode);
             return newNode;
         }
-    },
+    }
 
     // Set or remove a class on an element
-    setNodeClass(node, cls, set)
+    static setNodeClass(node, cls, set)
     {
         if (set)
             node.classList.add(cls);
         else
             node.classList.remove(cls);
-    },
+    }
 
     // Set or remove a style on an element
-    setNodeStyle(node, style, value)
+    static setNodeStyle(node, style, value)
     {
         if (value === undefined || value === null)
             node.style.removeProperty(style);
         else
             node.style[style] = value;
-    },
+    }
 
-    setNodeDisplay(node, show, prev_display)
+    static setNodeDisplay(node, show, prev_display)
     {
         if (show === true)
         {
@@ -110,9 +111,9 @@ export let TemplateHelpers = {
                 node.style.display = show;
             return prev ?? null;
         }
-    },
+    }
 
-    replaceMany(oldNodes, newNodes)
+    static replaceMany(oldNodes, newNodes)
     {
         // Insert the place holder
         oldNodes[0].replaceWith(...newNodes);
@@ -122,9 +123,9 @@ export let TemplateHelpers = {
         {
             oldNodes[i].remove();
         }
-    },
+    }
 
-    addEventListener(model, el, eventName, handler)
+    static addEventListener(model, el, eventName, handler)
     {
         function wrapped_handler(ev)
         {
@@ -136,6 +137,23 @@ export let TemplateHelpers = {
         return function() { el.removeEventListener(eventName, wrapped_handler); }
     }
 
+    /*
+    static cloneNodeRecursive(node) 
+    {
+        // Clone the node deeply
+        let clone = node.cloneNode(true);
 
+        // If the node has children, clone them recursively
+        if (node.hasChildNodes()) 
+        {
+            node.childNodes.forEach(child => {
+                clone.append(this.cloneNodeRecursive(child));
+            });
+        }
+
+        return clone;
+    }
+    */
+      
 }
 

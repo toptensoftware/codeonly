@@ -130,7 +130,12 @@ class HTMLNode
         this.parentNode = null;
     }
 
-    cloneNode()
+    hasChildNodes()
+    {
+        return this.childNodes != null && this.childNodes.length > 0;
+    }
+
+    cloneNode(deep)
     {
         switch (this.nodeType)
         {
@@ -154,11 +159,14 @@ class HTMLNode
                 }
 
                 // Clone child nodes
-                newNode.childNodes = this.childNodes.map(x => {
-                    let childNode = x.cloneNode();
-                    childNode.parentNode = this;
-                    return childNode;
-                });
+                if (deep)
+                {
+                    newNode.childNodes = this.childNodes.map(x => {
+                        let childNode = x.cloneNode();
+                        childNode.parentNode = this;
+                        return childNode;
+                    });
+                }
 
                 // Return cloned node
                 return newNode;
