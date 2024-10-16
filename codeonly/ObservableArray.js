@@ -65,7 +65,9 @@ class ArrayTraps
   }
   removeListener(fn)
   {
-    this.listeners.splice(listeners.indexOf(fn), 1);
+    let index = this.listeners.indexOf(fn);
+    if (index >= 0)
+      this.listeners.splice(index, 1);
   }
   fire(index, del, ins)
   {
