@@ -77,7 +77,6 @@ class ArrayTraps
     if (index >=0 && index < this.arr.length)
       this.listeners.forEach(x => x(index, 0, 0));
   }
-
   __gettrap(name)
   {
     let trap = this.boundTraps[name];
