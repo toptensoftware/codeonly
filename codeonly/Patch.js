@@ -93,8 +93,15 @@ export class Patch
       }
       return -1;
     }
-  
-  
+
+    static deleteInArray(array, predicate)
+    {
+        for (let i=array.length - 1; i >= 0; i--)
+        {
+            if (predicate(array[i]))
+                array.splice(i, 1);
+        }
+    }
 
     // Assign all the properties of source to target
     static update_different(target, source)

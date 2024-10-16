@@ -48,6 +48,8 @@ export function compileTemplateCode(rootTemplate, copts)
     closure.destroy = closure.addFunction("destroy").code;
     closure.create = closure.code;
 
+    closure.update.append(`model = context?.model;`);
+
     // Storarge for export and bindings
     closure.exports = new Map();
     closure.bindings = new Map();

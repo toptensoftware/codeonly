@@ -126,7 +126,7 @@ export class ForEachBlock
     {
         if (ins == 0 && del == 0)
         {
-            this.#patch_existing(index, 1);
+            this.#patch_existing(this.observableItems, index, 1);
         }
         else
         {
@@ -237,7 +237,7 @@ export class ForEachBlock
         if (!this.arraySensitive || this.observableItems)
         {
             // Patch existing items and quit
-            this.#patch_existing(0, this.itemDoms.length);
+            this.#patch_existing(newItems, 0, this.itemDoms.length);
             this.#updateEmpty();
             return;
         }
@@ -313,7 +313,7 @@ export class ForEachBlock
 
         function patch_existing(op)
         {
-            this.#patch_existing(op.index, op.count);
+            this.#patch_existing(newItems, op.index, op.count);
         }
     }
 
@@ -589,7 +589,7 @@ export class ForEachBlock
         }
     }
 
-    #patch_existing(index, count)
+    #patch_existing(newItems, index, count)
     {
         if (this.itemSensitive)
         {
@@ -598,6 +598,7 @@ export class ForEachBlock
             {
                 let item = this.itemDoms[i];
                 item.context.index = i;
+                item.context.model = newItems[i];
                 item.update();
             }
         }

@@ -167,3 +167,48 @@ export function deepEqual(a, b)
     
     return true
 }
+
+export function binarySearch(sortedArray, compare_items, item) 
+{
+    let left = 0;
+    let right = sortedArray.length - 1;
+
+    while (left <= right) 
+    {
+        let mid = Math.floor((left + right) / 2);
+        let foundVal = sortedArray[mid];
+
+        let compare = compare_items(foundVal, item);
+
+        if (compare == 0) 
+            return mid;
+        else if (compare < 0) 
+            left = mid + 1;
+        else
+            right = mid - 1; 
+    }
+
+    // Not found, return where (convert back to insert position with (-retv-1)
+    return -1 - left; 
+}
+
+export function compareStrings(a, b)
+{
+    if (a < b)
+        return -1;
+    if (a > b)
+        return 1;
+    return 0;
+}
+
+export function compareStringsI(a, b)
+{
+    a = a.toLowerCase();
+    b = b.toLowerCase();
+
+    if (a < b)
+        return -1;
+    if (a > b)
+        return 1;
+    return 0;
+}
