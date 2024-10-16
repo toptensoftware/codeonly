@@ -13,8 +13,7 @@ for dynamic `ForEach` block updates.
 
 ## Patch.array Function
 
-Updates `target` array to match `source` array.  Can be used with an
-ObservableArray target to generate updates for a `ForEach` block.
+Updates `target` array to match `source` array.  
 
 ```js
 Patch.array(target, source, compare_key, patch_item)
