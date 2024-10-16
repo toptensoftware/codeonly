@@ -38,6 +38,7 @@ navTree:
       - text: Utility Functions|utilities
       - text: nextFrame Function|nextFrame
       - text: ObservableArray Class|observableArray
+      - text: Patch Class|Patch
       - text: Router Class|Router
 ---
 
