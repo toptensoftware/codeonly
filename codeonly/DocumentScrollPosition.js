@@ -11,7 +11,8 @@ export class DocumentScrollPosition
     static set(value)
     {
         if (!value)
-            return;
-        window.scrollTo(value.left, value.top);
+            window.scrollTo(0, 0);
+        else
+            window.scrollTo(value.left, value.top);
     }
 }
