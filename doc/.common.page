@@ -14,6 +14,7 @@ navTree:
     subItems:
       - text: Components|component
       - text: Mounting|componentMount
+      - text: Updating and Invalidating|componentUpdates
       - text: Re-templating|componentRetemplating
       - text: loading Property|componentLoading
   - text: Templates

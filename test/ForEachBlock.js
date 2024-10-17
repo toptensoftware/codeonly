@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Template, ForEachBlock } from "../codeonly.js";
+import { Template, ForEachBlock, Component } from "../codeonly.js";
 import "./mockdom/mockdom.js";
 
 function assert_foreach_content(r, items, actual, expected)
@@ -99,4 +99,31 @@ test("ForEach Dynamic", () => {
     {
         return items;
     }
+});
+
+
+class TestComponent extends Component
+{
+
+}
+
+
+
+test("ForEach Component", () => {
+
+    let items = [ "A", "B", "C" ];
+
+    let r = Template.compile({
+        $: [
+            {
+                type: ForEachBlock,
+                items: () => items,
+                template: {
+                    type: TestComponent,
+                    text: x => x
+                }
+            }
+        ]
+    })();
+
 });

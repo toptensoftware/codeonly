@@ -7,7 +7,7 @@ export class ForEachBlock
     static integrate(template)
     {
         let data = {
-            itemConstructor: Template.compile(template.template, { initOnCreate: true}),
+            itemConstructor: Template.compile(template.template),
             template: {
                 items: template.items,
                 condition: template.condition,

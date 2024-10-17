@@ -299,12 +299,21 @@ export function compileTemplateCode(rootTemplate, copts)
 
         let slotNames = new Set(ni.template.type.slots ?? []);
 
+        let auto_update = ni.template.update === "auto";
+        let auto_modified_name = false;
+
         // Process all keys
         for (let key of Object.keys(ni.template))
         {
             // Process properties common to components and elements
             if (process_common_property(ni, key))
                 continue;
+
+            // Ignore for now
+            if (key == "update")
+            {
+                continue;
+            }
 
             // Compile value as a template
             if (slotNames.has(key))
@@ -316,9 +325,9 @@ export function compileTemplateCode(rootTemplate, copts)
                 let propTemplate = new TemplateNode(ni.template[key]);
                 emit_node(propTemplate);
                 if (propTemplate.isSingleRoot)
-                    closure.create.append(`${ni.name}[${JSON.stringify(key)}].content = ${propTemplate.name};`);
+                    closure.create.append(`${ni.name}${prop(key)}.content = ${propTemplate.name};`);
                 else
-                    closure.create.append(`${ni.name}[${JSON.stringify(key)}].content = [${propTemplate.spreadDomNodes()}];`);
+                    closure.create.append(`${ni.name}${prop(key)}.content = [${propTemplate.spreadDomNodes()}];`);
                 continue;
             }
 
@@ -327,24 +336,39 @@ export function compileTemplateCode(rootTemplate, copts)
             if (propType == 'string' || propType == 'number' || propType == 'boolean')
             {
                 // Simple literal property
-                closure.create.append(`${ni.name}[${JSON.stringify(key)}] = ${JSON.stringify(ni.template[key])}`);
+                closure.create.append(`${ni.name}${prop(key)} = ${JSON.stringify(ni.template[key])}`);
             }
             else if (propType === 'function')
             {
                 // Dynamic property
+
+                if (auto_update && !auto_modified_name)
+                {
+                    auto_modified_name = `${ni.name}_mod`;
+                    closure.update.append(`let ${auto_modified_name} = false;`);
+                }
 
                 // Create
                 let prevName = `p${prevId++}`;
                 closure.addLocal(prevName);
                 let callback_index = refs.length;
                 if (copts.initOnCreate)
-                    closure.create.append(`${ni.name}[${JSON.stringify(key)}] = ${prevName} = ${format_callback(callback_index)};`);
+                    closure.create.append(`${ni.name}${prop(key)} = ${prevName} = ${format_callback(callback_index)};`);
 
                 // Update
                 need_update_temp();
                 closure.update.append(`temp = ${format_callback(callback_index)};`);
                 closure.update.append(`if (temp !== ${prevName})`);
-                closure.update.append(`  ${ni.name}[${JSON.stringify(key)}] = ${prevName} = temp;`);
+                if (auto_update)
+                {
+                    closure.update.append(`{`);
+                    closure.update.append(`  ${auto_modified_name} = true;`);
+                }
+
+                closure.update.append(`  ${ni.name}${prop(key)} = ${prevName} = temp;`);
+
+                if (auto_update)
+                    closure.update.append(`}`);
 
                 // Store callback
                 refs.push(ni.template[key]);
@@ -357,8 +381,34 @@ export function compileTemplateCode(rootTemplate, copts)
                     val = val.value;
 
                 // Object property
-                closure.create.append(`${ni.name}[${JSON.stringify(key)}] = refs[${refs.length}];`);
+                closure.create.append(`${ni.name}${prop(key)} = refs[${refs.length}];`);
                 refs.push(val);
+            }
+        }
+
+        // Generate deep update
+        if (ni.template.update)
+        {
+            if (typeof(ni.template.update) === 'function')
+            {
+                closure.update.append(`if (${format_callback(refs.length)})`);
+                closure.update.append(`  ${ni.name}.update();`);
+                refs.push(ni.template.update);
+            }
+            else
+            {
+                if (auto_update)
+                {
+                    if (auto_modified_name)
+                    {
+                        closure.update.append(`if (${auto_modified_name})`);
+                        closure.update.append(`  ${ni.name}.update();`);
+                    }
+                }
+                else
+                {
+                    closure.update.append(`${ni.name}.update();`);
+                }
             }
         }
     }
@@ -656,3 +706,12 @@ export function compileTemplate(rootTemplate, compilerOptions)
     return compiledTemplate;
 }
 
+let rxIdentifier = /^[a-zA-Z$][a-zA-Z0-9_$]*$/;
+
+function prop(key)
+{
+    if (key.match(rxIdentifier))
+        return `.${key}`;
+    else
+        return `[${JSON.stringify(key)}]`;
+}

@@ -3,7 +3,7 @@ title: "Mounting Components"
 subtitle: "A simple, lightweight, code-only front-end Web framework."
 projectTitle: CodeOnly
 ---
-## Mounting Components
+# Mounting Components
 
 To attach a component to the document's DOM, call the component's `mount` method passing an element or selector indicating where the component should be mounted:
 

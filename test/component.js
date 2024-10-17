@@ -103,3 +103,92 @@ test("Invalidate during Update", () => {
     assert.equal(comp.updateCount, 2);
     assert.equal(comp2.updateCount, 2);
  });
+
+ test("deep update on", () => {
+
+    let template = Template.compile({
+        type: TestComponent,
+        update: true,
+        export: "comp",
+    });
+
+    let inst = template();
+    inst.update();
+    assert.equal(inst.comp.updateCount, 2);
+
+ });
+
+ test("deep update off", () => {
+
+    let template = Template.compile({
+        type: TestComponent,
+        update: false,
+        export: "comp",
+    });
+
+    let inst = template();
+    inst.update();
+    assert.equal(inst.comp.updateCount, 1);
+
+ });
+
+ test("deep update dynamic", () => {
+
+    let shouldUpdate = false;
+
+    let template = Template.compile({
+        type: TestComponent,
+        update: () => shouldUpdate,
+        export: "comp",
+    });
+
+    let inst = template();
+
+    inst.update();
+    assert.equal(inst.comp.updateCount, 1);
+
+    shouldUpdate = true;
+    inst.update();
+    assert.equal(inst.comp.updateCount, 2);
+
+    inst.update();
+    assert.equal(inst.comp.updateCount, 3);
+
+    shouldUpdate = false;
+    inst.update();
+    assert.equal(inst.comp.updateCount, 3);
+    inst.update();
+    assert.equal(inst.comp.updateCount, 3);
+
+ });
+
+ test("deep update auto", () => {
+
+    let prop_value = "foo";
+
+    let template = Template.compile({
+        type: TestComponent,
+        update: "auto",
+        export: "comp",
+        prop: () => prop_value,
+    });
+
+    let inst = template();
+
+    prop_value = "foo";
+    inst.update();
+    assert.equal(inst.comp.updateCount, 1);
+
+    prop_value = "foo";
+    inst.update();
+    assert.equal(inst.comp.updateCount, 1);
+
+    prop_value = "bar";
+    inst.update();
+    assert.equal(inst.comp.updateCount, 2);
+
+    prop_value = "bar";
+    inst.update();
+    assert.equal(inst.comp.updateCount, 2);
+
+ });

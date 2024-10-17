@@ -3,7 +3,7 @@ title: "Components"
 subtitle: "A simple, lightweight, code-only front-end Web framework."
 projectTitle: CodeOnly
 ---
-## Components
+# Components
 
 A component is the core concept in CodeOnly and defines a DOM template, 
 logic code and an optional set of CSS style declarations.
