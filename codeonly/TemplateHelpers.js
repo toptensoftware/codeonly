@@ -125,11 +125,11 @@ export class TemplateHelpers
         }
     }
 
-    static addEventListener(model, el, eventName, handler)
+    static addEventListener(provideModel, el, eventName, handler)
     {
         function wrapped_handler(ev)
         {
-            return handler(model, ev);
+            return handler(provideModel(), ev);
         }
 
         el.addEventListener(eventName, wrapped_handler);

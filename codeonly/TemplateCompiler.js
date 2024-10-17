@@ -48,13 +48,9 @@ export function compileTemplateCode(rootTemplate, copts)
     closure.destroy = closure.addFunction("destroy").code;
     closure.create = closure.code;
 
-    closure.update.append(`model = context?.model;`);
-
     // Storarge for export and bindings
     closure.exports = new Map();
     closure.bindings = new Map();
-
-    closure.create.append(`let model = context?.model;`);
 
     emit_node_closure(rootTemplateNode);
 
@@ -245,7 +241,7 @@ export function compileTemplateCode(rootTemplate, copts)
 
                 // Append to our closure
                 let nodeConstructor = `${ni_sub.name}_constructor_${i+1}`;
-                let itemClosureFn = closure.addFunction(nodeConstructor, [ ]);
+                let itemClosureFn = closure.addFunction(nodeConstructor, [ "context" ]);
                 sub_closure.appendTo(itemClosureFn.code);
 
                 nodeConstructors.push(nodeConstructor);
@@ -506,7 +502,7 @@ export function compileTemplateCode(rootTemplate, copts)
                 if (!closure.current_xmlns)
                     attrName = camel_to_dash(attrName);
 
-                format_dynamic(ni.template[key], (valueExpr) => `${ni.name}.setAttribute(${JSON.stringify(attrName)}, ${valueExpr});`);
+                format_dynamic(ni.template[key], (valueExpr) => `${ni.name}.setAttribute(${JSON.stringify(attrName)}, ${valueExpr})`);
                 continue;
             }
 
@@ -586,7 +582,7 @@ export function compileTemplateCode(rootTemplate, copts)
             closure.bindings.set(ni.template.bind, true);
 
             // Generate it
-            closure.create.append(`model[${JSON.stringify(ni.template.bind)}] = ${ni.name};`);
+            closure.create.append(`context.model[${JSON.stringify(ni.template.bind)}] = ${ni.name};`);
             return true;
         }
 
@@ -604,7 +600,7 @@ export function compileTemplateCode(rootTemplate, copts)
             closure.addLocal(listener_name);
 
             // Add listener
-            closure.create.append(`${listener_name} = helpers.addEventListener(model, ${ni.name}, ${JSON.stringify(eventName)}, refs[${refs.length}]);`);
+            closure.create.append(`${listener_name} = helpers.addEventListener(() => context.model, ${ni.name}, ${JSON.stringify(eventName)}, refs[${refs.length}]);`);
             refs.push(ni.template[key]);
             return true;
         }
@@ -644,7 +640,7 @@ export function compileTemplateCode(rootTemplate, copts)
 
     function format_callback(index)
     {
-        return `refs[${index}].call(model, model, context)`
+        return `refs[${index}].call(context.model, context.model, context)`
     }
 
     // Helper to format a dynamic value on a node (ie: a callback)

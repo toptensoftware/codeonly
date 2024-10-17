@@ -177,7 +177,7 @@ export class EmbedSlot
             // Insert placeholder?
             if (this.#placeholderConstructor)
             {
-                this.#resolvedContent = this.#placeholderConstructor();
+                this.#resolvedContent = this.#placeholderConstructor(this.#context);
                 this.#isPlaceholder = true;
                 this.#nodes = this.#resolvedContent.rootNodes
             }

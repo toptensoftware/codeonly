@@ -237,7 +237,7 @@ export class TemplateNode
         if (this.template.bind)
         {
             lines.push(
-                `model[${JSON.stringify(this.template.bind)}] = null;`
+                `context.model[${JSON.stringify(this.template.bind)}] = null;`
                 );
         }
 

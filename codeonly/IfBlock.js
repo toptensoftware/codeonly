@@ -169,7 +169,7 @@ export class IfBlock
         if (options.initOnCreate)
         {
             this.activeBranchIndex = this.resolveActiveBranch();
-            this.activeBranch = this.branches[this.activeBranchIndex].create();
+            this.activeBranch = this.branches[this.activeBranchIndex].create(this.context);
         }
         else
         {
@@ -192,7 +192,7 @@ export class IfBlock
         {
             let oldActiveBranch = this.activeBranch;
             this.activeBranchIndex = newActiveBranchIndex;
-            this.activeBranch = this.branches[newActiveBranchIndex].create();
+            this.activeBranch = this.branches[newActiveBranchIndex].create(this.context);
             TemplateHelpers.replaceMany(oldActiveBranch.rootNodes, this.activeBranch.rootNodes);
             oldActiveBranch.destroy();
         }
