@@ -111,7 +111,7 @@ export class ForEachBlock
         this.itemKey = options.data.template.itemKey;
         this.arraySensitive = options.data.template.arraySensitive !== false;
         this.itemSensitive = options.data.template.itemSensitive !== false;
-        this.indexSensitive = options.data.template.indexSensitive !== false;
+        this.indexSensitive = !!options.data.template.indexSensitive;
         this.emptyConstructor = options.nodes.length ? options.nodes[0] : null;
 
         // This will be an array of items constructed from the template
