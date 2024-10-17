@@ -12,9 +12,6 @@ export class ForEachBlock
                 items: template.items,
                 condition: template.condition,
                 itemKey: template.itemKey,
-                arraySensitive: template.arraySensitive,
-                itemSensitive: template.itemSensitive,
-                indexSensitive: template.indexSensitive,
             },
         }
 
@@ -29,9 +26,6 @@ export class ForEachBlock
         delete template.items;
         delete template.condition;
         delete template.itemKey;
-        delete template.arraySensitive;
-        delete template.itemSensitive;
-        delete template.indexSensitive;
         delete template.empty;
 
         return {
@@ -109,9 +103,6 @@ export class ForEachBlock
         this.items = options.data.template.items;
         this.condition = options.data.template.condition;
         this.itemKey = options.data.template.itemKey;
-        this.arraySensitive = options.data.template.arraySensitive !== false;
-        this.itemSensitive = options.data.template.itemSensitive !== false;
-        this.indexSensitive = !!options.data.template.indexSensitive;
         this.emptyConstructor = options.nodes.length ? options.nodes[0] : null;
 
         // This will be an array of items constructed from the template
@@ -239,7 +230,7 @@ export class ForEachBlock
 
         // If not array sensitive or using an observable items array
         // then don't bother diffing
-        if (!this.arraySensitive || this.observableItems)
+        if (this.observableItems)
         {
             // Patch existing items and quit
             this.#patch_existing(newItems, 0, this.itemDoms.length);
@@ -247,11 +238,8 @@ export class ForEachBlock
             return;
         }
 
-        // Do we need to update existing items?
-        let needCoverage = this.itemSensitive || this.indexSensitive;
-
         // Run diff
-        let ops = diff_keys(this.itemDoms.map(x => x.context.key), newKeys, needCoverage);
+        let ops = diff_keys(this.itemDoms.map(x => x.context.key), newKeys, true);
         if (ops.length == 0)
             return;
 
@@ -496,29 +484,13 @@ export class ForEachBlock
 
     #patch_existing(newItems, index, count)
     {
-        if (this.itemSensitive)
+        // If item sensitive, always update index and item
+        for (let i=index, end = index + count; i<end; i++)
         {
-            // If item sensitive, always update index and item
-            for (let i=index, end = index + count; i<end; i++)
-            {
-                let item = this.itemDoms[i];
-                item.context.index = i;
-                item.context.model = newItems[i];
-                item.update();
-            }
-        }
-        else if (this.indexSensitive)
-        {
-            // If index sensitive, only update when index changes
-            for (let i=index, end = index + count; i<end; i++)
-            {
-                let item = this.itemDoms[i];
-                if (item.context.index != i)
-                {
-                    item.context.index = i;
-                    item.update();
-                }
-            }
+            let item = this.itemDoms[i];
+            item.context.index = i;
+            item.context.model = newItems[i];
+            item.update();
         }
     }
 }

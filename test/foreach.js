@@ -231,33 +231,6 @@ test("ForEach with Conditional Items", () => {
 
 });
 
-test("ForEach Array Insensitive", () => {
-
-    let items = [ "A", "B", "C" ];
-
-    let r = Template.compile({
-        type: "DIV",
-        childNodes: [
-            {
-                foreach: {
-                    items: () => items,
-                    arraySensitive: false,
-                    itemSensitive: false,
-                },
-                type: "DIV",
-                text: (x, ctx) => `${x}${ctx.index}`,
-            }
-        ]
-    })();
-
-    assert.deepStrictEqual(["A0", "B1", "C2"], r.rootNode.childNodes.slice(1, -1).map(x => x.innerText));
-
-    items.unshift("Z");
-    r.update();
-
-    assert.deepStrictEqual(["A0", "B1", "C2"], r.rootNode.childNodes.slice(1, -1).map(x => x.innerText));
-});
-
 test("ForEach Index Sensitive", () => {
 
     let items = [ "A", "B", "C" ];
@@ -286,34 +259,6 @@ test("ForEach Index Sensitive", () => {
     assert.deepStrictEqual(["Z0", "A1", "C2"], r.rootNode.childNodes.slice(1, -1).map(x => x.innerText));
 });
 
-
-
-test("ForEach Index Inensitive", () => {
-
-    let items = [ "A", "B", "C" ];
-
-    let r = Template.compile({
-        type: "DIV",
-        childNodes: [
-            {
-                foreach: {
-                    items: () => items,
-                    itemSensitive: false,
-                    indexSensitive: false,         // Update items when index changes
-                },
-                type: "DIV",
-                text: (x, ctx) => `${x}${ctx.index}`,
-            }
-        ]
-    })();
-
-    assert.deepStrictEqual(["A0", "B1", "C2"], r.rootNode.childNodes.slice(1, -1).map(x => x.innerText));
-
-    items.unshift("Z");
-    r.update();
-
-    assert.deepStrictEqual(["Z0", "A0", "B1", "C2"], r.rootNode.childNodes.slice(1, -1).map(x => x.innerText));
-});
 
 function div(opts)
 {

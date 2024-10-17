@@ -55,9 +55,6 @@ The `foreach` attributes supports the following sub-attributes:
 * `items` the set of items to be iterated over (or a callback to provide them)
 * `itemKey` a callback function to return a unique key for an item
 * `condition` a callback function that indicates if an item should be included
-* `arraySensitive` set to true if the set of items should be updated when the component is updated (requires `itemKey`)
-* `indexSensitive` true if collection items should be updated when their position in the array changes (ie: set this to true if the template uses `context.index`, see below).
-* `itemSensitive` true if all collection items should be updated when the foreach block is updated.
 * `empty` template items to show when the items array is empty.
 
 ```js
@@ -68,8 +65,6 @@ static template = {
         foreach: {
             items: c => items, 
             itemKey: i => i.id,     // provide a unique value for each item
-            indexSensitive: true,   // true because we use ctx.index
-            arraySensitive: true,   // because we want to be able to update the list
 
             // This will be used if the list is empty
             empty: {
@@ -97,7 +92,7 @@ gives:
 </section>
 ```
 
-Further, because we've marked it `arraySensitive` and `indexSensitive` we can do this:
+Further, this:
 
 ```js
 // Method in the component...
@@ -108,7 +103,7 @@ addItem()
 }
 ```
 
-producing this:
+will produce this:
 
 ```html
 <section>
@@ -183,7 +178,3 @@ Note the following when using an `ObservableArray`:
 * returning a different observable array instance will reload
   the entire list (destroy + recreate the DOM) and start
   monitoring the new observable array.
-* the `itemSensitive` and `indexSensitive` properties are supported
-  but require the component to be updated (ie: a change to the 
-  ObservableArray item set doesn't trigger existing item updates).
-* the `arraySensitive` property is ignored.
