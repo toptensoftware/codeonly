@@ -241,7 +241,7 @@ export function compileTemplateCode(rootTemplate, copts)
 
                 // Append to our closure
                 let nodeConstructor = `${ni_sub.name}_constructor_${i+1}`;
-                let itemClosureFn = closure.addFunction(nodeConstructor, [ "context" ]);
+                let itemClosureFn = closure.addFunction(nodeConstructor, [ ]);
                 sub_closure.appendTo(itemClosureFn.code);
 
                 nodeConstructors.push(nodeConstructor);
@@ -438,6 +438,8 @@ export function compileTemplateCode(rootTemplate, copts)
             closure.create.append(`${ni.name} = document.createElementNS(${JSON.stringify(xmlns)}, ${JSON.stringify(ni.template.type)});`);
         }
 
+        //closure.create.append(`${ni.name}.dataset.coId = context.$instanceId + "-${ni.name}";`)
+
         for (let key of Object.keys(ni.template))
         {
             // Process properties common to components and elements
@@ -607,7 +609,7 @@ export function compileTemplateCode(rootTemplate, copts)
 
         if (key == "debug_create")
         {
-            if (typeof(ni.template[key] === 'function'))
+            if (typeof(ni.template[key]) === 'function')
             {
                 closure.create.append(`if (${format_callback(refs.length)})`);
                 closure.create.append(`  debugger;`);
@@ -619,7 +621,7 @@ export function compileTemplateCode(rootTemplate, copts)
         }
         if (key == "debug_update")
         {
-            if (typeof(ni.template[key] === 'function'))
+            if (typeof(ni.template[key]) === 'function')
             {
                 closure.update.append(`if (${format_callback(refs.length)})`);
                 closure.update.append(`  debugger;`);
@@ -679,6 +681,7 @@ export function compileTemplateCode(rootTemplate, copts)
 }
 
 
+let _nextInstanceId = 1;
 
 export function compileTemplate(rootTemplate, compilerOptions)
 {
@@ -692,6 +695,9 @@ export function compileTemplate(rootTemplate, compilerOptions)
     // Wrap it in a constructor function
     let compiledTemplate = function(context)
     {
+        if (!context)
+            context = {};
+        context.$instanceId = _nextInstanceId++;
         return templateFunction(code.refs, TemplateHelpers, context ?? {});
     }
 

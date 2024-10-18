@@ -318,7 +318,7 @@ export class ForEachBlock
         {
             if (!this.emptyDom && this.emptyConstructor)
             {
-                this.emptyDom = this.emptyConstructor(this.outer);
+                this.emptyDom = this.emptyConstructor();
                 if (this.tailSentinal.parentNode)
                     this.tailSentinal.before(...this.emptyDom.rootNodes);
             }

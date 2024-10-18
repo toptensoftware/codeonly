@@ -150,6 +150,7 @@ export class IfBlock
     constructor(options)
     {
         this.branches = options.data;
+        this.branch_constructors = [];
         this.context = options.context;
 
         // Setup constructors for branches
@@ -157,11 +158,11 @@ export class IfBlock
         {
             if (br.nodeIndex !== undefined)
             {
-                br.create = options.nodes[br.nodeIndex];
+                this.branch_constructors.push(options.nodes[br.nodeIndex]);
             }
             else
             {
-                br.create = Placeholder(" IfBlock placeholder ");   
+                this.branch_constructors.push(Placeholder(" IfBlock placeholder "));
             }
         }
 
@@ -169,7 +170,7 @@ export class IfBlock
         if (options.initOnCreate)
         {
             this.activeBranchIndex = this.resolveActiveBranch();
-            this.activeBranch = this.branches[this.activeBranchIndex].create(this.context);
+            this.activeBranch = this.branch_constructors[this.activeBranchIndex]();
         }
         else
         {
@@ -192,7 +193,7 @@ export class IfBlock
         {
             let oldActiveBranch = this.activeBranch;
             this.activeBranchIndex = newActiveBranchIndex;
-            this.activeBranch = this.branches[newActiveBranchIndex].create(this.context);
+            this.activeBranch = this.branch_constructors[newActiveBranchIndex]();
             TemplateHelpers.replaceMany(oldActiveBranch.rootNodes, this.activeBranch.rootNodes);
             oldActiveBranch.destroy();
         }
