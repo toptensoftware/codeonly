@@ -1,13 +1,13 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { tiny_diff } from "../codeonly/tinyDiff.js";
+import { diff_tiny } from "../codeonly/diff_tiny.js";
 
 function run_diff(o, n)
 {
     let oldKeys = o.split("");
     let newKeys = n.split("");
 
-    let ops = tiny_diff(oldKeys, newKeys);
+    let ops = diff_tiny(oldKeys, newKeys);
 
     let store = [];
     for (let op of ops)

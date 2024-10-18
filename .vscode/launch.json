@@ -2,7 +2,7 @@
     "configurations": [
     {
         "name": "Launch Program",
-        "program": "${workspaceFolder}/codeonly/WatchProxy.js",
+        "program": "${workspaceFolder}/codeonly/diff_tiny_stress.js",
         "request": "launch",
         "skipFiles": [
             "<node_internals>/**"

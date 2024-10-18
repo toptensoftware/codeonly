@@ -1,4 +1,4 @@
-export function tiny_diff(oldArray, newArray)
+export function diff_tiny(oldArray, newArray)
 {
     let minLength = Math.min(oldArray.length, newArray.length);
     let maxLength = Math.max(oldArray.length, newArray.length);
@@ -127,7 +127,10 @@ export function tiny_diff(oldArray, newArray)
         while (o < endOld && !newMap.has(oldArray[o]))
             o++;
         if (o > os)
+        {
             ops.push({ op: "delete", index: n, count: o - os });
+            continue;
+        }
 
         // Store all items are are in the new map
         while (o < endOld && newMap.consume(oldArray[o]) !== undefined)
@@ -150,7 +153,7 @@ export function tiny_diff(oldArray, newArray)
             n++;
         if (n > ns)
         {
-            ops.push({ op: "insert", index: n, count: n - ns });
+            ops.push({ op: "insert", index: ns, count: n - ns });
             continue;
         }
 
