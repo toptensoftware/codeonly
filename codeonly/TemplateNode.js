@@ -31,6 +31,13 @@ export class TemplateNode
         // Setup
         this.template = template;
 
+        // _ is an alias for type
+        if (template._ && !template.type)
+        {
+            template.type = template._;
+            delete template._;
+        }
+
         // Work out its kind
         if (is_constructor(template.type))
         {

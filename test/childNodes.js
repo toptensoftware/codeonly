@@ -7,10 +7,10 @@ import "./mockdom/mockdom.js";
 test("Child Nodes", () => {
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
-            { type: "SPAN", text: "foo" },
-            { type: "SPAN", text: "bar" },
+        _: "DIV",
+        $: [
+            { _: "SPAN", text: "foo" },
+            { _: "SPAN", text: "bar" },
         ]
     })();
 
@@ -23,9 +23,9 @@ test("Child Nodes with Dynamic", () => {
 
     let val = "foo";
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
-            { type: "SPAN", text: () => val },
+        _: "DIV",
+        $: [
+            { _: "SPAN", text: () => val },
         ]
     })();
 
@@ -40,7 +40,7 @@ test("Child Nodes is Static Text", () => {
 
     let val = "foo";
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         text: val,
     })();
 
@@ -51,7 +51,7 @@ test("Child Nodes is Static HTML", () => {
 
     let val = "<span>foo</span>";
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         text: Html.raw(val),
     })();
 
@@ -62,7 +62,7 @@ test("$ is Static Text", () => {
 
     let val = "foo";
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         $: val,
     })();
 
@@ -73,7 +73,7 @@ test("$ is Static HTML", () => {
 
     let val = "<span>foo</span>";
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         $: Html.raw(val),
     })();
 
