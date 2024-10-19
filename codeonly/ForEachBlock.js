@@ -111,11 +111,6 @@ export class ForEachBlock
         // Sentinal nodes
         this.headSentinal = document.createComment(" enter foreach block ");
         this.tailSentinal = document.createComment(" leave foreach block ");
-
-        if (options.initOnCreate)
-        {
-            this.update();
-        }
     }
 
     onObservableUpdate(index, del, ins)

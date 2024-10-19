@@ -115,6 +115,8 @@ export class TemplateHelpers
 
     static replaceMany(oldNodes, newNodes)
     {
+        if (!oldNodes[0].parentNode)
+            return;
         // Insert the place holder
         oldNodes[0].replaceWith(...newNodes);
 

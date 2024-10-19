@@ -10,7 +10,6 @@ class TestComponent extends Component
         super();
         this.value = "Hello World";
         this.updateCount = 0;
-        this.update();
     }
 
 
@@ -77,9 +76,9 @@ test("Invalidate Component", () => {
 
    blockAnimationFrames(); 
    comp.invalidate();
-   assert.equal(comp.updateCount, 1);
+   assert.equal(comp.updateCount, 0);
    dispatchAnimationFrames();
-   assert.equal(comp.updateCount, 2);
+   assert.equal(comp.updateCount, 1);
 });
 
 test("Invalidate during Update", () => {
@@ -100,11 +99,11 @@ test("Invalidate during Update", () => {
  
     blockAnimationFrames(); 
     comp.invalidate();
+    assert.equal(comp.updateCount, 0);
+    assert.equal(comp2.updateCount, 0);
+    dispatchAnimationFrames();
     assert.equal(comp.updateCount, 1);
     assert.equal(comp2.updateCount, 1);
-    dispatchAnimationFrames();
-    assert.equal(comp.updateCount, 2);
-    assert.equal(comp2.updateCount, 2);
  });
 
  test("deep update on", () => {
@@ -131,7 +130,7 @@ test("Invalidate during Update", () => {
 
     let inst = template();
     inst.update();
-    assert.equal(inst.comp.updateCount, 1);
+    assert.equal(inst.comp.updateCount, 0);
 
  });
 
@@ -148,20 +147,20 @@ test("Invalidate during Update", () => {
     let inst = template();
 
     inst.update();
-    assert.equal(inst.comp.updateCount, 1);
+    assert.equal(inst.comp.updateCount, 0);
 
     shouldUpdate = true;
     inst.update();
-    assert.equal(inst.comp.updateCount, 2);
+    assert.equal(inst.comp.updateCount, 1);
 
     inst.update();
-    assert.equal(inst.comp.updateCount, 3);
+    assert.equal(inst.comp.updateCount, 2);
 
     shouldUpdate = false;
     inst.update();
-    assert.equal(inst.comp.updateCount, 3);
+    assert.equal(inst.comp.updateCount, 2);
     inst.update();
-    assert.equal(inst.comp.updateCount, 3);
+    assert.equal(inst.comp.updateCount, 2);
 
  });
 

@@ -25,11 +25,6 @@ export function compileTemplateCode(rootTemplate, copts)
     // Create root node info        
     let rootTemplateNode = new TemplateNode(rootTemplate);
 
-    // Set default options
-    copts = Object.assign({
-        initOnCreate: true,
-    }, copts);
-
     // Storarge for export and bindings
     let exports = new Map();
 
@@ -81,6 +76,8 @@ export function compileTemplateCode(rootTemplate, copts)
 
         // Call create function
         closure.code.append(`create();`);
+        closure.code.append(`bind();`);
+        closure.code.append(`update();`);
             
         // Render code
         emit_node(ni);
@@ -213,10 +210,7 @@ export function compileTemplateCode(rootTemplate, copts)
             addNodeLocal(ni);
             let prevName = `p${prevId++}`;
             closure.addLocal(prevName);
-            if (copts.initOnCreate)
-                closure.create.append(`${ni.name} = helpers.createTextNode(${prevName} = ${format_callback(refs.length)});`);
-            else
-                closure.create.append(`${ni.name} = helpers.createTextNode("");`);
+            closure.create.append(`${ni.name} = helpers.createTextNode("");`);
 
             // Update
             need_update_temp();
@@ -239,10 +233,7 @@ export function compileTemplateCode(rootTemplate, copts)
                 // Create
                 let prevName = `p${prevId++}`;
                 closure.addLocal(prevName);
-                if (copts.initOnCreate)
-                    closure.create.append(`${ni.name} = document.createComment(${prevName} = ${format_callback(refs.length)});`);
-                else
-                    closure.create.append(`${ni.name} = document.createComment("");`);
+                closure.create.append(`${ni.name} = document.createComment("");`);
 
                 // Update
                 need_update_temp();
@@ -314,7 +305,6 @@ export function compileTemplateCode(rootTemplate, copts)
             closure.create.append(
                 `${ni.name} = new refs[${refs.length}]({`,
                 `  context,`,
-                `  initOnCreate: ${JSON.stringify(copts.initOnCreate)},`,
                 `  data: ${ni.integrated.data ? `refs[${data_index}]` : `null`},`,
                 `  nodes: [ ${nodeConstructors.join(", ")} ],`,
                 `});`
@@ -397,8 +387,6 @@ export function compileTemplateCode(rootTemplate, copts)
                     let prevName = `p${prevId++}`;
                     closure.addLocal(prevName);
                     let callback_index = refs.length;
-                    if (copts.initOnCreate)
-                        closure.create.append(`${ni.name}${prop(key)} = ${prevName} = ${format_callback(callback_index)};`);
 
                     // Update
                     need_update_temp();
@@ -703,14 +691,6 @@ export function compileTemplateCode(rootTemplate, copts)
                 
                 // Render the update code
                 let code = formatter();
-
-                // Append the code to both the main code block (to set initial value) and to 
-                // the update function.
-                if (copts.initOnCreate)
-                {
-                    closure.create.append(`${prevName} = ${format_callback(refs.length)};`);
-                    closure.create.append(`${formatter(prevName)};`);
-                }
 
                 need_update_temp();
                 closure.update.append(`temp = ${format_callback(refs.length)};`);

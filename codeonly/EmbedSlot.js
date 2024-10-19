@@ -82,16 +82,8 @@ export class EmbedSlot
         this.#nodes = [];
         this.#ownsContent = options.data.ownsContent ?? true;
 
-        if (options.data.content instanceof Function && !options.initOnCreate)
-        {
-            // Just store content and we'll load it on next update
-            this.#content = options.data.content;
-        }
-        else
-        {
-            // Load now
-            this.content = options.data.content;
-        }
+        // Load now
+        this.content = options.data.content;
     }
 
     get rootNodes() 

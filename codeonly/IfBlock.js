@@ -167,17 +167,8 @@ export class IfBlock
         }
 
         // Initialize
-        if (options.initOnCreate)
-        {
-            this.activeBranchIndex = this.resolveActiveBranch();
-            this.activeBranch = this.branch_constructors[this.activeBranchIndex]();
-        }
-        else
-        {
-            this.activeBranchIndex = -1;
-            this.activeBranch = Placeholder(" IfBlock placeholder ")();
-        }
-        
+        this.activeBranchIndex = -1;
+        this.activeBranch = Placeholder(" IfBlock placeholder ")();
     }
 
     destroy()
