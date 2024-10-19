@@ -93,6 +93,8 @@ export class TemplateNode
                     template.childNodes = [ template.childNodes ];
                 }
 
+                template.childNodes = template.childNodes.flat();
+
                 ForEachBlock.transformGroup(template.childNodes);
                 EmbedSlot.transformGroup(template.childNodes);
                 IfBlock.transformGroup(template.childNodes);
