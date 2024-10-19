@@ -148,6 +148,18 @@ export class EmbedSlot
         }
     }
 
+    bind()
+    {
+        if (this.#isPlaceholder)
+            this.#resolvedContent?.bind?.()
+    }
+
+    unbind()
+    {
+        if (this.#isPlaceholder)
+            this.#resolvedContent?.unbind?.()
+    }
+
     replaceContent(value)
     {
         // Quit if redundant (same value, or still need placeholder)

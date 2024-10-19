@@ -226,35 +226,4 @@ export class TemplateNode
         }
     }
 
-    renderDestroy()
-    {
-        let lines = [];
-        if (this.isComponent || this.isIntegrated)
-        {
-            lines.push(`${this.name}.destroy();`);
-        }            
-
-        if (this.template.bind)
-        {
-            lines.push(
-                `context.model[${JSON.stringify(this.template.bind)}] = null;`
-                );
-        }
-
-        if (this.listenerCount)
-        {
-            for (let i=0; i<this.listenerCount; i++)
-            {
-                lines.push(`${this.name}_ev${i+1}?.();`);
-                lines.push(`${this.name}_ev${i+1} = null;`);
-            }
-        }
-
-        if (this.kind == 'html' && this.nodes.length == 0)
-            return lines;
-
-        lines.push(`${this.name} = null;`);
-
-        return lines;
-    }
 }

@@ -69,8 +69,6 @@ export function CodeBuilder()
 
     return {
         append,
-        append,
-        append,
         enterCollapsibleBlock,
         leaveCollapsibleBlock,
         indent,
@@ -78,5 +76,6 @@ export function CodeBuilder()
         braced,
         toString,
         lines,
+        get isEmpty() { return lines.length == 0; },
     }
 }

@@ -202,6 +202,16 @@ export class IfBlock
         this.activeBranch.update();
     }
 
+    unbind()
+    {
+        this.activeBranch.unbind?.();
+    }
+
+    bind()
+    {
+        this.activeBranch.bind?.();
+    }
+
     resolveActiveBranch()
     {
         for (let i=0; i<this.branches.length; i++)

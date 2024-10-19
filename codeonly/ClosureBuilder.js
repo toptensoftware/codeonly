@@ -5,10 +5,20 @@ export class ClosureBuilder
     constructor()
     {
         this.code = CodeBuilder();
+        this.code.closure = this;
         this.functions = [];
         this.locals = [];
         this.prologs = [];
         this.epilogs = [];
+    }
+
+    get isEmpty()
+    {
+        return this.code.isEmpty && 
+            this.locals.length == 0 &&
+            this.functions.every(x => x.code.isEmpty) &&
+            this.prologs.every(x => x.isEmpty) &&
+            this.epilogs.every(x => x.isEmpty)
     }
 
     addProlog()
@@ -45,6 +55,11 @@ export class ClosureBuilder
         }
         this.functions.push(fn);
         return fn.code;
+    }
+
+    getFunction(name)
+    {
+        return this.functions.find(x => x.name == name)?.code;
     }
 
     toString()

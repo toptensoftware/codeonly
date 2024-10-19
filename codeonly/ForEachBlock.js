@@ -296,6 +296,16 @@ export class ForEachBlock
         }
     }
 
+    bind()
+    {
+        this.emptyDom?.bind?.();
+    }
+
+    unbind()
+    {
+        this.emptyDom?.unbind?.();
+    }
+
     destroy()
     {
         if (this.observableItems != null)
