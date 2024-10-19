@@ -1,4 +1,4 @@
-import { diff_keys } from "./diff.js";
+import { diff_tiny } from "./diff_tiny.js";
 import { Template } from "./Template.js";
 import { TemplateNode } from "./TemplateNode.js";
 
@@ -122,7 +122,7 @@ export class ForEachBlock
     {
         if (ins == 0 && del == 0)
         {
-            this.#patch_existing(this.observableItems, index, 1);
+            this.#patch_existing(this.observableItems, null, index, 1);
         }
         else
         {
@@ -213,10 +213,13 @@ export class ForEachBlock
             }
 
             // Generate keys
-            newKeys = this.itemKey ? newItems.map((item) => {
-                tempCtx.item = item;
-                return this.itemKey.call(item, item, tempCtx);
-            }) : newItems;
+            if (this.itemKey)
+            {
+                newKeys = newItems.map((item) => {
+                    tempCtx.model = item;
+                    return this.itemKey.call(item, item, tempCtx);
+                });
+            }
         }
 
         // Items not yet loaded?
@@ -228,72 +231,143 @@ export class ForEachBlock
             return;
         }
 
-        // If not array sensitive or using an observable items array
+        // If using an observable items array
         // then don't bother diffing
         if (this.observableItems)
         {
             // Patch existing items and quit
-            this.#patch_existing(newItems, 0, this.itemDoms.length);
+            this.#patch_existing(this.observableItems, null, 0, this.itemDoms.length);
             this.#updateEmpty();
             return;
         }
 
-        // Run diff
-        let ops = diff_keys(this.itemDoms.map(x => x.context.key), newKeys, true);
-        if (ops.length == 0)
-            return;
-
-        // Single or multi-root handlers
-        let handlers;
-        if (this.itemConstructor.isSingleRoot)
+        // Run diff or patch over
+        let ops;
+        if (newKeys)
         {
-            handlers = {
-                insert: single_root_insert,
-                delete: single_root_delete,
-                keep: patch_existing,
-            }
+            ops = diff_tiny(this.itemDoms.map(x => x.context.key), newKeys, true);
         }
         else
         {
-            handlers = {
-                insert: multi_root_insert,
-                delete: multi_root_delete,
-                keep: patch_existing,
+            if (newItems.length > this.itemDoms.length)
+            {
+                ops = [{ 
+                    op: "insert", 
+                    index: this.itemDoms.length,
+                    count: newItems.length - this.itemDoms.length,
+                }];
+            }
+            else if (newItems.length < this.itemDoms.length)
+            {
+                ops = [{
+                    op: "delete",
+                    index: newItems.length,
+                    count: this.itemDoms.length - newItems.length,
+                }];
+            }
+            else
+            {
+                ops = [];
             }
         }
 
+        // Run diff
+        if (ops.length == 0)
+        {
+            this.#patch_existing(newItems, newKeys, 0, newItems.length);
+            return;
+        }
+
+        let store = [];
+        let spare = [];
+
+        // Op dispatch table
+        let handlers = {
+            insert: op_insert,
+            delete: op_delete,
+            store: op_store,
+            restore: op_restore,
+        };
+
+        // Single vs multi-root op helpers
+        let insert, insert_dom, remove_dom;
+        if (this.itemConstructor.isSingleRoot)
+        {
+            insert = this.#single_root_insert;
+            insert_dom = this.#single_root_insert_dom;
+            remove_dom = this.#single_root_remove_dom;
+        }
+        else
+        {
+            insert = this.#multi_root_insert;
+            insert_dom = this.#multi_root_insert_dom;
+            remove_dom = this.#multi_root_remove_dom;
+        }
+
         // Dispatch to handlers
+        let pos = 0;
         for (let o of ops)
         {
+            if (o.index > pos)
+                this.#patch_existing(newItems, newKeys, pos, o.index - pos);
+
             handlers[o.op].call(this, o);
         }
+        
+        // Patch trailing items
+        if (pos < newItems.length)
+            this.#patch_existing(newItems, newKeys, pos, newItems.length - pos);
 
+        // Destroy remaining spare items
+        for (let i=spare.length-1; i>=0; i--)
+        {
+            spare[i].destroy();
+        }
+
+/*
+        for (let i=0; i<this.itemDoms.length; i++)
+        {
+            if (this.itemDoms[i].context.model != newItems[i])
+                debugger;
+        }
+*/
+
+        // Update empty list indicator
         this.#updateEmpty();
         
-        function multi_root_insert(op)
+        function op_insert(op)
         {
-            this.#multi_root_insert(newItems, newKeys, op.index, op.count);
+            pos += op.count;
+
+            let useSpare = Math.min(spare.length, op.count);
+            if (useSpare)
+            {
+                insert_dom.call(this, op.index, spare.splice(0, useSpare));
+                this.#patch_existing(newItems, newKeys, op.index, useSpare);
+            }
+            if (useSpare < op.count)
+            {
+                insert.call(this, newItems, newKeys, op.index, op.count);
+            }
         }
 
-        function multi_root_delete(op)
+        function op_delete(op)
         {
-            this.#multi_root_delete(op.index, op.count);
+            spare.push(...remove_dom.call(this, op.index, op.count));
         }
 
-        function single_root_insert(op)
+        function op_store(op)
         {
-            this.#single_root_insert(newItems, newKeys, op.index, op.count);
+            store.push(...remove_dom.call(this, op.index, op.count));
         }
 
-        function single_root_delete(op)
+        function op_restore(op)
         {
-            this.#single_root_delete(op.index, op.count);
+            pos += op.count;
+            insert_dom.call(this, op.index, store.slice(op.index, op.index + op.count));
+            this.#patch_existing(newItems, newKeys, op.index, op.count);
         }
 
-        function patch_existing(op)
-        {
-            this.#patch_existing(newItems, op.index, op.count);
-        }
     }
 
     bind()
@@ -372,7 +446,7 @@ export class ForEachBlock
 
     #multi_root_insert(newItems, newKeys, index, count)
     {
-        let newNodes = [];
+        let itemDoms = [];
         for (let i=0; i<count; i++)
         {
             // Setup item context
@@ -384,22 +458,26 @@ export class ForEachBlock
             };
 
             // Construct the item
-            let itemDom = this.itemConstructor(itemCtx);
-
-            // Add to item collection
-            this.itemDoms.splice(index + i, 0, itemDom);
-
-            // Build list of nodes to be inserted
-            newNodes.push(...itemDom.rootNodes);
+            itemDoms.push(this.itemConstructor(itemCtx));
         }
 
+        this.#multi_root_insert_dom(index, itemDoms);
+    }
+
+    #multi_root_insert_dom(index, itemDoms)
+    {
+        // Save dom elements
+        this.itemDoms.splice(index, 0, ...itemDoms);
+
         // Insert the nodes
+        let newNodes = [];
+        itemDoms.forEach(x => newNodes.push(...x.rootNodes));
         if (this.tailSentinal.parentNode)
         {
             let insertBefore;
-            if (index + count < this.itemDoms.length)
+            if (index + itemDoms.length < this.itemDoms.length)
             {
-                insertBefore = this.itemDoms[index + count].rootNodes[0];
+                insertBefore = this.itemDoms[index + itemDoms.length].rootNodes[0];
             }
             else
             {
@@ -410,6 +488,15 @@ export class ForEachBlock
     }
 
     #multi_root_delete(index, count)
+    {
+        let itemDoms = this.#multi_root_remove_dom(index, count);
+        for (let i = itemDoms.length-1; i>=0; i--)
+        {
+            itemsDoms[i].destroy();
+        }
+    }
+
+    #multi_root_remove_dom(index, count)
     {
         // Destroy the items
         let isAttached = this.tailSentinal.parentNode != null;
@@ -424,18 +511,15 @@ export class ForEachBlock
                     children[j].remove();
                 }
             }
-
-            // Destroy the item
-            this.itemDoms[index + i].destroy();
         }
 
         // Splice arrays
-        this.itemDoms.splice(index, count);
+        return this.itemDoms.splice(index, count);
     }
 
     #single_root_insert(newItems, newKeys, index, count)
     {
-        let newNodes = [];
+        let itemDoms = [];
         for (let i=0; i<count; i++)
         {
             // Setup item context
@@ -447,22 +531,25 @@ export class ForEachBlock
             };
 
             // Construct the item
-            let item_closure = this.itemConstructor(itemCtx);
-
-            // Add to item collection
-            this.itemDoms.splice(index + i, 0, item_closure);
-
-            // Build list of nodes to be inserted
-            newNodes.push(item_closure.rootNode);
+            itemDoms.push(this.itemConstructor(itemCtx));
         }
 
+        this.#single_root_insert_dom(index, itemDoms);
+    }
+
+    #single_root_insert_dom(index, itemDoms)
+    {
+        // Save dom elements
+        this.itemDoms.splice(index, 0, ...itemDoms);
+
         // Insert the nodes
+        let newNodes = itemDoms.map(x => x.rootNode);;
         if (this.tailSentinal.parentNode)
         {
             let insertBefore;
-            if (index + count < this.itemDoms.length)
+            if (index + itemDoms.length < this.itemDoms.length)
             {
-                insertBefore = this.itemDoms[index + count].rootNode;
+                insertBefore = this.itemDoms[index + itemDoms.length].rootNode;
             }
             else
             {
@@ -474,7 +561,16 @@ export class ForEachBlock
 
     #single_root_delete(index, count)
     {
-        // Destroy the items
+        let itemDoms = this.#single_root_remove_dom(index, count);
+        for (let i = itemDoms.length - 1; i>=0; i--)
+        {
+            itemDoms[i].destroy();
+        }
+    }
+
+    #single_root_remove_dom(index, count)
+    {
+        // Remove
         let isAttached = this.tailSentinal.parentNode != null;
         for (let i=0; i<count; i++)
         {
@@ -483,21 +579,19 @@ export class ForEachBlock
             {
                 this.itemDoms[index + i].rootNode.remove();
             }
-
-            // Destroy the item
-            this.itemDoms[index + i].destroy();
         }
 
         // Splice arrays
-        this.itemDoms.splice(index, count);
+        return this.itemDoms.splice(index, count);
     }
 
-    #patch_existing(newItems, index, count)
+    #patch_existing(newItems, newKeys, index, count)
     {
         // If item sensitive, always update index and item
         for (let i=index, end = index + count; i<end; i++)
         {
             let item = this.itemDoms[i];
+            item.context.key = newKeys?.[i];
             item.context.index = i;
             item.context.model = newItems[i];
             item.rebind();

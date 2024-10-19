@@ -758,7 +758,7 @@ export function compileTemplate(rootTemplate, compilerOptions)
 {
     // Compile code
     let code = compileTemplateCode(rootTemplate, compilerOptions);
-    console.log(code.code);
+    //console.log(code.code);
 
     // Put it in a function
     let templateFunction = new Function("refs", "helpers", "context", code.code);
