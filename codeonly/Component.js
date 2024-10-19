@@ -66,6 +66,10 @@ export class Component extends EventTarget
 
     invalidate()
     {
+        // No need to invalidate if not created yet
+        if (!this.#dom)
+            return;
+
         // Already invalid?
         if (this.invalid)
             return;
@@ -108,6 +112,9 @@ export class Component extends EventTarget
 
     update()
     {
+        if (!this.#dom)
+            return;
+        
         this.invalid = false;
         this.dom.update();
 

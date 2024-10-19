@@ -67,7 +67,9 @@ export function compileTemplateCode(rootTemplate, copts)
         closure.update = closure.addFunction("update").code;
         closure.unbind = closure.addFunction("unbind").code;
         closure.destroy = closure.addFunction("destroy").code;
-        let rebind = closure.addFunction("rebind").code;
+        let rebind;
+        if (isRootTemplate)
+            rebind = closure.addFunction("rebind").code;
         let bindings = new Map();
 
         // Create model variable
@@ -119,9 +121,12 @@ export function compileTemplateCode(rootTemplate, copts)
             }
             else
             {
-                rebind.append(`unbind();`);
-                rebind.append(`model = context.model`);
-                rebind.append(`bind();`);
+                rebind.append(`if (model != context.model)`)
+                rebind.braced(() => {
+                    rebind.append(`unbind();`);
+                    rebind.append(`model = context.model`);
+                    rebind.append(`bind();`);
+                });
             }
             otherExports.push(`  rebind,`);
         }

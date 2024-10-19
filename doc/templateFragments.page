@@ -3,7 +3,7 @@ title: "Fragments"
 subtitle: "A simple, lightweight, code-only front-end Web framework."
 projectTitle: CodeOnly
 ---
-### Fragments
+# Fragments
 
 If a template element doesn't have a type, it's considered a "fragment" 
 or multi-root element.  Any child elements of the fragment will be included directly in the fragment's parent.

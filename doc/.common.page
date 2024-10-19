@@ -32,6 +32,7 @@ navTree:
       - text: Using Components in Templates|templateComponents
       - text: Embed Slots|templateEmbedSlots
       - text: The Content ($) Property|templateContentProperty
+      - text: Update Semantics|templateUpdateSemantics
   - text: Utilities
     subItems:
       - text: Html Class|html

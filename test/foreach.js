@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Template, ObservableArray } from "../codeonly.js";
+import { Template, ObservableArray, Component } from "../codeonly.js";
 import "./mockdom/mockdom.js";
 
 
@@ -356,5 +356,97 @@ test("ForEach Else", () => {
         "foo", "bar"
         ], r.rootNode.childNodes.filter(x => x.nodeType == 1).map(x => x.innerText));
     assert.equal(r.empty, null);
+});
+
+
+class ItemComponent extends Component
+{
+    constructor()
+    {
+        super();
+    }
+
+    #item
+    get item()
+    {
+        return this.#item;
+    }
+    set item(value)
+    {
+        if (this.#item != value)
+        {
+            this.#item = value;
+            this.invalidate();
+        }
+    }
+
+    update()
+    {
+        ItemComponent.updateCount++;
+        super.update();
+    }
+
+    static template = {
+        type: "DIV",
+        text: c => c.item.name,
+    }
+
+    static updateCount = 0;
+}
+
+test("ForEach Component Update", () => {
+
+    let items = [ 
+        { name: "Apples" },
+        { name: "Pears" },
+        { name: "Bananas" },
+    ];
+
+    let r = Template.compile({
+        type: "DIV",
+        childNodes: [
+            {
+                foreach: {
+                    items: () => items,
+                    itemKey: i => i.name,
+                },
+                type: ItemComponent,
+                item: i => i,
+            }
+        ]
+    })();
+
+    assert.equal(r.rootNode.childNodes[1].innerText, "Apples");
+    assert.equal(r.rootNode.childNodes[2].innerText, "Pears");
+    assert.equal(r.rootNode.childNodes[3].innerText, "Bananas");
+
+    // There shouldn't be any updates yet
+    assert.equal(ItemComponent.updateCount, 0);
+
+    items.push({ name: "Berries" });
+    r.update();
+
+    // Check the new item got added 
+    assert.equal(r.rootNode.childNodes[1].innerText, "Apples");
+    assert.equal(r.rootNode.childNodes[2].innerText, "Pears");
+    assert.equal(r.rootNode.childNodes[3].innerText, "Bananas");
+    assert.equal(r.rootNode.childNodes[4].innerText, "Berries");
+
+    // There still shouldn't be any updates, because we've only added new
+    // items, not updated existing ones
+    assert.equal(ItemComponent.updateCount, 0);
+
+    // If we change one item with a new object instance with the same key,
+    // we should get one update
+    items[0] = { name: "Apples" };
+    r.update();
+    assert.equal(ItemComponent.updateCount, 1);
+
+    // If we change one item with a new object instance with the different key,
+    // we should get one update because the old delete item should be re-used
+    items[0] = { name: "Watermelon" };
+    r.update();
+    assert.equal(ItemComponent.updateCount, 2);
+
 });
 

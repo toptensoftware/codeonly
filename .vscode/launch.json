@@ -2,7 +2,7 @@
     "configurations": [
     {
         "name": "Launch Program",
-        "program": "${workspaceFolder}/codeonly/diff_tiny_stress.js",
+        "program": "${workspaceFolder}/codeonly/splice_coalesc.js",
         "request": "launch",
         "skipFiles": [
             "<node_internals>/**"

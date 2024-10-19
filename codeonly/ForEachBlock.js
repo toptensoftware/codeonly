@@ -500,6 +500,7 @@ export class ForEachBlock
             let item = this.itemDoms[i];
             item.context.index = i;
             item.context.model = newItems[i];
+            item.rebind();
             item.update();
         }
     }

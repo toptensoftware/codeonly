@@ -73,3 +73,85 @@ test("Bind conditional", () => {
     assert.equal(model.myPara, model._p);
 });
 
+
+
+test("Simple rebind", () => {
+
+    // First bind to this model
+    let model = {};
+    let ctx = { model };
+
+    let r = Template.compile({
+        type: "DIV",
+        childNodes:
+        [
+            {
+                type: "P",
+                bind: "myPara",
+                text: "foo",
+            }
+        ]
+    })(ctx);
+
+    // check bound
+    assert.equal(model.myPara.innerText, "foo");
+
+    // Create a new model, store it in the context and rebind
+    let model2 = {};
+    ctx.model = model2;
+    r.rebind();
+
+    assert.equal(model.myPara, null);
+    assert.equal(model2.myPara.innerText, "foo");
+});
+
+
+test("Conditional block rebind", () => {
+
+    // First bind to this model
+    let model = {};
+    let ctx = { model };
+
+    let val = true;
+
+    let r = Template.compile({
+        type: "DIV",
+        childNodes:
+        [
+            {
+                if: () => val,
+                type: "P",
+                bind: "myPara",
+                text: "foo",
+            }
+        ]
+    })(ctx);
+
+    // check bound
+    assert.equal(model.myPara.innerText, "foo");
+
+    // Turn off with conditional
+    val = false;
+    r.update();
+    assert.equal(model.myPara, null);
+
+    val = true;
+    r.update();
+    assert.equal(model.myPara.innerText, "foo");
+
+    // Create a new model, store it in the context and rebind
+    let model2 = {};
+    ctx.model = model2;
+    r.rebind();
+
+    // Should now be bound to the new model
+    assert.equal(model.myPara, null);
+    assert.equal(model2.myPara.innerText, "foo");
+
+    // Turn off with condition and check nulled
+    val = false;
+    r.update();
+    assert.equal(model2.myPara, null);
+
+});
+
