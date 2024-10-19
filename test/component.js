@@ -73,6 +73,7 @@ test("Component as direct child node", () => {
 test("Invalidate Component", () => {
 
    let comp = new TestComponent();
+   comp.init();
 
    blockAnimationFrames(); 
    comp.invalidate();
@@ -85,6 +86,8 @@ test("Invalidate during Update", () => {
 
     let comp = new TestComponent();
     let comp2 = new TestComponent();
+    comp.init();
+    comp2.init();
 
     comp.onUpdate = function()
     {

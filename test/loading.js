@@ -10,6 +10,7 @@ globalThis.requestAnimationFrame = function(callback)
 test("loading", () => {
 
     let comp = new Component();
+    comp.init();
 
     // Busy should be false by default
     assert.equal(comp.loading, false);
@@ -25,6 +26,7 @@ test("loading", () => {
 test("loaded event", () => {
 
     let comp = new Component();
+    comp.init();
 
 
     let triggered = 0;
