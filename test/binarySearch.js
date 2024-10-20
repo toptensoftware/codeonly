@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { binarySearch } from "../codeonly/Utils.js";
+import { binarySearch } from "../codeonly.js";
 
 test("Existing Item Lookup", () => {
 

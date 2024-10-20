@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { diff_tiny } from "../codeonly/diff_tiny.js";
+import { diff_tiny } from "../core/diff_tiny.js";
 
 function run_diff(o, n)
 {

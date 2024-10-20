@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { UpdateManager } from "../codeonly/UpdateManager.js";
+import { UpdateManager } from "../core/UpdateManager.js";
 
 test("update manager", () => {
 

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { urlPattern } from "../codeonly/urlPattern.js";
+import { urlPattern } from "../core/urlPattern.js";
 
 
 test("Simple", () => {

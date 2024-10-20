@@ -101,7 +101,7 @@ class HTMLStyleList
     }
 }
 
-class HTMLNode
+class Node
 {
     constructor(document, type, nameOrValue)
     {
@@ -142,13 +142,13 @@ class HTMLNode
         {
             case 3:
             case 8:
-                return new HTMLNode(this.document, this.nodeType, this.nodeValue);
+                return new Node(this.document, this.nodeType, this.nodeValue);
 
             case 1:
             case 11:
             {
                 // Create node
-                let newNode = new HTMLNode(this.document, this.nodeType);
+                let newNode = new Node(this.document, this.nodeType);
 
                 // Clone attributes
                 if (this.attributes)
@@ -436,19 +436,19 @@ export class Document
 
     createElement(type)
     {
-        return new HTMLNode(this, 1, type);
+        return new Node(this, 1, type);
     }
     createTextNode(text)
     {
-        return new HTMLNode(this, 3, text.replace(/\s+/g, ' '));
+        return new Node(this, 3, text.replace(/\s+/g, ' '));
     }
     createComment(text)
     {
-        return new HTMLNode(this, 8, text);
+        return new Node(this, 8, text);
     }
     createDocumentFragment()
     {
-        return new HTMLNode(this, 11);
+        return new Node(this, 11);
     }
 }
 
@@ -605,6 +605,6 @@ export function createEnvironment()
     return {
         document: new Document(),
         window: new Window(),
-        Node: HTMLNode,
+        Node: Node,
     }
 }
