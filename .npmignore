@@ -1,0 +1,7 @@
+node_modules
+dist
+doc
+test
+vite.config.js
+.vscode
+*.tgz
