@@ -2,6 +2,9 @@ import { test } from "node:test";
 import { strict as assert } from "node:assert";
 import { ObservableArray, Patch, deepEqual } from "../codeonly.js";
 
+// Removing Patch class, don't like it.
+
+/*
 
 test("update_always", () => {
 
@@ -158,3 +161,5 @@ test("Patch.Array replace deep", () => {
     assert.strictEqual(target[1], varied[1]);
     assert.deepEqual(target, varied);
 });
+
+*/

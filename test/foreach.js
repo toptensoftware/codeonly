@@ -3,6 +3,11 @@ import { strict as assert } from "node:assert";
 import { Template, ObservableArray, Component } from "../codeonly.js";
 import "./mockdom/mockdom.js";
 
+function assert_iterables(a, b)
+{
+    assert.deepStrictEqual(Array.from(a), Array.from(b));
+}
+
 
 test("ForEach Static", () => {
     let r = Template.compile({
@@ -27,66 +32,66 @@ test("ForEach Static", () => {
 function assert_foreach_content(r, items, actual, expected)
 {
     // Initial
-    assert.deepStrictEqual(actual(), expected());
+    assert_iterables(Array.from(actual()), Array.from(expected()));
 
     // Append
     items.push("D", "E");
     r.update();
-    assert.deepStrictEqual(actual(), expected());
+    assert_iterables(actual(), expected());
 
     // Prepend
     items.unshift("F", "G");
     r.update();
-    assert.deepStrictEqual(actual(), expected());
+    assert_iterables(actual(), expected());
 
     // Remove from front
     items.shift();
     items.shift();
     r.update();
-    assert.deepStrictEqual(actual(), expected());
+    assert_iterables(actual(), expected());
 
     // Remove from end
     items.pop();
     items.pop();
     r.update();
-    assert.deepStrictEqual(actual(), expected());
+    assert_iterables(actual(), expected());
 
     // Insert
     items.splice(1, 0, "H");
     r.update();
-    assert.deepStrictEqual(actual(), expected());
+    assert_iterables(actual(), expected());
 
     // Delete
     items.splice(1, 1);
     r.update();
-    assert.deepStrictEqual(actual(), expected());
+    assert_iterables(actual(), expected());
 
     // Replace
     items.splice(1, 1, "I");
     r.update();
-    assert.deepStrictEqual(actual(), expected());
+    assert_iterables(actual(), expected());
 
     // Clear
     items.splice(0, items.length);
     r.update();
-    assert.deepStrictEqual(actual(), expected());
+    assert_iterables(actual(), expected());
 
     // Insert again
     items.push("J", "K", "L", "M", "N", "O", "P", "Q");
     r.update();
-    assert.deepStrictEqual(actual(), expected());
+    assert_iterables(actual(), expected());
 
     // Move right
     let temp = items.splice(0, 3);
     items.push(...temp);
     r.update();
-    assert.deepEqual(actual(), expected());
+    assert_iterables(actual(), expected());
 
     // Move left
     temp = items.splice(-3, 3);
     items.unshift(...temp);
     r.update();
-    assert.deepEqual(actual(), expected());
+    assert_iterables(actual(), expected());
 }
 
 
@@ -246,17 +251,17 @@ test("ForEach Index Sensitive", () => {
         ]
     })();
 
-    assert.deepStrictEqual(["A0", "B1", "C2"], r.rootNode.childNodes.slice(1, -1).map(x => x.innerText));
+    assert_iterables(["A0", "B1", "C2"], r.rootNode.childNodes.slice(1, -1).map(x => x.innerText));
 
     items.unshift("Z");
     r.update();
 
-    assert.deepStrictEqual(["Z0", "A1", "B2", "C3"], r.rootNode.childNodes.slice(1, -1).map(x => x.innerText));
+    assert_iterables(["Z0", "A1", "B2", "C3"], r.rootNode.childNodes.slice(1, -1).map(x => x.innerText));
 
     items.splice(2, 1);
     r.update();
 
-    assert.deepStrictEqual(["Z0", "A1", "C2"], r.rootNode.childNodes.slice(1, -1).map(x => x.innerText));
+    assert_iterables(["Z0", "A1", "C2"], r.rootNode.childNodes.slice(1, -1).map(x => x.innerText));
 });
 
 
@@ -291,14 +296,14 @@ test("ForEach Nested", () => {
         ]
     })();
 
-    assert.deepStrictEqual([
+    assert_iterables([
         "A1", "A2", "B3", "B4"
         ], r.rootNode.childNodes.filter(x => x.nodeType == 1).map(x => x.innerText));
 
     items[0].subItems.push("3");
     r.update();
 
-    assert.deepStrictEqual([
+    assert_iterables([
         "A1", "A2", "A3", "B3", "B4"
         ], r.rootNode.childNodes.filter(x => x.nodeType == 1).map(x => x.innerText));
 
@@ -327,7 +332,7 @@ test("ForEach Else", () => {
         ],
     })();
 
-    assert.deepStrictEqual([
+    assert_iterables([
         "Empty!",
         ], r.rootNode.childNodes.filter(x => x.nodeType == 1).map(x => x.innerText));
 
@@ -336,7 +341,7 @@ test("ForEach Else", () => {
 
     items = [ "apples", "bananas" ];
     r.update();
-    assert.deepStrictEqual([
+    assert_iterables([
         "apples", "bananas",
         ], r.rootNode.childNodes.filter(x => x.nodeType == 1).map(x => x.innerText));
     assert.equal(r.empty, null);
@@ -344,7 +349,7 @@ test("ForEach Else", () => {
 
     items = [ ];
     r.update();
-    assert.deepStrictEqual([
+    assert_iterables([
         "Empty!",
         ], r.rootNode.childNodes.filter(x => x.nodeType == 1).map(x => x.innerText));
     assert.equal(r.empty.innerText, "Empty!");
@@ -352,7 +357,7 @@ test("ForEach Else", () => {
 
     items = [ "foo", "bar" ];
     r.update();
-    assert.deepStrictEqual([
+    assert_iterables([
         "foo", "bar"
         ], r.rootNode.childNodes.filter(x => x.nodeType == 1).map(x => x.innerText));
     assert.equal(r.empty, null);

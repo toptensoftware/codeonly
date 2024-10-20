@@ -1,3 +1,4 @@
+/*
 
 class ArrayTraps
 {
@@ -5,7 +6,6 @@ class ArrayTraps
 	{
 		this.arr = arr;
 		this.listeners = [];
-		this.boundTraps = {};
 	}
 	push()
 	{
@@ -82,14 +82,17 @@ class ArrayTraps
 	}
 	__gettrap(name)
 	{
-		let trap = this.boundTraps[name];
-		if (trap)
-			return trap;
 		if (!ArrayTraps.prototype.hasOwnProperty(name))
-			return null;
-		trap = ArrayTraps.prototype[name].bind(this);
-		this.boundTraps[name] = trap;
-		return trap;
+			return false;
+
+		let fn = this[name];
+		if (typeof(fn) !== 'function')
+			return false;
+
+		if (fn.name == name)
+			this[name] = fn.bind(this);
+
+		return this[name];
 	}
 
 
@@ -130,12 +133,20 @@ ObservableArray.from = function(other)
 {
 	return new ObservableArray(...Array.from(other));
 }
-
-/*
+*/
 
 // This is a much cleaner implementation but doesn't
-// support notifications of modification by [] indexer
-// ie: `arr[123] = value` won't fire an event
+// support notification of modification by [] indexer
+//
+// ie: `arr[index] = value` won't fire an event
+//
+// Given the performance overhead (x70+) and ugliness of 
+// using proxies, this seems like a worthwhile compromise.
+//
+// Workaround, use either:
+// 
+// * `arr.setAt(index, value`
+// * `arr.splice(index, 1, value)`
 
 export class ObservableArray extends Array
 {
@@ -229,10 +240,9 @@ export class ObservableArray extends Array
 		this[index] = value;
 		this.fire(index, 1, 1);
 	}
+	get isObservable() { return true; }
 	static from(other)
 	{
 		return new ObservableArray(...other);
 	}
 }
-
-*/
