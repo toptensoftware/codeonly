@@ -2,11 +2,21 @@ import { test } from "node:test";
 import { strict as assert } from "node:assert";
 import { ObservableArray } from "../codeonly.js";
 
+test("constructor", () => {
+    let a = new ObservableArray(1,2,3);
+    assert.deepEqual(Array.from(a), [ 1,2,3 ]);
+});
+
+test("from", () => {
+    let a = ObservableArray.from([1,2,3]);
+    assert.deepEqual(a, [ 1,2,3 ]);
+});
+
 
 test("Events Test", () => {
 
     let a = new ObservableArray();
-    let b = [];
+    let b = new ObservableArray();
 
     a.addListener((index, del, ins) => {
         b.splice(index, del, ...a.slice(index, index + ins));
