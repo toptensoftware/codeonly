@@ -36,66 +36,70 @@ function assert_foreach_content(r, items, actual, expected)
 
     // Append
     items.push("D", "E");
-    r.update();
-    assert_iterables(actual(), expected());
+    assert_items();
 
     // Prepend
     items.unshift("F", "G");
-    r.update();
-    assert_iterables(actual(), expected());
+    assert_items();
 
     // Remove from front
     items.shift();
     items.shift();
-    r.update();
-    assert_iterables(actual(), expected());
+    assert_items();
 
     // Remove from end
     items.pop();
     items.pop();
-    r.update();
-    assert_iterables(actual(), expected());
+    assert_items();
 
     // Insert
     items.splice(1, 0, "H");
-    r.update();
-    assert_iterables(actual(), expected());
+    assert_items();
 
     // Delete
     items.splice(1, 1);
-    r.update();
-    assert_iterables(actual(), expected());
+    assert_items();
 
     // Replace
     items.splice(1, 1, "I");
-    r.update();
-    assert_iterables(actual(), expected());
+    assert_items();
+
+    // Replace few with many
+    items.splice(1, 2, "J", "K", "L", "M", "N");
+    assert_items();
+
+    // Replace many with few
+    items.splice(1, 5, "O", "P");
+    assert_items();
 
     // Clear
     items.splice(0, items.length);
-    r.update();
-    assert_iterables(actual(), expected());
+    assert_items();
 
     // Insert again
     items.push("J", "K", "L", "M", "N", "O", "P", "Q");
-    r.update();
-    assert_iterables(actual(), expected());
+    assert_items();
 
     // Move right
     let temp = items.splice(0, 3);
     items.push(...temp);
-    r.update();
-    assert_iterables(actual(), expected());
+    assert_items();
 
     // Move left
     temp = items.splice(-3, 3);
     items.unshift(...temp);
-    r.update();
-    assert_iterables(actual(), expected());
+    assert_items();
+
+    function assert_items()
+    {
+        if (!items.isObservable)
+            r.update();
+        assert_iterables(actual(), expected());
+    }
 }
 
 
-test("ForEach Dynamic", () => {
+test("ForEach Dynamic (no key)", () => {
 
     let items = [ "A", "B", "C" ];
 
@@ -124,7 +128,39 @@ test("ForEach Dynamic", () => {
     }
 });
 
-test("ForEach Observable", () => {
+test("ForEach Dynamic (with key)", () => {
+
+    let items = [ "A", "B", "C" ];
+
+    let r = Template.compile({
+        type: "DIV",
+        childNodes: [
+            {
+                foreach: {
+                    items: () => items,
+                    itemKey: x => x,
+                },
+                type: "DIV",
+                text: x => x,
+            }
+        ]
+    })();
+
+
+    assert_foreach_content(r, items, actual, expected);
+
+    function actual()
+    {
+        return r.rootNodes[0].childNodes.slice(1, -1).map(x => x.innerText);
+    }
+
+    function expected()
+    {
+        return items;
+    }
+});
+
+test("ForEach Observable (no key)", () => {
 
     let items = new ObservableArray();
     items.push("A", "B", "C");
@@ -134,6 +170,40 @@ test("ForEach Observable", () => {
         childNodes: [
             {
                 foreach: () => items,
+                type: "DIV",
+                text: x => x,
+            }
+        ]
+    })();
+
+
+    assert_foreach_content(r, items, actual, expected);
+
+    function actual()
+    {
+        return r.rootNodes[0].childNodes.slice(1, -1).map(x => x.innerText);
+    }
+
+    function expected()
+    {
+        return items;
+    }
+});
+
+
+test("ForEach Observable (with key)", () => {
+
+    let items = new ObservableArray();
+    items.push("A", "B", "C");
+
+    let r = Template.compile({
+        type: "DIV",
+        childNodes: [
+            {
+                foreach: {
+                    items: () => items,
+                    itemKey: x => x
+                },
                 type: "DIV",
                 text: x => x,
             }
@@ -184,12 +254,12 @@ test("ForEach Dynamic Fragment", () => {
 
     function actual()
     {
-        return items;
+        return outer.childNodes.slice(1, -1).filter((x,i) => i % 2 == 0).map(x => x.innerText);
     }
 
     function expected()
     {
-        return outer.childNodes.slice(1, -1).filter((x,i) => i % 2 == 0).map(x => x.innerText);
+        return items;
     }
 
 });
@@ -226,12 +296,12 @@ test("ForEach with Conditional Items", () => {
 
     function actual()
     {
-        return items.filter(check_condition);
+        return outer.childNodes.slice(1, -1).map(x => x.innerText);
     }
 
     function expected()
     {
-        return outer.childNodes.slice(1, -1).map(x => x.innerText);
+        return items.filter(check_condition);
     }
 
 });
@@ -265,10 +335,6 @@ test("ForEach Index Sensitive", () => {
 });
 
 
-function div(opts)
-{
-    return Object.assign({ type: "DIV" }, opts)
-}
 
 test("ForEach Nested", () => {
 
