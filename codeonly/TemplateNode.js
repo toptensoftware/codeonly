@@ -1,6 +1,7 @@
 import { HtmlString } from "./HtmlString.js";
 import { is_constructor } from "./Utils.js";
 import { Plugins } from "./Plugins.js";
+import { Environment } from "./Enviroment.js";
 
 // Manages information about a node in a template
 export class TemplateNode
@@ -47,7 +48,7 @@ export class TemplateNode
         else if (template instanceof HtmlString)
         {
             // Use div to parse HTML
-            let div = document.createElement('div');
+            let div = Environment.document.createElement('div');
             div.innerHTML = template.html;
 
             // Store nodes

@@ -1,11 +1,10 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Component } from "../codeonly/Component.js";
+import { Component, Environment } from "../codeonly.js";
 
-// Mock requestAnimationFrame
-globalThis.requestAnimationFrame = function(callback) 
-{ 
-};
+import "./mockdom.js";
+
+Environment.window.blockAnimationFrames();
 
 test("loading", () => {
 

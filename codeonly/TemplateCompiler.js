@@ -1,10 +1,10 @@
 import { camel_to_dash } from "./Utils.js";
 import { HtmlString } from "./HtmlString.js";
 import { CloakedValue} from "./CloakedValue.js";
-import { CodeBuilder } from "./CodeBuilder.js";
 import { ClosureBuilder } from "./ClosureBuilder.js";
 import { TemplateHelpers } from "./TemplateHelpers.js";
 import { TemplateNode } from "./TemplateNode.js";
+import { Environment } from "./Enviroment.js";
 
 
 export function compileTemplateCode(rootTemplate, copts)
@@ -72,6 +72,7 @@ export function compileTemplateCode(rootTemplate, copts)
         {
             rootClosure = closure;
             rootClosure.code.append(`let model = context.model;`);
+            rootClosure.code.append(`let document = Environment.document;`);
         }
 
         // Call create function
@@ -736,10 +737,10 @@ export function compileTemplate(rootTemplate, compilerOptions)
 {
     // Compile code
     let code = compileTemplateCode(rootTemplate, compilerOptions);
-    //console.log(code.code);
+    console.log(code.code);
 
     // Put it in a function
-    let templateFunction = new Function("refs", "helpers", "context", code.code);
+    let templateFunction = new Function("Environment", "refs", "helpers", "context", code.code);
 
     // Wrap it in a constructor function
     let compiledTemplate = function(context)
@@ -747,7 +748,7 @@ export function compileTemplate(rootTemplate, compilerOptions)
         if (!context)
             context = {};
         context.$instanceId = _nextInstanceId++;
-        return templateFunction(code.refs, TemplateHelpers, context ?? {});
+        return templateFunction(Environment, code.refs, TemplateHelpers, context ?? {});
     }
 
     // Store meta data about the component on the function since we need this before 

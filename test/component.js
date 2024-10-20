@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Component, Template } from "../codeonly.js";
-import "./mockdom/mockdom.js";
+import { Component, Template, Environment } from "../codeonly.js";
+import "./mockdom.js";
 
 class TestComponent extends Component
 {
@@ -68,10 +68,10 @@ test("Invalidate Component", () => {
    let comp = new TestComponent();
    comp.init();
 
-   blockAnimationFrames(); 
+   Environment.window.blockAnimationFrames(); 
    comp.invalidate();
    assert.equal(comp.updateCount, 0);
-   dispatchAnimationFrames();
+   Environment.window.dispatchAnimationFrames();
    assert.equal(comp.updateCount, 1);
 });
 
@@ -91,11 +91,11 @@ test("Invalidate during Update", () => {
         comp2.invalidate();
     }
  
-    blockAnimationFrames(); 
+    Environment.window.blockAnimationFrames(); 
     comp.invalidate();
     assert.equal(comp.updateCount, 0);
     assert.equal(comp2.updateCount, 0);
-    dispatchAnimationFrames();
+    Environment.window.dispatchAnimationFrames();
     assert.equal(comp.updateCount, 1);
     assert.equal(comp2.updateCount, 1);
  });

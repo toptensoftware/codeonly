@@ -1,26 +1,15 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { nextFrame, postNextFrame } from "../codeonly/nextFrame.js";
+import { Environment, nextFrame, postNextFrame } from "../codeonly.js";
+import "./mockdom.js";
 
-// Mock requestAnimationFrame
-let pendingCallbacks = [];
-globalThis.requestAnimationFrame = function(callback) 
-{ 
-    pendingCallbacks.push(callback);
-};
-
-function mock_dispatch()
-{
-    let temp = pendingCallbacks;
-    pendingCallbacks = [];
-    temp.forEach(x => x());
-}
+Environment.window.blockAnimationFrames();
 
 test("single", () => {
 
     let invoked = false;
     nextFrame(() => { invoked = true });
-    mock_dispatch();
+    Environment.window.dispatchAnimationFrames();
     assert(invoked);
 
 });
@@ -31,7 +20,7 @@ test("multiple", () => {
     nextFrame(() => { invoked++ });
     nextFrame(() => { invoked++ });
     nextFrame(() => { invoked++ });
-    mock_dispatch();
+    Environment.window.dispatchAnimationFrames();
     assert.equal(invoked, 3);
 
 });
@@ -45,7 +34,7 @@ test("sorted", () => {
     nextFrame(() => { order.push(0); }, 0);
     nextFrame(() => { order.push(-100); }, -100);
     nextFrame(() => { order.push(100); }, 100);
-    mock_dispatch();
+    Environment.window.dispatchAnimationFrames();
     assert.deepStrictEqual(order, [-100, -100, 0, 0, 100, 100]);
 
 });
@@ -75,6 +64,6 @@ test("postNextFrame (delayed)", () => {
     assert.deepEqual(invoked, [0]);
 
     // Dispatched
-    mock_dispatch();
+    Environment.window.dispatchAnimationFrames();
     assert.deepEqual(invoked, [0, 1, 1, 3]);
 });

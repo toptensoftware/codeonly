@@ -1,7 +1,9 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Template, html } from "../codeonly.js";
-import "./mockdom/mockdom.js";
+import { Template, Environment } from "../codeonly.js";
+import "./mockdom.js";
+
+
 test("Fragment", () => {
     let r = Template.compile({
         $: [
@@ -25,7 +27,7 @@ test("Fragment (with conditional)", () => {
     assert.equal(r.rootNodes[0].nodeType, 8);
 
     // Attach the root nodes to a div so replaceWith works
-    let outer = document.createElement("DIV");
+    let outer = Environment.document.createElement("DIV");
     outer.append(...r.rootNodes);
 
     // Condition true
@@ -90,7 +92,7 @@ test("Double Nested Fragment (with conditional)", () => {
     })();
 
     // Attach the root nodes to a div so replaceWith works
-    let outer = document.createElement("DIV");
+    let outer = Environment.document.createElement("DIV");
     outer.append(...r.rootNodes);
 
     assert.equal(outer.childNodes.length, 5);

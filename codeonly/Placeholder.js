@@ -1,8 +1,10 @@
+import { Environment } from "./Enviroment.js";
+
 export function Placeholder(comment)
 {
     let fn = function()
     {
-        let node = document.createComment(comment);
+        let node = Environment.document.createComment(comment);
 
         return {
             get rootNode() { return node; },

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Template, Html } from "../codeonly.js";
-import "./mockdom/mockdom.js";
+import { Environment, Template, Html } from "../codeonly.js";
+import "./mockdom.js";
 
 test("Static Comment", () => {
     let r = Template.compile({
@@ -54,7 +54,7 @@ test("Dynamic Text Node", () => {
     let val = "foo";
     let r = Template.compile(() => val)();
 
-    let outer = document.createElement("div");
+    let outer = Environment.document.createElement("div");
     outer.append(...r.rootNodes);
 
     assert.equal(outer.childNodes.length, 3);

@@ -1,6 +1,7 @@
 import { is_constructor } from "./Utils.js";
 import { HtmlString } from "./HtmlString.js";
 import { TemplateNode } from "./TemplateNode.js";
+import { Environment } from "./Enviroment.js";
 
 export class EmbedSlot
 {
@@ -77,8 +78,8 @@ export class EmbedSlot
     {
         this.#context = options.context;
         this.#placeholderConstructor = options.nodes.length > 0 ? options.nodes[0] : null;
-        this.#headSentinal = document.createTextNode("");
-        this.#tailSentinal = document.createTextNode("");
+        this.#headSentinal = Environment.document.createTextNode("");
+        this.#tailSentinal = Environment.document.createTextNode("");
         this.#nodes = [];
         this.#ownsContent = options.data.ownsContent ?? true;
 
@@ -196,20 +197,20 @@ export class EmbedSlot
             // Array of HTML nodes
             this.#nodes = value;
         }
-        else if (value instanceof Node)
+        else if (value instanceof Environment.Node)
         {
             // Single HTML node
             this.#nodes = [ value ];
         }
         else if (value instanceof HtmlString)
         {
-            let span = document.createElement('span');
+            let span = Environment.document.createElement('span');
             span.innerHTML = value.html;
             this.#nodes = [ ...span.childNodes ];
         }
         else if (typeof(value) === 'string')
         {
-            this.#nodes = [ document.createTextNode(value) ];
+            this.#nodes = [ Environment.document.createTextNode(value) ];
         }
         else
         {

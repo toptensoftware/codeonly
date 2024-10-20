@@ -103,8 +103,9 @@ class HTMLStyleList
 
 class HTMLNode
 {
-    constructor(type, nameOrValue)
+    constructor(document, type, nameOrValue)
     {
+        this.document = document;
         this.nodeType = type;
         switch (type)
         {
@@ -141,13 +142,13 @@ class HTMLNode
         {
             case 3:
             case 8:
-                return new HTMLNode(this.nodeType, this.nodeValue);
+                return new HTMLNode(this.document, this.nodeType, this.nodeValue);
 
             case 1:
             case 11:
             {
                 // Create node
-                let newNode = new HTMLNode(this.nodeType);
+                let newNode = new HTMLNode(this.document, this.nodeType);
 
                 // Clone attributes
                 if (this.attributes)
@@ -231,7 +232,7 @@ class HTMLNode
 
     set innerHTML(value)
     {
-        var nodes = parseHtml(value);
+        var nodes = parseHtml(this.document, value);
         this.childNodes.forEach(x => x.remove());
         this.append(...nodes);
     }
@@ -266,7 +267,7 @@ class HTMLNode
             this.childNodes.forEach(x => x.remove());
 
         // Set inner text
-        this.append(document.createTextNode(value));
+        this.append(this.document.createTextNode(value));
     }
 
     setAttribute(name, value)
@@ -427,7 +428,7 @@ class HTMLNode
     }
 }
 
-class Document
+export class Document
 {
     constructor()
     {
@@ -435,26 +436,26 @@ class Document
 
     createElement(type)
     {
-        return new HTMLNode(1, type);
+        return new HTMLNode(this, 1, type);
     }
     createTextNode(text)
     {
-        return new HTMLNode(3, text.replace(/\s+/g, ' '));
+        return new HTMLNode(this, 3, text.replace(/\s+/g, ' '));
     }
     createComment(text)
     {
-        return new HTMLNode(8, text);
+        return new HTMLNode(this, 8, text);
     }
     createDocumentFragment()
     {
-        return new HTMLNode(11);
+        return new HTMLNode(this, 11);
     }
 }
 
 
 // Mini parser converts HTML to an array of nodes
 // (lots of limitations, good enough for mocking)
-export function parseHtml(str)
+export function parseHtml(document, str)
 {
     let tokens = tokenizer(str);
     let token;
@@ -568,29 +569,42 @@ export function parseHtml(str)
     }
 }
 
+class Window
+{
+    animationFrames = null;
 
-let animationFrames = null;
-globalThis.document = new Document();
-globalThis.requestAnimationFrame = function(callback) 
-{ 
-    if (animationFrames == null)
-        callback() 
-    else
-        animationFrames.push(callback);
-};
-globalThis.blockAnimationFrames = function()
-{
-    if (animationFrames === null)
-        animationFrames = [];
-}
-globalThis.dispatchAnimationFrames = function()
-{
-    if (animationFrames != null)
+    requestAnimationFrame(callback) 
+    { 
+        if (this.animationFrames == null)
+            callback() 
+        else
+            this.animationFrames.push(callback);
+    }
+
+    blockAnimationFrames()
     {
-        let temp = animationFrames;
-        animationFrames = [];
-        temp.forEach(x => x());
+        if (this.animationFrames === null)
+            this.animationFrames = [];
+    }
+
+    dispatchAnimationFrames()
+    {
+        if (this.animationFrames != null)
+        {
+            let temp = this.animationFrames;
+            this.animationFrames = [];
+            temp.forEach(x => x());
+        }
     }
 }
-globalThis.Node = HTMLNode;
 
+export function createEnvironment()
+{
+    let animationFrames = null;
+
+    return {
+        document: new Document(),
+        window: new Window(),
+        Node: HTMLNode,
+    }
+}
