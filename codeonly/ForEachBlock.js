@@ -250,7 +250,7 @@ export class ForEachBlock
         if (!this.itemsLoaded)
         {
             this.itemsLoaded = true;
-            this.#insert(newItems, newKeys, 0, newItems.length);
+            this.#insert(newItems, newKeys, 0, 0, newItems.length);
             this.#updateEmpty();
             return;
         }
