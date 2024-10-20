@@ -1,17 +1,17 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Template, html } from "../codeonly.js";
+import { Template, IfBlock } from "../codeonly.js";
 import "./mockdom/mockdom.js";
 
 
 test("If (true)", () => {
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
+        _: "DIV",
+        $: [
             { 
                 if: true,
-                type: "SPAN", 
+                _: "SPAN", 
                 text: "foo", 
             },
         ]
@@ -24,9 +24,9 @@ test("If (true)", () => {
 test("If (false)", () => {
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
-            { type: "SPAN", text: "foo", if: false },
+        _: "DIV",
+        $: [
+            { _: "SPAN", text: "foo", if: false },
         ]
     })();
 
@@ -38,13 +38,13 @@ test("If", () => {
 
     let val = false;
     let r = Template.compile({
-        type: "DIV",
-        childNodes: 
+        _: "DIV",
+        $: 
         [
             { 
                 if: () => val,
-                type: "DIV", 
-                childNodes: [ "A", "B", "C" ]
+                _: "DIV", 
+                $: [ "A", "B", "C" ]
             },
         ]
     })();
@@ -63,16 +63,16 @@ test("If-Else", () => {
 
     let val = true;
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
+        _: "DIV",
+        $: [
             { 
                 if: () => val,
-                type: "DIV", 
+                _: "DIV", 
                 text: "foo",
             },
             { 
                 else: true,
-                type: "DIV", 
+                _: "DIV", 
                 text: "bar",
             },
         ]
@@ -92,16 +92,16 @@ test("If-ElseIf", () => {
 
     let val = 1;
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
+        _: "DIV",
+        $: [
             { 
                 if: () => val == 1,
-                type: "DIV", 
+                _: "DIV", 
                 text: "foo",
             },
             { 
                 elseif: () => val == 2,
-                type: "DIV", 
+                _: "DIV", 
                 text: "bar",
             },
         ]
@@ -127,21 +127,21 @@ test("If-ElseIf-Else", () => {
 
     let val = 1;
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
+        _: "DIV",
+        $: [
             { 
                 if: () => val == 1,
-                type: "DIV", 
+                _: "DIV", 
                 text: "foo",
             },
             { 
                 elseif: () => val == 2,
-                type: "DIV", 
+                _: "DIV", 
                 text: "bar",
             },
             {
                 else: true,
-                type: "DIV", 
+                _: "DIV", 
                 text: "baz",
             },
         ]
@@ -167,15 +167,15 @@ test("If Foreach Fragment", () => {
 
     let val = true;
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
+        _: "DIV",
+        $: [
             {
                 if: () => val,
-                childNodes: [
+                $: [
                     "text",
                     { 
                         foreach: [ "A", "B", "C" ],
-                        type: "DIV", 
+                        _: "DIV", 
                         text: x => x,
                     },
                 ]
@@ -200,7 +200,7 @@ test("If at root", () => {
 
     let val = true;
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         if: () => val,
     })();
 
@@ -224,7 +224,7 @@ test("If at root", () => {
 test("If at root (true)", () => {
 
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         if: true,
     })();
 
@@ -237,7 +237,7 @@ test("If at root (true)", () => {
 test("If at root (false)", () => {
 
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         if: false,
     })();
 
@@ -253,10 +253,10 @@ test("If on fragment at root", () => {
     let val = true;
     let r = Template.compile({
         if: () => val,
-        childNodes: 
+        $: 
         [
             {
-                type: "DIV",
+                _: "DIV",
             }
         ]
     })();
@@ -278,3 +278,37 @@ test("If on fragment at root", () => {
     assert.equal(r.rootNodes[0].nodeType, 1);
 });
 
+
+
+test("IfBlock", () => {
+
+    let val = false;
+    let r = Template.compile({
+        _: "div",
+        $: 
+        [
+            {
+                _: IfBlock,
+                branches: [
+                    {
+                        condition: () => val,
+                        template: 
+                        { 
+                            _: "DIV", 
+                            $: [ "A", "B", "C" ]
+                        },
+                    },
+                ]
+            }
+        ],
+    })();
+
+    assert.equal(r.rootNodes[0].childNodes[0].nodeType, 8);
+    val = true;
+    r.update();
+    assert.equal(r.rootNodes[0].childNodes[0].nodeType, 1);
+    assert.equal(r.rootNodes[0].childNodes[0].nodeName, "DIV");
+    val = false;
+    r.update();
+    assert.equal(r.rootNodes[0].childNodes[0].nodeType, 8);
+});

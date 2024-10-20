@@ -7,7 +7,7 @@ import "./mockdom/mockdom.js";
 test("Root Export", () => {
 
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         export: "mydiv",
     })();
 
@@ -17,11 +17,11 @@ test("Root Export", () => {
 test("Non-root Export", () => {
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes:
+        _: "DIV",
+        $:
         [
             {
-                type: "P",
+                _: "P",
                 export: "myPara",
                 text: "foo",
             }
@@ -35,12 +35,12 @@ test("Export conditional", () => {
 
     let val = true;
     let r = Template.compile({
-        type: "DIV",
-        childNodes:
+        _: "DIV",
+        $:
         [
             {
                 if: () => val,
-                type: "P",
+                _: "P",
                 export: "myPara",
                 text: "foo",
             }

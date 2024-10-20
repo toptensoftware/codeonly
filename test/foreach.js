@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Template, ObservableArray, Component } from "../codeonly.js";
+import { Template, ObservableArray, Component, ForEachBlock } from "../codeonly.js";
 import "./mockdom/mockdom.js";
 
 function assert_iterables(a, b)
@@ -11,11 +11,11 @@ function assert_iterables(a, b)
 
 test("ForEach Static", () => {
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
+        _: "DIV",
+        $: [
             {
                 foreach: [ "apples", "pears", "bananas" ],
-                type: "DIV",
+                _: "DIV",
                 text: x => x,
             }
         ]
@@ -104,11 +104,11 @@ test("ForEach Dynamic (no key)", () => {
     let items = [ "A", "B", "C" ];
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
+        _: "DIV",
+        $: [
             {
                 foreach: () => items,
-                type: "DIV",
+                _: "DIV",
                 text: x => x,
             }
         ]
@@ -133,14 +133,14 @@ test("ForEach Dynamic (with key)", () => {
     let items = [ "A", "B", "C" ];
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
+        _: "DIV",
+        $: [
             {
                 foreach: {
                     items: () => items,
                     itemKey: x => x,
                 },
-                type: "DIV",
+                _: "DIV",
                 text: x => x,
             }
         ]
@@ -166,11 +166,11 @@ test("ForEach Observable (no key)", () => {
     items.push("A", "B", "C");
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
+        _: "DIV",
+        $: [
             {
                 foreach: () => items,
-                type: "DIV",
+                _: "DIV",
                 text: x => x,
             }
         ]
@@ -197,14 +197,14 @@ test("ForEach Observable (with key)", () => {
     items.push("A", "B", "C");
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
+        _: "DIV",
+        $: [
             {
                 foreach: {
                     items: () => items,
                     itemKey: x => x
                 },
-                type: "DIV",
+                _: "DIV",
                 text: x => x,
             }
         ]
@@ -230,16 +230,16 @@ test("ForEach Dynamic Fragment", () => {
     let items = [ "A", "B", "C" ];
 
     let r = Template.compile({
-        childNodes: [
+        $: [
             {
                 foreach: () => items,
-                childNodes: [
+                $: [
                     {
-                        type: "DIV",
+                        _: "DIV",
                         text: x => x,
                     },
                     {
-                        type: "SPAN",
+                        _: "SPAN",
                         text: x => x,
                     }
                 ]
@@ -277,13 +277,13 @@ test("ForEach with Conditional Items", () => {
     }
 
     let r = Template.compile({
-        childNodes: [
+        $: [
             {
                 foreach: {
                     items: () => items,
                     condition: check_condition,
                 },
-                type: "DIV",
+                _: "DIV",
                 text: x => x,
             }
         ]
@@ -311,11 +311,11 @@ test("ForEach Index Sensitive", () => {
     let items = [ "A", "B", "C" ];
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
+        _: "DIV",
+        $: [
             {
                 foreach: () => items,
-                type: "DIV",
+                _: "DIV",
                 text: (x, ctx) => `${x}${ctx.index}`,
             }
         ]
@@ -345,16 +345,16 @@ test("ForEach Nested", () => {
 
     let r = Template.compile(
     {
-        type: "DIV",
-        childNodes: 
+        _: "DIV",
+        $: 
         [
             {
                 foreach: () => items,
-                childNodes: 
+                $: 
                 [
                     {
                         foreach: (item) => item.subItems,
-                        type: "DIV",
+                        _: "DIV",
                         text: (subItem, ctx) => `${ctx.outer.model.name}${subItem}`,
                     }
                 ],
@@ -382,16 +382,16 @@ test("ForEach Else", () => {
 
     let r = Template.compile(
     {
-        type: "DIV",
-        childNodes: [
+        _: "DIV",
+        $: [
             {
-                type: "DIV",
+                _: "DIV",
                 foreach: () => items,
                 text: x => x,
             },
             {
                 else: true,
-                type: "DIV",
+                _: "DIV",
                 text: "Empty!",
                 export: "empty",
             }
@@ -458,7 +458,7 @@ class ItemComponent extends Component
     }
 
     static template = {
-        type: "DIV",
+        _: "DIV",
         text: c => c.item.name,
     }
 
@@ -474,14 +474,14 @@ test("ForEach Component Update", () => {
     ];
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
+        _: "DIV",
+        $: [
             {
                 foreach: {
                     items: () => items,
                     itemKey: i => i.name,
                 },
-                type: ItemComponent,
+                _: ItemComponent,
                 item: i => i,
             }
         ]
@@ -521,3 +521,62 @@ test("ForEach Component Update", () => {
 
 });
 
+
+test("ForEach Dynamic", () => {
+
+    let items = [ "A", "B", "C" ];
+
+    let r = Template.compile({
+        _: "DIV",
+        $: [
+            {
+                _: ForEachBlock,
+                items: () => items,
+                template: {
+                    _: "DIV",
+                    text: x => x
+                }
+            }
+        ]
+    })();
+
+
+    assert_foreach_content(r, items, actual, expected);
+
+    function actual()
+    {
+        return r.rootNodes[0].childNodes.slice(1, -1).map(x => x.innerText);
+    }
+
+    function expected()
+    {
+        return items;
+    }
+});
+
+
+class TestComponent extends Component
+{
+
+}
+
+
+
+test("ForEach Component", () => {
+
+    let items = [ "A", "B", "C" ];
+
+    let r = Template.compile({
+        $: [
+            {
+                _: ForEachBlock,
+                items: () => items,
+                template: {
+                    _: TestComponent,
+                    text: x => x
+                }
+            }
+        ]
+    })();
+
+});

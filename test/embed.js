@@ -7,11 +7,11 @@ import "./mockdom/mockdom.js";
 test("Empty Embed", () => {
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
+        _: "DIV",
+        $: [
             "pre",
             {
-                type: EmbedSlot,
+                _: EmbedSlot,
                 export: "slot",
             },
             "post",
@@ -25,11 +25,11 @@ test("Empty Embed", () => {
 test("Embedded Single Element", () => {
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
+        _: "DIV",
+        $: [
             "pre",
             {
-                type: EmbedSlot,
+                _: EmbedSlot,
                 export: "slot",
             },
             "post",
@@ -50,11 +50,11 @@ test("Embedded Single Element", () => {
 test("Embedded Multiple Elements", () => {
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
+        _: "DIV",
+        $: [
             "pre",
             {
-                type: EmbedSlot,
+                _: EmbedSlot,
                 export: "slot",
             },
             "post",
@@ -79,16 +79,16 @@ test("Embedded Multiple Elements", () => {
 test("Embedded with Placeholder", () => {
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
+        _: "DIV",
+        $: [
             "pre",
             {
-                type: EmbedSlot,
+                _: EmbedSlot,
                 export: "slot",
             },
             {
                 else: true,
-                type: "span",
+                _: "span",
                 text: "placeholder content",
             },
             "post",
@@ -125,7 +125,7 @@ class MyComponent extends Component
     }
 
     static template = {
-        childNodes: [
+        $: [
             "apples",
             "pears",
             "bananas",
@@ -137,11 +137,11 @@ class MyComponent extends Component
 test("Embedded Component", () => {
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
+        _: "DIV",
+        $: [
             "pre",
             {
-                type: EmbedSlot,
+                _: EmbedSlot,
                 export: "slot",
             },
             "post",
@@ -163,11 +163,11 @@ test("Embedded Component", () => {
 test("Embedded Component destroyed", () => {
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes: [
+        _: "DIV",
+        $: [
             "pre",
             {
-                type: EmbedSlot,
+                _: EmbedSlot,
                 export: "slot",
             },
             "post",

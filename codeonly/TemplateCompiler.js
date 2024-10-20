@@ -608,8 +608,6 @@ export function compileTemplateCode(rootTemplate, copts)
 
             if (key == "bind")
             {
-                if (!bindings)
-                    throw new Error("'bind' can't be used inside 'foreach'");
                 if (typeof(ni.template.bind) !== 'string')
                     throw new Error("'bind' must be a string");
                 if (bindings.has(ni.template.export))

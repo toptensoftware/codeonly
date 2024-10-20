@@ -4,7 +4,7 @@ import { Template, Html } from "../codeonly.js";
 import "./mockdom/mockdom.js";
 
 
-test("Child Nodes", () => {
+test("Basic", () => {
 
     let r = Template.compile({
         _: "DIV",
@@ -19,7 +19,7 @@ test("Child Nodes", () => {
     assert.equal(r.rootNodes[0].childNodes[1].nodeName, "SPAN");
 });
 
-test("Child Nodes with Dynamic", () => {
+test("Child Nodes with Dynamic Text", () => {
 
     let val = "foo";
     let r = Template.compile({
@@ -36,7 +36,7 @@ test("Child Nodes with Dynamic", () => {
 });
 
 
-test("Child Nodes is Static Text", () => {
+test("Child Nodes with Static Text", () => {
 
     let val = "foo";
     let r = Template.compile({
@@ -47,7 +47,7 @@ test("Child Nodes is Static Text", () => {
     assert.equal(r.rootNodes[0].innerText, val);
 });
 
-test("Child Nodes is Static HTML", () => {
+test("Child Nodes with Static HTML", () => {
 
     let val = "<span>foo</span>";
     let r = Template.compile({
@@ -58,7 +58,7 @@ test("Child Nodes is Static HTML", () => {
     assert.equal(r.rootNodes[0].innerHTML, val);
 });
 
-test("$ is Static Text", () => {
+test("$: Static Text", () => {
 
     let val = "foo";
     let r = Template.compile({
@@ -69,7 +69,7 @@ test("$ is Static Text", () => {
     assert.equal(r.rootNodes[0].innerText, val);
 });
 
-test("$ is Static HTML", () => {
+test("$: Static HTML", () => {
 
     let val = "<span>foo</span>";
     let r = Template.compile({

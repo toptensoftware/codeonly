@@ -4,9 +4,9 @@ import { Template, html } from "../codeonly.js";
 import "./mockdom/mockdom.js";
 test("Fragment", () => {
     let r = Template.compile({
-        childNodes: [
-            { type: "SPAN", text: "foo" },
-            { type: "SPAN", text: "bar" },
+        $: [
+            { _: "SPAN", text: "foo" },
+            { _: "SPAN", text: "bar" },
         ]
     })();
     assert.equal(r.rootNodes.length, 2);
@@ -15,9 +15,9 @@ test("Fragment", () => {
 test("Fragment (with conditional)", () => {
     let val = false;
     let r = Template.compile({
-        childNodes: [
-            { type: "SPAN", text: "foo", if: () => val },
-            { type: "SPAN", text: "bar" },
+        $: [
+            { _: "SPAN", text: "foo", if: () => val },
+            { _: "SPAN", text: "bar" },
         ]
     })();
 
@@ -43,10 +43,10 @@ test("Fragment (with conditional)", () => {
 
 test("Nested Fragment", () => {
     let r = Template.compile({
-        childNodes: [
-            { type: "SPAN", text: "foo" },
+        $: [
+            { _: "SPAN", text: "foo" },
             { 
-                childNodes: [ "A", "B", "C" ]
+                $: [ "A", "B", "C" ]
             },
         ]
     })();
@@ -55,11 +55,11 @@ test("Nested Fragment", () => {
 
 test("Double Nested Fragment", () => {
     let r = Template.compile({
-        childNodes: [
+        $: [
             { 
-                childNodes: [
+                $: [
                     {
-                        childNodes: [
+                        $: [
                             "A", "B", "C",
                         ]
                     }
@@ -75,14 +75,14 @@ test("Double Nested Fragment (with conditional)", () => {
     let val1 = true;
     let val2 = true;
     let r = Template.compile({
-        childNodes: [
+        $: [
             { 
                 if: () => val1,
-                childNodes: [
+                $: [
                     "A", "B",
                     {
                         if: () => val2,
-                        childNodes: ["C", "D", "E"],
+                        $: ["C", "D", "E"],
                     }
                 ],
             },

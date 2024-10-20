@@ -22,10 +22,10 @@ class TestComponent extends Component
     }
 
     static template = {
-        type:  "DIV",
-        childNodes: [
+        _:  "DIV",
+        $: [
             {
-                type: "DIV",
+                _: "DIV",
                 text: c => c.value,
             }
         ],
@@ -38,12 +38,6 @@ test("Instantiate Component", () => {
     assert(c.rootNode != null);
     assert.equal(c.rootNodes.length, 1);
     assert(!c.isMultiRoot);
-});
-
-
-test("Access Component Property from Template", () => {
-
-    let c = new TestComponent();
     assert.equal(c.rootNode.childNodes[0].innerText, "Hello World");
 });
 
@@ -60,7 +54,7 @@ test("Update Component", () => {
 
 test("Component as direct child node", () => {
     let r = Template.compile({
-        childNodes: [
+        $: [
             TestComponent,
         ]
     })();
@@ -109,7 +103,7 @@ test("Invalidate during Update", () => {
  test("deep update on", () => {
 
     let template = Template.compile({
-        type: TestComponent,
+        _: TestComponent,
         update: true,
         export: "comp",
     });
@@ -123,7 +117,7 @@ test("Invalidate during Update", () => {
  test("deep update off", () => {
 
     let template = Template.compile({
-        type: TestComponent,
+        _: TestComponent,
         update: false,
         export: "comp",
     });
@@ -139,7 +133,7 @@ test("Invalidate during Update", () => {
     let shouldUpdate = false;
 
     let template = Template.compile({
-        type: TestComponent,
+        _: TestComponent,
         update: () => shouldUpdate,
         export: "comp",
     });
@@ -169,7 +163,7 @@ test("Invalidate during Update", () => {
     let prop_value = "foo";
 
     let template = Template.compile({
-        type: TestComponent,
+        _: TestComponent,
         update: "auto",
         export: "comp",
         prop: () => prop_value,

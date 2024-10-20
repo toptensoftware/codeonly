@@ -1,8 +1,6 @@
 import { HtmlString } from "./HtmlString.js";
 import { is_constructor } from "./Utils.js";
-import { IfBlock } from "./IfBlock.js";
-import { ForEachBlock } from "./ForEachBlock.js";
-import { EmbedSlot } from "./EmbedSlot.js";
+import { Plugins } from "./Plugins.js";
 
 // Manages information about a node in a template
 export class TemplateNode
@@ -19,10 +17,15 @@ export class TemplateNode
             template = { $:template }
         }
 
+        // _ is an alias for type
+        if (template._ && !template.type)
+        {
+            template.type = template._;
+            delete template._;
+        }
+
         // Apply automatic transforms
-        template = ForEachBlock.transform(template);
-        template = EmbedSlot.transform(template);
-        template = IfBlock.transform(template);
+        template = Plugins.transform(template);
         if (is_constructor(template))
         {
             template = { type: template }
@@ -30,13 +33,6 @@ export class TemplateNode
 
         // Setup
         this.template = template;
-
-        // _ is an alias for type
-        if (template._ && !template.type)
-        {
-            template.type = template._;
-            delete template._;
-        }
 
         // Work out its kind
         if (is_constructor(template.type))
@@ -99,12 +95,25 @@ export class TemplateNode
                 {
                     template.childNodes = [ template.childNodes ];
                 }
+                else
+                {
+                    template.childNodes = template.childNodes.flat();
+                }
+                
+                template.childNodes.forEach(x => {
+                    if (x._ && !x.type)
+                    {
+                        x.type = x._;
+                        delete x._;
+                    }
+                });
 
-                template.childNodes = template.childNodes.flat();
-
+                Plugins.transformGroup(template.childNodes);
+                /*
                 ForEachBlock.transformGroup(template.childNodes);
                 EmbedSlot.transformGroup(template.childNodes);
                 IfBlock.transformGroup(template.childNodes);
+                */
                 this.childNodes = this.template.childNodes.map(x => new TemplateNode(x));
             }
             else

@@ -7,7 +7,7 @@ import "./mockdom/mockdom.js";
 test("Single-root", () => {
 
     let component = Template.compile({
-        type: "DIV",
+        _: "DIV",
         text: "foo",
     });
 
@@ -18,7 +18,7 @@ test("Single-root", () => {
 test("Single-root fragment", () => {
 
     let component = Template.compile({
-        childNodes: [
+        $: [
             "apples",
         ]
     });
@@ -29,7 +29,7 @@ test("Single-root fragment", () => {
 test("Multi-root fragment", () => {
 
     let component = Template.compile({
-        childNodes: [
+        $: [
             "apples",
             "pears",
             "bananas",

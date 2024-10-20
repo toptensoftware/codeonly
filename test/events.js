@@ -10,7 +10,7 @@ test("Event", () => {
     let model = {};
 
     let r = Template.compile({
-        type: "BUTTON",
+        _: "BUTTON",
         on_click: (evModel, ev) => {
             // Note triggered
             triggered = true;

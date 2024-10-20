@@ -2,7 +2,7 @@ import { test } from "node:test";
 import { strict as assert } from "node:assert";
 import { binarySearch } from "../codeonly/Utils.js";
 
-test("Existing", () => {
+test("Existing Item Lookup", () => {
 
     let arr = [10, 20, 30, 40, 50, 60];
 
@@ -15,7 +15,7 @@ test("Existing", () => {
 
 });
 
-test("Missing", () => {
+test("Missing Item Insert", () => {
 
     let start = [10, 20, 30, 40, 50, 60];
     let arr = [...start];

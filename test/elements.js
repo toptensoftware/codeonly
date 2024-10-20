@@ -1,11 +1,11 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Template, html } from "../codeonly.js";
+import { Template, Html } from "../codeonly.js";
 import "./mockdom/mockdom.js";
 
 test("Static Comment", () => {
     let r = Template.compile({
-        type: "comment",
+        _: "comment",
         text: "foo",
     })();
 
@@ -16,7 +16,7 @@ test("Static Comment", () => {
 test("Dynamic Comment", () => {
     let val = "foo";
     let r = Template.compile({
-        type: "comment",
+        _: "comment",
         text: () => val,
     })();
 
@@ -35,7 +35,7 @@ test("Dynamic Comment", () => {
 test("Single Node", () => {
 
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
     })();
 
     assert.equal(r.rootNodes[0].nodeName, "DIV");
@@ -76,7 +76,7 @@ test("Dynamic Text Node", () => {
 
 test("Static Single-Node HTML", () => {
 
-    let r = Template.compile(html("Hello World"))();
+    let r = Template.compile(Html.raw("Hello World"))();
 
     assert.equal(r.isSingleRoot, true);
     assert.equal(r.rootNodes[0].nodeType, 3);
@@ -85,7 +85,7 @@ test("Static Single-Node HTML", () => {
 
 test("Static Multi-Node HTML", () => {
 
-    let r = Template.compile(html("<div>Hello</div><div>World</div>"))();
+    let r = Template.compile(Html.raw("<div>Hello</div><div>World</div>"))();
 
     assert.equal(r.isSingleRoot, false);
     assert.equal(r.rootNodes.length, 2);
@@ -97,7 +97,7 @@ test("Static Multi-Node HTML", () => {
 
 test("Empty HTML Node", () => {
 
-    let r = Template.compile(html(""))();
+    let r = Template.compile(Html.raw(""))();
 
     assert.equal(r.isSingleRoot, false);
     assert.equal(r.rootNodes.length, 0);
@@ -106,7 +106,7 @@ test("Empty HTML Node", () => {
 test("Dynamic HTML Node", () => {
 
     let val = "foo";
-    let r = Template.compile(() => html(val))();
+    let r = Template.compile(() => Html.raw(val))();
 
     let contentNodes = r.rootNodes.filter(x => x.nodeValue != "");
     assert.equal(contentNodes[0].nodeType, 3);
@@ -132,7 +132,7 @@ test("Text Node", () => {
 test("Inner Text", () => {
 
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         text: "Hello World",
     })();
 
@@ -143,8 +143,8 @@ test("Inner Text", () => {
 test("Inner HTML", () => {
 
     let r = Template.compile({
-        type: "DIV",
-        text: html("Hello World"),
+        _: "DIV",
+        text: Html.raw("Hello World"),
     })();
 
     assert.equal(r.rootNodes[0].nodeName, "DIV");
@@ -155,7 +155,7 @@ test("Dynamic Text", () => {
 
     let text = 'foo';
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         text: () => text,
     })();
 
@@ -170,7 +170,7 @@ test("Dynamic Text", () => {
 test("Static ID Attribute", () => {
 
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         id: "foo",
     })();
 
@@ -181,7 +181,7 @@ test("Dynamic ID Attribute", () => {
 
     let val = "foo";
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         id: () => val,
     })();
 
@@ -194,7 +194,7 @@ test("Dynamic ID Attribute", () => {
 test("Static Class Attribute", () => {
 
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         class: "foo",
     })();
 
@@ -205,7 +205,7 @@ test("Dynamic Class Attribute", () => {
 
     let val = "foo";
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         class: () => val,
     })();
 
@@ -219,7 +219,7 @@ test("Dynamic Class Attribute", () => {
 test("Static Boolean Class", () => {
 
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         class_foo: true,
         class_bar: false,
     })();
@@ -233,7 +233,7 @@ test("Dynamic Boolean Class", () => {
 
     let val = true;
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         class_foo: () => val,
     })();
 
@@ -249,7 +249,7 @@ test("Dynamic Boolean Class", () => {
 test("Static Style", () => {
 
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         style_backgroundColor: "red",
     })();
 
@@ -259,7 +259,7 @@ test("Static Style", () => {
 test("Static Style (named)", () => {
 
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         "style_background-color": "red",
     })();
 
@@ -270,7 +270,7 @@ test("Dynamic Style", () => {
 
     let val = "red";
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         style_backgroundColor: () => val,
     })();
 
@@ -289,7 +289,7 @@ test("Dynamic Style", () => {
 test("Static Display (false)", () => {
 
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         display: false,
     })();
 
@@ -299,7 +299,7 @@ test("Static Display (false)", () => {
 test("Static Display (true)", () => {
 
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         display: true,
     })();
 
@@ -309,7 +309,7 @@ test("Static Display (true)", () => {
 test("Static Display (string)", () => {
 
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         display: "flex",
     })();
 
@@ -320,7 +320,7 @@ test("Dynamic Display (with prior display set)", () => {
 
     let val = true;
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         style: "display: flex",
         display: () => val,
     })();
@@ -348,7 +348,7 @@ test("Dynamic Display (without prior display set)", () => {
 
     let val = true;
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         style: "",
         display: () => val,
     })();
@@ -368,7 +368,7 @@ test("Dynamic Display (without prior display set)", () => {
 test("Static Style Attribute", () => {
 
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         style: "foo",
     })();
 
@@ -379,7 +379,7 @@ test("Dynamic Style Attribute", () => {
 
     let val = "foo";
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         style: () => val,
     })();
 
@@ -393,7 +393,7 @@ test("Dynamic Style Attribute", () => {
 test("Static Attribute", () => {
 
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         attr_dataMyData: "foo",
     })();
 
@@ -404,7 +404,7 @@ test("Dynamic Attribute", () => {
 
     let val = "foo";
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         attr_dataMyData: () => val,
     })();
 

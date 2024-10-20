@@ -4,7 +4,7 @@ import { Template, html } from "../codeonly.js";
 import "./mockdom/mockdom.js";
 
 
-test("Root Bind", () => {
+test("Root Element", () => {
 
     let model = {
         get mydiv() { return this._mydiv; },
@@ -12,23 +12,23 @@ test("Root Bind", () => {
     };
 
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         bind: "mydiv",
     })({ model });
 
     assert.equal(r.rootNode, model.mydiv);
 });
 
-test("Non-root Bind", () => {
+test("Non-root Element", () => {
 
     let model = {};
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes:
+        _: "DIV",
+        $:
         [
             {
-                type: "P",
+                _: "P",
                 bind: "myPara",
                 text: "foo",
             }
@@ -38,7 +38,7 @@ test("Non-root Bind", () => {
     assert.equal(model.myPara.innerText, "foo");
 });
 
-test("Bind conditional", () => {
+test("Conditionally Included Element", () => {
 
     let model = {
         get myPara() { return this._p; },
@@ -47,12 +47,12 @@ test("Bind conditional", () => {
 
     let val = true;
     let r = Template.compile({
-        type: "DIV",
-        childNodes:
+        _: "DIV",
+        $:
         [
             {
                 if: () => val,
-                type: "P",
+                _: "P",
                 bind: "myPara",
                 text: "foo",
             }
@@ -75,18 +75,18 @@ test("Bind conditional", () => {
 
 
 
-test("Simple rebind", () => {
+test("Simple Rebind", () => {
 
     // First bind to this model
     let model = {};
     let ctx = { model };
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes:
+        _: "DIV",
+        $:
         [
             {
-                type: "P",
+                _: "P",
                 bind: "myPara",
                 text: "foo",
             }
@@ -106,7 +106,7 @@ test("Simple rebind", () => {
 });
 
 
-test("Conditional block rebind", () => {
+test("Conditional Rebind", () => {
 
     // First bind to this model
     let model = {};
@@ -115,12 +115,12 @@ test("Conditional block rebind", () => {
     let val = true;
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes:
+        _: "DIV",
+        $:
         [
             {
                 if: () => val,
-                type: "P",
+                _: "P",
                 bind: "myPara",
                 text: "foo",
             }

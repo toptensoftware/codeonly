@@ -7,12 +7,12 @@ import "./mockdom/mockdom.js";
 test("Single root component at root level", () => {
 
     let component = Template.compile({
-        type: "DIV",
+        _: "DIV",
         text: "foo",
     });
 
     let r = Template.compile({
-        type: component,
+        _: component,
     })();
 
     assert.equal(r.isSingleRoot, true);
@@ -24,16 +24,16 @@ test("Single root component at root level", () => {
 test("Single root component as child", () => {
 
     let component = Template.compile({
-        type: "DIV",
+        _: "DIV",
         text: "foo",
     });
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes:
+        _: "DIV",
+        $:
         [
             {
-                type: component,
+                _: component,
             }
         ]
     })();
@@ -46,7 +46,7 @@ test("Single root component as child", () => {
 test("Multi-root component at root level", () => {
 
     let component = Template.compile({
-        childNodes:
+        $:
         [
             "foo", 
             "bar"
@@ -54,7 +54,7 @@ test("Multi-root component at root level", () => {
     });
 
     let r = Template.compile({
-        type: component,
+        _: component,
     })();
 
     assert.equal(r.isSingleRoot, false);
@@ -67,7 +67,7 @@ test("Multi-root component at root level", () => {
 test("Multi-root component as child", () => {
 
     let component = Template.compile({
-        childNodes:
+        $:
         [
             "foo", 
             "bar"
@@ -75,11 +75,11 @@ test("Multi-root component as child", () => {
     });
 
     let r = Template.compile({
-        type: "DIV",
-        childNodes:
+        _: "DIV",
+        $:
         [
             {
-                type: component,
+                _: component,
             }
         ]
     })();
@@ -93,8 +93,8 @@ test("Multi-root component as child", () => {
 test("Conditional single-root component", () => {
 
     let component = Template.compile({
-        type: "DIV",
-        childNodes:
+        _: "DIV",
+        $:
         [
             "foo", 
             "bar"
@@ -103,12 +103,12 @@ test("Conditional single-root component", () => {
 
     let value = true;
     let r = Template.compile({
-        type: "DIV",
-        childNodes:
+        _: "DIV",
+        $:
         [
             {
                 if: () => value,
-                type: component,
+                _: component,
             }
         ]
     })();
@@ -130,7 +130,7 @@ test("Conditional single-root component", () => {
 test("Conditional multi-root component", () => {
 
     let component = Template.compile({
-        childNodes:
+        $:
         [
             "foo", 
             "bar"
@@ -139,12 +139,12 @@ test("Conditional multi-root component", () => {
 
     let value = true;
     let r = Template.compile({
-        type: "DIV",
-        childNodes:
+        _: "DIV",
+        $:
         [
             {
                 if: () => value,
-                type: component,
+                _: component,
             }
         ]
     })();
@@ -168,8 +168,8 @@ test("Conditional multi-root component", () => {
 test("Foreach single-root component", () => {
 
     let component = Template.compile({
-        type: "DIV",
-        childNodes:
+        _: "DIV",
+        $:
         [
             "foo", 
             "bar"
@@ -178,12 +178,12 @@ test("Foreach single-root component", () => {
 
     let value = ["apples", "pears", "bananas"];
     let r = Template.compile({
-        type: "DIV",
-        childNodes:
+        _: "DIV",
+        $:
         [
             {
                 foreach: () => value,
-                type: component,
+                _: component,
             }
         ]
     })();
@@ -201,7 +201,7 @@ test("Foreach single-root component", () => {
 test("Foreach multi-root component", () => {
 
     let component = Template.compile({
-        childNodes:
+        $:
         [
             "foo", 
             "bar"
@@ -210,12 +210,12 @@ test("Foreach multi-root component", () => {
 
     let value = ["apples", "pears", "bananas"];
     let r = Template.compile({
-        type: "DIV",
-        childNodes:
+        _: "DIV",
+        $:
         [
             {
                 foreach: () => value,
-                type: component,
+                _: component,
             }
         ]
     })();
@@ -233,17 +233,17 @@ test("Foreach multi-root component", () => {
 test("Component properties", () => {
 
     let component = Template.compile({
-        type: "DIV",
+        _: "DIV",
         text: "foo",
     });
 
     let val = "foo";
     let r = Template.compile({
-        type: "DIV",
-        childNodes:
+        _: "DIV",
+        $:
         [
             {
-                type: component,
+                _: component,
                 export: "instance",
                 stringProperty: "Hello World",
                 boolProperty: true,
@@ -277,9 +277,9 @@ test("Component properties", () => {
 test("Component Embed Slots (single root)", () => {
 
     let component = Template.compile({
-        type: "a",
+        _: "a",
         $: {
-            type: "embed-slot",
+            _: "embed-slot",
             export: "content",
         }
     });
@@ -287,12 +287,12 @@ test("Component Embed Slots (single root)", () => {
 
     let val = "foo";
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         $:{
             export: "anchor",
-            type: component,
+            _: component,
             content: {
-                type: "span",
+                _: "span",
                 text: () => val,
             }
         }
@@ -310,9 +310,9 @@ test("Component Embed Slots (single root)", () => {
 test("Component Embed Slots (multi root)", () => {
 
     let component = Template.compile({
-        type: "a",
+        _: "a",
         $: {
-            type: "embed-slot",
+            _: "embed-slot",
             export: "content",
         }
     });
@@ -320,13 +320,13 @@ test("Component Embed Slots (multi root)", () => {
 
     let val = "foo";
     let r = Template.compile({
-        type: "DIV",
+        _: "DIV",
         $:{
             export: "anchor",
-            type: component,
+            _: component,
             content: [
                 {
-                    type: "span",
+                    _: "span",
                     text: () => val,
                 },
                 "-baz"
@@ -346,9 +346,9 @@ test("Component Embed Slots (multi root)", () => {
 test("Component Embed Slots ($ content)", () => {
 
     let component = Template.compile({
-        type: "a",
+        _: "a",
         $: {
-            type: "embed-slot",
+            _: "embed-slot",
             export: "content",
         }
     });
@@ -356,9 +356,9 @@ test("Component Embed Slots ($ content)", () => {
 
     let val = "foo";
     let r = Template.compile({
-        type: "div",
+        _: "div",
         $:{
-            type: component,
+            _: component,
             $: [ () => val, "-baz" ]
         }
     })();
