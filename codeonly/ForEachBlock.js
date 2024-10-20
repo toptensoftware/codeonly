@@ -111,6 +111,24 @@ export class ForEachBlock
         // Sentinal nodes
         this.headSentinal = document.createComment(" enter foreach block ");
         this.tailSentinal = document.createComment(" leave foreach block ");
+
+        // Single vs multi-root op helpers
+        let insert, insert_dom, remove_dom;
+        if (this.itemConstructor.isSingleRoot)
+        {
+            this.#insert = this.#single_root_insert;
+            this.#delete = this.#single_root_delete;
+            this.#insert_dom = this.#single_root_insert_dom;
+            this.#remove_dom = this.#single_root_remove_dom;
+        }
+        else
+        {
+            this.#insert = this.#multi_root_insert;
+            this.#delete = this.#multi_root_delete;
+            this.#insert_dom = this.#multi_root_insert_dom;
+            this.#remove_dom = this.#multi_root_remove_dom;
+        }
+        
     }
 
     onObservableUpdate(index, del, ins)
@@ -325,20 +343,6 @@ export class ForEachBlock
             restore: op_restore,
         };
 
-        // Single vs multi-root op helpers
-        let insert, insert_dom, remove_dom;
-        if (this.itemConstructor.isSingleRoot)
-        {
-            insert = this.#single_root_insert;
-            insert_dom = this.#single_root_insert_dom;
-            remove_dom = this.#single_root_remove_dom;
-        }
-        else
-        {
-            insert = this.#multi_root_insert;
-            insert_dom = this.#multi_root_insert_dom;
-            remove_dom = this.#multi_root_remove_dom;
-        }
 
         // Dispatch to handlers
         let pos = 0;
@@ -363,14 +367,6 @@ export class ForEachBlock
             spare[i].destroy();
         }
 
-/*
-        for (let i=0; i<this.itemDoms.length; i++)
-        {
-            if (this.itemDoms[i].context.model != newItems[i])
-                debugger;
-        }
-*/
-
         // Update empty list indicator
         this.#updateEmpty();
         
@@ -381,29 +377,29 @@ export class ForEachBlock
             let useSpare = Math.min(spare.length, op.count);
             if (useSpare)
             {
-                insert_dom.call(this, op.index + range_start, spare.splice(0, useSpare));
+                this.#insert_dom(op.index + range_start, spare.splice(0, useSpare));
                 this.#patch_existing(newItems, newKeys, op.index + range_start, op.index, useSpare);
             }
             if (useSpare < op.count)
             {
-                insert.call(this, newItems, newKeys, op.index + range_start + useSpare, op.index + useSpare, op.count - useSpare);
+                this.#insert(newItems, newKeys, op.index + range_start + useSpare, op.index + useSpare, op.count - useSpare);
             }
         }
 
         function op_delete(op)
         {
-            spare.push(...remove_dom.call(this, op.index + range_start, op.count));
+            spare.push(...this.#remove_dom(op.index + range_start, op.count));
         }
 
         function op_store(op)
         {
-            store.push(...remove_dom.call(this, op.index + range_start, op.count));
+            store.push(...this.#remove_dom(op.index + range_start, op.count));
         }
 
         function op_restore(op)
         {
             pos += op.count;
-            insert_dom.call(this, op.index + range_start, store.slice(op.storeIndex, op.storeIndex + op.count));
+            this.#insert_dom(op.index + range_start, store.slice(op.storeIndex, op.storeIndex + op.count));
             this.#patch_existing(newItems, newKeys, op.index + range_start, op.index, op.count);
         }
 
@@ -467,21 +463,11 @@ export class ForEachBlock
         }
     }
 
-    #insert(newItems, newKeys, index, src_index, count)
-    {
-        if (this.itemConstructor.isSingleRoot)
-            this.#single_root_insert(newItems, newKeys, index, src_index, count);
-        else
-            this.#multi_root_insert(newItems, newKeys, index, src_index, count);
-    }
+    #insert;
+    #insert_dom;
+    #delete;
+    #remove_dom;
 
-    #delete(index, count)
-    {
-        if (this.itemConstructor.isSingleRoot)
-            this.#single_root_delete(index, count);
-        else
-            this.#multi_root_delete(index, count);
-    }
 
     #multi_root_insert(newItems, newKeys, index, src_index, count)
     {
