@@ -9,7 +9,7 @@ function assert_iterables(a, b)
 }
 
 
-test("ForEach Static", () => {
+test("ForEach Content Static", () => {
     let r = Template.compile({
         _: "DIV",
         $: [
@@ -29,10 +29,10 @@ test("ForEach Static", () => {
     assert.equal(r.rootNodes[0].childNodes[4].nodeType, 8);
 });
 
-function assert_foreach_content(r, items, actual, expected)
+function assert_foreach_content(r, items, actual, expected, opts)
 {
     // Initial
-    assert_iterables(Array.from(actual()), Array.from(expected()));
+    assert_iterables(Array.from(actual().map(x => x.innerText)), Array.from(expected()));
 
     // Append
     items.push("D", "E");
@@ -92,14 +92,17 @@ function assert_foreach_content(r, items, actual, expected)
 
     function assert_items()
     {
+        // Do the update
         if (!items.isObservable)
             r.update();
-        assert_iterables(actual(), expected());
+
+        // Check items match
+        assert_iterables(actual().map(x => x.innerText), expected());
     }
 }
 
 
-test("ForEach Dynamic (no key)", () => {
+test("ForEach Content (diff, unkeyed)", () => {
 
     let items = [ "A", "B", "C" ];
 
@@ -119,7 +122,7 @@ test("ForEach Dynamic (no key)", () => {
 
     function actual()
     {
-        return r.rootNodes[0].childNodes.slice(1, -1).map(x => x.innerText);
+        return r.rootNodes[0].childNodes.slice(1, -1);
     }
 
     function expected()
@@ -128,7 +131,7 @@ test("ForEach Dynamic (no key)", () => {
     }
 });
 
-test("ForEach Dynamic (with key)", () => {
+test("ForEach Content (diff, keyed)", () => {
 
     let items = [ "A", "B", "C" ];
 
@@ -151,7 +154,7 @@ test("ForEach Dynamic (with key)", () => {
 
     function actual()
     {
-        return r.rootNodes[0].childNodes.slice(1, -1).map(x => x.innerText);
+        return r.rootNodes[0].childNodes.slice(1, -1);
     }
 
     function expected()
@@ -160,7 +163,7 @@ test("ForEach Dynamic (with key)", () => {
     }
 });
 
-test("ForEach Observable (no key)", () => {
+test("ForEach Content (observable, unkeyed)", () => {
 
     let items = new ObservableArray();
     items.push("A", "B", "C");
@@ -181,7 +184,7 @@ test("ForEach Observable (no key)", () => {
 
     function actual()
     {
-        return r.rootNodes[0].childNodes.slice(1, -1).map(x => x.innerText);
+        return r.rootNodes[0].childNodes.slice(1, -1);
     }
 
     function expected()
@@ -191,7 +194,7 @@ test("ForEach Observable (no key)", () => {
 });
 
 
-test("ForEach Observable (with key)", () => {
+test("ForEach Content (observable, keyed)", () => {
 
     let items = new ObservableArray();
     items.push("A", "B", "C");
@@ -215,7 +218,7 @@ test("ForEach Observable (with key)", () => {
 
     function actual()
     {
-        return r.rootNodes[0].childNodes.slice(1, -1).map(x => x.innerText);
+        return r.rootNodes[0].childNodes.slice(1, -1);
     }
 
     function expected()
@@ -225,7 +228,7 @@ test("ForEach Observable (with key)", () => {
 });
 
 
-test("ForEach Dynamic Fragment", () => {
+test("ForEach Content (fragment)", () => {
 
     let items = [ "A", "B", "C" ];
 
@@ -254,7 +257,7 @@ test("ForEach Dynamic Fragment", () => {
 
     function actual()
     {
-        return outer.childNodes.slice(1, -1).filter((x,i) => i % 2 == 0).map(x => x.innerText);
+        return outer.childNodes.slice(1, -1).filter((x,i) => i % 2 == 0);
     }
 
     function expected()
@@ -265,7 +268,7 @@ test("ForEach Dynamic Fragment", () => {
 });
 
 
-test("ForEach with Conditional Items", () => {
+test("ForEach Content (conditional items)", () => {
 
     let items = [ "A", "B", "C" ];
 
@@ -296,7 +299,7 @@ test("ForEach with Conditional Items", () => {
 
     function actual()
     {
-        return outer.childNodes.slice(1, -1).map(x => x.innerText);
+        return outer.childNodes.slice(1, -1);
     }
 
     function expected()
@@ -306,7 +309,7 @@ test("ForEach with Conditional Items", () => {
 
 });
 
-test("ForEach Index Sensitive", () => {
+test("ForEach Content (index sensitive)", () => {
 
     let items = [ "A", "B", "C" ];
 
@@ -336,7 +339,7 @@ test("ForEach Index Sensitive", () => {
 
 
 
-test("ForEach Nested", () => {
+test("ForEach Content (nested)", () => {
 
     let items = [
         { name: "A", subItems: [ "1", "2"], },
@@ -376,7 +379,7 @@ test("ForEach Nested", () => {
 });
 
 
-test("ForEach Else", () => {
+test("ForEach Conent (with else block)", () => {
 
     let items = [];
 
@@ -465,7 +468,7 @@ class ItemComponent extends Component
     static updateCount = 0;
 }
 
-test("ForEach Component Update", () => {
+test("ForEach Update Count Check", () => {
 
     let items = [ 
         { name: "Apples" },
@@ -522,61 +525,276 @@ test("ForEach Component Update", () => {
 });
 
 
-test("ForEach Dynamic", () => {
+class TextItem extends Component
+{
+    constructor()
+    {
+        super();
+        TextItem.createCount++;
+        TextItem.instanceCount++;
+    }
 
-    let items = [ "A", "B", "C" ];
+    update()
+    {
+        super.update();
+        TextItem.updateCount++;
+    }
+
+    destroy()
+    {
+        super.destroy();
+        TextItem.destroyCount++;
+        TextItem.instanceCount--;
+    }
+
+    static instanceCount;
+    static createCount;
+    static updateCount;
+    static destroyCount;
+
+    static reset()
+    {
+        this.instanceCount = 0;
+        this.updateCount = 0;
+        this.createCount = 0;
+        this.destroyCount = 0;
+    }
+
+    static resetCycle()
+    {
+        this.updateCOunt = 0
+        this.createCount = 0;
+        this.destroyCount = 0;
+    }
+
+    #text;
+    get text() { return this.#text; }
+    set text(value) { this.#text = "" + value; this.invalidate() }
+
+    static template = { 
+        _: "DIV",
+        text: x => x.text,
+    }
+}
+
+test("ForEach Item Life (diff, unkeyed)", () => {
+
+    TextItem.reset();
+
+    let items = [ 
+        "Apples",
+        "Pears",
+        "Bananas",
+        "Berries",
+    ];
 
     let r = Template.compile({
         _: "DIV",
         $: [
             {
-                _: ForEachBlock,
-                items: () => items,
-                template: {
-                    _: "DIV",
-                    text: x => x
-                }
+                foreach: {
+                    items: () => items,
+                },
+                _: TextItem,
+                text: i => i,
             }
         ]
     })();
 
+    assert.equal(TextItem.instanceCount, items.length);
 
-    assert_foreach_content(r, items, actual, expected);
+    items.splice(1, 2,  
+        "Melons",
+        "Oranges",
+        "Lemons",
+    );
+    TextItem.resetCycle();
+    r.update();
+    assert.equal(TextItem.instanceCount, items.length);
+    assert.equal(TextItem.destroyCount, 0);
+    assert.equal(TextItem.createCount, 1);
 
-    function actual()
-    {
-        return r.rootNodes[0].childNodes.slice(1, -1).map(x => x.innerText);
-    }
+    items.splice(1, 2);
+    TextItem.resetCycle();
+    r.update();
+    assert.equal(TextItem.instanceCount, items.length);
+    assert.equal(TextItem.destroyCount, 2);
+    assert.equal(TextItem.createCount, 0);
 
-    function expected()
-    {
-        return items;
-    }
 });
 
 
-class TestComponent extends Component
+function test_item_life(r, items)
 {
+    assert.equal(TextItem.instanceCount, items.length);
 
+    function run_edit(cb)
+    {
+        TextItem.resetCycle();
+
+        // Capture the current item -> node mapping
+        let nodes = r.rootNodes[0].childNodes.slice(1, -1);
+        assert.equal(nodes.length, items.length);
+        let nodeMap = new Map();
+        for (let i=0; i<items.length; i++)
+        {
+            nodeMap.set(items[i], nodes[i]);
+        }
+
+        let edits;
+        if (items.isObservable)
+        {
+            // For observable arrays we need
+            // to do all the edits in a single update
+            // otherwise items aren't re-used in the
+            // same manner.  Copy to a temp array
+            // make the edits and then merge back 
+            let wip = Array.from(items);
+            edits = cb(wip);
+
+            // Work out what actually changed
+            let start = 0;
+            while (start < wip.length && 
+                   start < items.length && 
+                   wip[start] == items[start])
+                start++;
+            let end = 0;
+            while (items.length - end > 0 &&
+                    wip.length - end > 0 &&
+                    items[items.length - end - 1] == wip[wip.length - end - 1])
+                end++;
+
+            // Get the changed range
+            let wip_slice = wip.slice(start, wip.length - end);
+
+            // Splice it back onto the observable array
+            items.splice(start, items.length - end - start, ...wip_slice);
+
+            // Make sure we didn't mess it up
+            assert.deepEqual(wip, Array.from(items));
+        }
+        else
+        {
+            edits = cb(items);
+            r.update();
+        }
+
+        // Check counts
+        assert.equal(TextItem.instanceCount, items.length);
+        assert.equal(TextItem.destroyCount, edits.destroy);
+        assert.equal(TextItem.createCount, edits.create);
+
+        // Make sure items that were in the old set of items
+        // are still using the same set of root nodes
+        nodes = r.rootNodes[0].childNodes.slice(1, -1);
+        assert.equal(nodes.length, items.length);
+        for (let i=0; i<items.length; i++)
+        {
+            if (nodeMap.has(items[i]))
+            {
+                if (nodeMap.get(items[i]) != nodes[i])
+                {
+                    assert(false);
+                }
+            }
+        }
+    }
+
+    run_edit((arr) => {
+        arr.splice(1, 2,  
+            10,
+            20,
+            30,
+        );
+        return { create: 3, destroy: 0 }
+    });
+
+    run_edit((arr) => {
+        arr.splice(1, 2,  
+            40,
+            50,
+            60,
+        );
+        return { create: 1, destroy: 0 }
+    });
+
+    run_edit((arr) => {
+        arr.splice(1, 3,  
+            70,
+            80,
+            90,
+        );
+        return { create: 0, destroy: 0 }
+    });
+
+    run_edit((arr) => {
+        arr.splice(1, 3,  
+            80,
+            90,
+            70,
+        );
+        return { create: 0, destroy: 0 }
+    });
+
+    run_edit((arr) => {
+        arr.splice(1, 2);
+        return { create: 0, destroy: 2 }
+    });
+
+    run_edit((arr) => {
+        arr.push(...arr.splice(0, 2));
+        return { create: 0, destroy: 0 }
+    });
 }
 
+test("ForEach Item Life (diff, keyed)", () => {
 
+    TextItem.reset();
 
-test("ForEach Component", () => {
+    let items = [ 
+    ];
 
-    let items = [ "A", "B", "C" ];
 
     let r = Template.compile({
+        _: "DIV",
         $: [
             {
-                _: ForEachBlock,
-                items: () => items,
-                template: {
-                    _: TestComponent,
-                    text: x => x
-                }
+                foreach: {
+                    items: () => items,
+                    itemKey: i => i,
+                },
+                _: TextItem,
+                text: i => i,
             }
         ]
     })();
 
+    test_item_life(r, items);
 });
+
+
+test("ForEach Item Life (observable, keyed)", () => {
+
+    TextItem.reset();
+
+    let items = ObservableArray.from([ 
+    ]);
+
+
+    let r = Template.compile({
+        _: "DIV",
+        $: [
+            {
+                foreach: {
+                    items: () => items,
+                    itemKey: i => i,
+                },
+                _: TextItem,
+                text: i => i,
+            }
+        ]
+    })();
+
+    test_item_life(r, items);
+});
+

@@ -115,29 +115,35 @@ export class ForEachBlock
 
     onObservableUpdate(index, del, ins)
     {
+        let tempCtx = { outer: this.outer };
         if (ins == 0 && del == 0)
         {
-            this.#patch_existing(this.observableItems, null, index, index, 1);
+            let item = this.observableItems[index];
+            let newItems = [ item ];
+            let newKeys = null;
+            if (this.itemKey)
+            {
+                tempCtx.model = item;
+                newKeys = [ this.itemKey.call(item, item, tempCtx) ];
+            }
+            this.#patch_existing(newItems, newKeys, index, 0, 1);
         }
         else
         {
+            // Over patch or keyed patch?
+            let newKeys = null;
+            let newItems = this.observableItems.slice(index, index + ins);
+            if (this.itemKey)
+            {
+                // Get keys for all new items
+                newKeys = newItems.map((item) => {
+                    tempCtx.model = item;
+                    return this.itemKey.call(item, item, tempCtx);
+                });
+            }
+
             if (ins && del)
             {
-                // Get just the new items
-                let newItems = this.observableItems.slice(index, index + ins);
-                let newKeys = null;
-
-                // Over patch or keyed patch?
-                if (this.itemKey)
-                {
-                    // Get keys for all new items
-                    let tempCtx = { outer: this.outer };
-                     newKeys = newItems.map((item) => {
-                        tempCtx.model = item;
-                        return this.itemKey.call(item, item, tempCtx);
-                    });
-                }
-
                 // Update range
                 this.#update_range(index, del, newItems, newKeys); 
             }
@@ -147,7 +153,7 @@ export class ForEachBlock
             }
             else if (ins != 0)
             {
-                this.#insert(this.observableItems, null, index, ins);
+                this.#insert(newItems, newKeys, index, 0, ins);
             }
 
             this.#updateEmpty();
@@ -397,7 +403,7 @@ export class ForEachBlock
         function op_restore(op)
         {
             pos += op.count;
-            insert_dom.call(this, op.index, store.slice(op.index + range_start, op.index + range_start + op.count));
+            insert_dom.call(this, op.index + range_start, store.slice(op.storeIndex, op.storeIndex + op.count));
             this.#patch_existing(newItems, newKeys, op.index + range_start, op.index, op.count);
         }
 
@@ -461,12 +467,12 @@ export class ForEachBlock
         }
     }
 
-    #insert(newItems, newKeys, index, count)
+    #insert(newItems, newKeys, index, src_index, count)
     {
         if (this.itemConstructor.isSingleRoot)
-            this.#single_root_insert(newItems, newKeys, index, index, count);
+            this.#single_root_insert(newItems, newKeys, index, src_index, count);
         else
-            this.#multi_root_insert(newItems, newKeys, index, index, count);
+            this.#multi_root_insert(newItems, newKeys, index, src_index, count);
     }
 
     #delete(index, count)
