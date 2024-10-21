@@ -18,6 +18,13 @@ export class Header extends Component
                 class: "buttons",
                 $: [
                     {
+                        _: "a",
+                        class: "small button",
+                        attr_href: "https://www.toptensoftware.com/codeonly/",
+                        attr_target: "_blank",
+                        text: "Documentation",
+                    },
+                    {
                         _: "button",
                         class: "small",
                         text: "Save Link",
@@ -48,7 +55,9 @@ Style.declare(`
 
     .buttons
     {
-
+        font-size: 12pt;
+        display: flex;
+        gap: 10px;
     }
 }
 `);
