@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { Document, parseHtml } from "./mockdom/mockdom.js";
+import { Document, parseHtml } from "../minidom/minidom.js";
 
 
 test("text node", () => {
@@ -49,7 +49,7 @@ test("element with mixed child nodes", () => {
     assert.equal(nodes[0].childNodes[0].nodeType, 8);
     assert.equal(nodes[0].childNodes[0].nodeValue, " foo ");
     assert.equal(nodes[0].childNodes[1].nodeType, 3);
-    assert.equal(nodes[0].childNodes[1].nodeValue, " bar baz ");
+    assert.equal(nodes[0].childNodes[1].nodeValue, "   bar   baz   ");
     assert.equal(nodes[0].childNodes[2].nodeType, 1);
     assert.equal(nodes[0].childNodes[2].nodeName, "inner");
 });

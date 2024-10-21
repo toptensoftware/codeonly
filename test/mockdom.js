@@ -1,4 +1,9 @@
 import { setEnvironment } from "../codeonly.js";
-import { createEnvironment } from "./mockdom/mockdom.js";
+import { Document, Window, Node } from "../minidom/minidom.js";
 
-setEnvironment(createEnvironment());
+
+setEnvironment({
+    document: new Document(),
+    window: new Window(),
+    Node: Node,
+})

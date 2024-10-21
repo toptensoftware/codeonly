@@ -1,5 +1,5 @@
 import { strict as assert } from "node:assert";
-import { tokenizer } from "./mockdom/tokenizer.js";
+import { tokenizer } from "../minidom/tokenizer.js";
 import { test } from "node:test";
 
 test("comment", () => {
