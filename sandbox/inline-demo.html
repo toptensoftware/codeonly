@@ -1,0 +1,99 @@
+<html>
+<head>
+<script type="importmap">
+{
+    "imports": {
+        "@toptensoftware/codeonly": "/codeonly.js"
+    }
+}
+</script>
+
+<style>
+.sample
+{
+    border: 1px solid silver;
+}
+.sample-output
+{
+    border: 1px solid red;
+}
+</style>
+    
+</head>
+<body>
+    <h1>Sandbox</h1>
+    <pre class="sample"><code>
+class MyButton extends Component
+{
+    value = 1;
+
+    on_click()
+    {
+        this.value++;
+        this.invalidate()
+    }
+
+    static template = {
+        _: "button",
+        class: "my-button",
+        text: c => `Click Me (${c.value})`,
+        on_click: c => c.on_click(),
+    }
+}
+
+class Main extends Component
+{
+    static template = [ 
+        MyButton, 
+        MyButton, 
+        MyButton 
+    ];
+}
+
+
+Style.declare(`
+    .my-button { margin-right: 10px }
+`);
+
+    </code></pre>
+
+
+    <pre class="sample"><code>
+class Main extends Component
+{
+    static template = {
+        type: "DIV",
+        text: "This is another embedded sample",
+    }
+}
+
+    </code></pre>
+        
+        <script>
+        let sampleId = 0;
+        for (let e of document.querySelectorAll(".sample"))
+        {
+            // Allocate a sample id
+            sampleId++;
+
+            // Create a div after the script
+            let div = document.createElement("div");
+            div.setAttribute("class", "sample-output");
+            div.setAttribute("id", `sample-${sampleId}`);
+            e.after(div);
+
+            // Get the script text
+            script_text = `import { Component, Style } from "@toptensoftware/codeonly"\n`;
+            script_text += e.querySelector("code").textContent;
+            script_text += `\n`;
+            script_text += `new Main().mount(document.getElementById("sample-${sampleId}"))\n`;
+
+            // Create script element
+            let script = document.createElement("script");
+            script.setAttribute("type", "module");
+            script.appendChild(document.createTextNode(script_text));
+            document.body.appendChild(script);
+        }
+    </script>
+</body>
+</html>
