@@ -5,7 +5,7 @@
   "main": "./codeonly.js",
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "build": "vite build"
   },
   "author": "Topten Software",
   "contributors": [
@@ -18,5 +18,8 @@
     "type": "git",
     "url": "git+https://github.com/toptensoftware/codeonly.git"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "vite": "^5.4.9"
+  }
 }

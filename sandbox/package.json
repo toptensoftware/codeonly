@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "Application.js",
+  "type": "module",
   "scripts": {
-    "build": "vite build && cp codeonly.js stylish.css ./dist/"
+    "build": "npm run build --prefix ../ && vite build && cp ../dist/codeonly.js stylish.css ./dist/"
   },
   "author": "",
   "license": "ISC",
