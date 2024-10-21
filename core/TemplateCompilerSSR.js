@@ -6,16 +6,13 @@ import { TemplateHelpers } from "./TemplateHelpers.js";
 import { TemplateNode } from "./TemplateNode.js";
 import { Environment } from "./Enviroment.js";
 import { member } from "./Utils.js";
+import { TemplateLiteralBuilder} from "./TemplateLiteralBuilder.js";
 
 
 export function compileTemplateCode(rootTemplate, copts)
 {
     // Every node in the template will get an id, starting at 1.
     let nodeId = 1;
-
-    // Every dynamic property gets a variable named pNNN where n increments
-    // using this variable
-    let prevId = 1;
 
     // Any callbacks, arrays etc... referenced directly by the template
     // will be stored here and passed back to the compile code via refs
@@ -26,17 +23,11 @@ export function compileTemplateCode(rootTemplate, copts)
     // Create root node info        
     let rootTemplateNode = new TemplateNode(rootTemplate);
 
-    // Storarge for export and bindings
-    let exports = new Map();
-
-
     let closure = create_node_closure(rootTemplateNode, true);
-
 
     // Return the code and context
     return { 
         code: closure.toString(), 
-        isSingleRoot: rootTemplateNode.isSingleRoot,
         refs,
     }
 
@@ -59,30 +50,27 @@ export function compileTemplateCode(rootTemplate, copts)
         // Setup closure functions
         let closure = new ClosureBuilder();
         closure.create = closure.addFunction("create").code;
-        closure.bind = closure.addFunction("bind").code;
-        closure.update = closure.addFunction("update").code;
-        closure.unbind = closure.addFunction("unbind").code;
+        closure.render = closure.addFunction("render", [ "w" ]).code;
         closure.destroy = closure.addFunction("destroy").code;
-        let rebind;
-        if (isRootTemplate)
-            rebind = closure.addFunction("rebind").code;
-        let bindings = new Map();
+
+        // Create a template literal builder
+        let tlb = new TemplateLiteralBuilder();
 
         // Create model variable
         if (isRootTemplate)
         {
             rootClosure = closure;
             rootClosure.code.append(`let model = context.model;`);
-            rootClosure.code.append(`let document = Environment.document;`);
         }
 
         // Call create function
         closure.code.append(`create();`);
-        closure.code.append(`bind();`);
-        closure.code.append(`update();`);
             
         // Render code
         emit_node(ni);
+
+
+        flushTlb();
 
         // Render destroy code
         for (let ln of ni.enumLocalNodes())
@@ -90,63 +78,28 @@ export function compileTemplateCode(rootTemplate, copts)
             renderDestroy(ln);
         }
 
-        // Bind/unbind
-        if (!closure.bind.closure.isEmpty)
-        {
-            closure.create.append(`bind();`);
-            closure.destroy.closure.addProlog().append(`unbind();`);
-        }
-
-        let otherExports = []
-
-        // Single root
-        if (ni.isSingleRoot)
-            otherExports.push(`  get rootNode() { return ${ni.spreadDomNodes()}; },`);
-
         // Root context?
         if (isRootTemplate)
         {
             otherExports.push(`  context,`);
-
-            if (ni == rootTemplateNode)
-            {
-                exports.forEach((value, key) => 
-                    otherExports.push(`  get ${key}() { return ${value}; },`));
-            }
-
-            if (closure.getFunction('bind').isEmpty)
-            {
-                rebind.append(`model = context.model`);
-            }
-            else
-            {
-                rebind.append(`if (model != context.model)`)
-                rebind.braced(() => {
-                    rebind.append(`unbind();`);
-                    rebind.append(`model = context.model`);
-                    rebind.append(`bind();`);
-                });
-            }
-            otherExports.push(`  rebind,`);
-        }
-        else
-        {
-            otherExports.push(`  bind,`);
-            otherExports.push(`  unbind,`);
         }
 
 
         // Render API to the closure
         closure.code.append([
             `return { `,
-            `  update,`,
-            `  destroy,`,
-            `  get rootNodes() { return [ ${ni.spreadDomNodes()} ]; },`,
-            `  isSingleRoot: ${ni.isSingleRoot},`,
+            `  render,`,
             ...otherExports,
             `};`]);
 
         return closure;
+
+        function flushTlb()
+        {
+            let str = tlb.resolve();
+            if (str != "``")
+                closure.render.append(`w.write(${str});`);
+        }
 
         function addNodeLocal(ni)
         {
@@ -154,18 +107,6 @@ export function compileTemplateCode(rootTemplate, copts)
                 rootClosure.addLocal(ni.name);
             else
                 closure.addLocal(ni.name);
-        }
-
-
-        // Sometimes we need a temp variable.  This function
-        // adds it when needed
-        function need_update_temp()
-        {
-            if (!closure.update.temp_declared)
-            {
-                closure.update.temp_declared = true;
-                closure.update.append(`let temp;`);
-            }
         }
 
         // Recursively emit a node from a template
@@ -181,76 +122,36 @@ export function compileTemplateCode(rootTemplate, copts)
         // Emit a static 'text' node
         function emit_text_node(ni)
         {
-            addNodeLocal(ni);
-            closure.create.append(`${ni.name} = document.createTextNode(${JSON.stringify(ni.template)});`);
+            tlb.text(ni.template);
         }
 
         // Emit a static 'html' node
         function emit_html_node(ni)
         {
-            if (ni.nodes.length == 0)
-                return;
-
-            // Emit
-            addNodeLocal(ni);
-            if (ni.nodes.length == 1)
-            {
-                closure.create.append(`${ni.name} = refs[${refs.length}].cloneNode(true);`);
-                refs.push(ni.nodes[0]);
-            }
-            else
-            {
-                closure.create.append(`${ni.name} = refs[${refs.length}].map(x => x.cloneNode(true));`);
-                refs.push(ni.nodes);
-            }
+            tlb.raw(ni.html);
         }
 
-        // Emit a 'dynamic-text' onde
+        // Emit a 'dynamic-text' node
         function emit_dynamic_text_node(ni)
         {
-            // Create
-            addNodeLocal(ni);
-            let prevName = `p${prevId++}`;
-            closure.addLocal(prevName);
-            closure.create.append(`${ni.name} = helpers.createTextNode("");`);
-
-            // Update
-            need_update_temp();
-            closure.update.append(`temp = ${format_callback(refs.length)};`);
-            closure.update.append(`if (temp !== ${prevName})`)
-            closure.update.append(`  ${ni.name} = helpers.setNodeText(${ni.name}, ${prevName} = ${format_callback(refs.length)});`);
-
-            // Store the callback as a ref
+            tlb.expr(`helpers.rawText(${format_callback(refs.length)})`);
             refs.push(ni.template);
         }
 
         // Emit a 'comment' node
         function emit_comment_node(ni)
         {
-            addNodeLocal(ni);
+            tlb.raw("<!--");
             if (ni.template.text instanceof Function)
             {
-                // Dynamic comment
-
-                // Create
-                let prevName = `p${prevId++}`;
-                closure.addLocal(prevName);
-                closure.create.append(`${ni.name} = document.createComment("");`);
-
-                // Update
-                need_update_temp();
-                closure.update.append(`temp = ${format_callback(refs.length)};`);
-                closure.update.append(`if (temp !== ${prevName})`);
-                closure.update.append(`  ${ni.name}.nodeValue = ${prevName} = temp;`);
-
-                // Store callback
+                tlb.text_expr(format_callback(refs.length));
                 refs.push(ni.template.text);
             }
             else
             {
-                // Static
-                closure.create.append(`${ni.name} = document.createComment(${JSON.stringify(ni.template.text)});`);
+                tlb.text(ni.template.text);
             }
+            tlb.raw("-->");
         }
 
         // Emit an 'integrated' component node
@@ -282,17 +183,6 @@ export function compileTemplateCode(rootTemplate, copts)
 
                     nodeConstructors.push(nodeConstructor);
                 }
-            }
-
-            if (ni.integrated.wantsUpdate)
-            {
-                closure.update.append(`${ni.name}.update()`);
-            }
-
-            if (has_bindings)
-            {
-                closure.bind.append(`${ni.name}.bind()`);
-                closure.unbind.append(`${ni.name}.unbind()`);
             }
 
             let data_index = -1;
@@ -336,21 +226,17 @@ export function compileTemplateCode(rootTemplate, copts)
 
             let slotNames = new Set(ni.template.type.slots ?? []);
 
-            let auto_update = ni.template.update === "auto";
-            let auto_modified_name = false;
-
             // Process all keys
+            flushTlb();
             for (let key of Object.keys(ni.template))
             {
                 // Process properties common to components and elements
                 if (process_common_property(ni, key))
                     continue;
 
-                // Ignore for now
+                // Ignore 
                 if (key == "update")
-                {
                     continue;
-                }
 
                 // Compile value as a template
                 if (slotNames.has(key))
@@ -361,10 +247,7 @@ export function compileTemplateCode(rootTemplate, copts)
                     // Emit the template node
                     let propTemplate = new TemplateNode(ni.template[key]);
                     emit_node(propTemplate);
-                    if (propTemplate.isSingleRoot)
-                        closure.create.append(`${ni.name}${member(key)}.content = ${propTemplate.name};`);
-                    else
-                        closure.create.append(`${ni.name}${member(key)}.content = [${propTemplate.spreadDomNodes()}];`);
+                    closure.create.append(`${ni.name}${member(key)}.content = ${propTemplate.name};`);
                     continue;
                 }
 
@@ -377,14 +260,6 @@ export function compileTemplateCode(rootTemplate, copts)
                 }
                 else if (propType === 'function')
                 {
-                    // Dynamic property
-
-                    if (auto_update && !auto_modified_name)
-                    {
-                        auto_modified_name = `${ni.name}_mod`;
-                        closure.update.append(`let ${auto_modified_name} = false;`);
-                    }
-
                     // Create
                     let prevName = `p${prevId++}`;
                     closure.addLocal(prevName);
@@ -392,18 +267,9 @@ export function compileTemplateCode(rootTemplate, copts)
 
                     // Update
                     need_update_temp();
-                    closure.update.append(`temp = ${format_callback(callback_index)};`);
-                    closure.update.append(`if (temp !== ${prevName})`);
-                    if (auto_update)
-                    {
-                        closure.update.append(`{`);
-                        closure.update.append(`  ${auto_modified_name} = true;`);
-                    }
-
-                    closure.update.append(`  ${ni.name}${member(key)} = ${prevName} = temp;`);
-
-                    if (auto_update)
-                        closure.update.append(`}`);
+                    closure.render.append(`temp = ${format_callback(callback_index)};`);
+                    closure.render.append(`if (temp !== ${prevName})`);
+                    closure.render.append(`  ${ni.name}${member(key)} = ${prevName} = temp;`);
 
                     // Store callback
                     refs.push(ni.template[key]);
@@ -421,31 +287,7 @@ export function compileTemplateCode(rootTemplate, copts)
                 }
             }
 
-            // Generate deep update
-            if (ni.template.update)
-            {
-                if (typeof(ni.template.update) === 'function')
-                {
-                    closure.update.append(`if (${format_callback(refs.length)})`);
-                    closure.update.append(`  ${ni.name}.update();`);
-                    refs.push(ni.template.update);
-                }
-                else
-                {
-                    if (auto_update)
-                    {
-                        if (auto_modified_name)
-                        {
-                            closure.update.append(`if (${auto_modified_name})`);
-                            closure.update.append(`  ${ni.name}.update();`);
-                        }
-                    }
-                    else
-                    {
-                        closure.update.append(`${ni.name}.update();`);
-                    }
-                }
-            }
+            closure.render.append(`${ni.name}.render(w);`);
         }
 
         // Emit a 'fragment' noe
@@ -457,27 +299,11 @@ export function compileTemplateCode(rootTemplate, copts)
         // Emit an 'element' node
         function emit_element_node(ni)
         {
-            // Work out namespace
-            let save_xmlns = closure.current_xmlns;
-            let xmlns = ni.template.xmlns;
-            if (xmlns === undefined && ni.template.type == 'svg')
-            {
-                xmlns = "http://www.w3.org/2000/svg";
-            }
-            if (xmlns == null)
-                xmlns = closure.current_xmlns;
+            tlb.raw(`<${ni.template.type}`);
 
-            // Create the element
-            addNodeLocal(ni);
-            if (!xmlns)
-                closure.create.append(`${ni.name} = document.createElement(${JSON.stringify(ni.template.type)});`);
-            else
-            {
-                closure.current_xmlns = xmlns;
-                closure.create.append(`${ni.name} = document.createElementNS(${JSON.stringify(xmlns)}, ${JSON.stringify(ni.template.type)});`);
-            }
-
-            //closure.create.append(`${ni.name}.dataset.coId = context.$instanceId + "-${ni.name}";`)
+            // Resolve class_* and style_* attributes
+            let classList = [];
+            let styleList = [];
 
             for (let key of Object.keys(ni.template))
             {
@@ -487,53 +313,75 @@ export function compileTemplateCode(rootTemplate, copts)
 
                 if (key == "id")
                 {
-                    format_dynamic(ni.template.id, (valueExpr) => `${ni.name}.setAttribute("id", ${valueExpr});`);
+                    tlb.raw(` id="`);
+                    if (ni.template.id instanceof Function)
+                    {
+                        tlb.text_expr(format_callback(refs.length))
+                        refs.push(ni.template.id);
+                    }
+                    else
+                        tlb.text(ni.template.id);
+                    tlb.raw(`"`);
                     continue;
                 }
 
                 if (key == "class")
                 {
-                    format_dynamic(ni.template.class, (valueExpr) => `${ni.name}.setAttribute("class", ${valueExpr});`);
+                    classList.push({ 
+                        name: ni.template[key],
+                        condition: true,
+                    });
                     continue;
                 }
 
                 if (key.startsWith("class_"))
                 {
-                    let className = camel_to_dash(key.substring(6));
-
-                    format_dynamic(ni.template[key], (valueExpr) => `helpers.setNodeClass(${ni.name}, ${JSON.stringify(className)}, ${valueExpr})`);
+                    classList.push({ 
+                        name: camel_to_dash(key.substring(6)), 
+                        condition: ni.template[key] 
+                    });
                     continue;
                 }
 
                 if (key == "style")
                 {
-                    format_dynamic(ni.template.style, (valueExpr) => `${ni.name}.setAttribute("style", ${valueExpr});`);
+                    styleList.push(ni.template[key]);
                     continue;
                 }
 
                 if (key.startsWith("style_"))
                 {
-                    let styleName = camel_to_dash(key.substring(6));
-                    format_dynamic(ni.template[key], (valueExpr) => `helpers.setNodeStyle(${ni.name}, ${JSON.stringify(styleName)}, ${valueExpr})`);
-                    continue;
+                    styleList.push({ 
+                        name: camel_to_dash(key.substring(6)), 
+                        value: ni.template[key] 
+                    });
                 }
 
                 if (key == "display")
                 {
-                    if (ni.template.display instanceof Function)
+                    if (ni.template.display instanceof Function || 
+                        typeof(ni.template.display )== "string")
                     {
-                        closure.addLocal(`${ni.name}_prev_display`);
-                        format_dynamic(ni.template[key], (valueExpr) => `${ni.name}_prev_display = helpers.setNodeDisplay(${ni.name}, ${valueExpr}, ${ni.name}_prev_display)`);
+                        styleList.push({
+                            name: "display",
+                            value: ni.template.display,
+                        });
                     }
-                    else
+                    else if (ni.template.display === false || ni.template.display === null || ni.template.display === undefined)
                     {
-                        if (typeof(ni.template.display) == 'string')
-                            closure.create.append(`${ni.name}.style.display = '${ni.template.display}';`);
-                        else if (ni.template.display === false || ni.template.display === null || ni.template.display === undefined)
-                            closure.create.append(`${ni.name}.style.display = 'none';`);
-                        else if (ni.template.display !== true)
-                            throw new Error("display property must be set to string, true, false, or null")
+                        styleList.add({
+                            name: "display",
+                            value: "none",
+                        });
                     }
+                    else if (ni.template.display !== true)
+                        throw new Error("display property must be set to function, string, true, false, or null")
+
+                    continue;
+                }
+
+                if (key == "text")
+                {
                     continue;
                 }
 
@@ -545,39 +393,73 @@ export function compileTemplateCode(rootTemplate, copts)
                     if (!closure.current_xmlns)
                         attrName = camel_to_dash(attrName);
 
-                    format_dynamic(ni.template[key], (valueExpr) => `${ni.name}.setAttribute(${JSON.stringify(attrName)}, ${valueExpr})`);
-                    continue;
-                }
-
-                if (key == "text")
-                {
-                    if (ni.template.text instanceof Function)
-                    {
-                        format_dynamic(ni.template.text, (valueExpr) => `helpers.setElementText(${ni.name}, ${valueExpr})`);
-                    }
-                    else if (ni.template.text instanceof HtmlString)
-                    {
-                        closure.create.append(`${ni.name}.innerHTML = ${JSON.stringify(ni.template.text.html)};`);
-                    }
-                    if (typeof(ni.template.text) === 'string')
-                    {
-                        closure.create.append(`${ni.name}.innerText = ${JSON.stringify(ni.template.text)};`);
-                    }
+                    tlb.raw(` ${attrName}="`);
+                    tlb_dynamic(this.template[key]);
+                    tlb.raw(`"`);
                     continue;
                 }
 
                 throw new Error(`Unknown element template key: ${key}`);
             }
 
-            // Emit child nodes
-            emit_child_nodes(ni);
-            
-            // Add all the child nodes to this node
-            if (ni.childNodes?.length)
+            // Classes
+            if (classList.length > 0)
             {
-                closure.create.append(`${ni.name}.append(${ni.spreadChildDomNodes()});`);
+                tlb.raw(` class="`);
+                let needSpace = false;
+                for (let cls of classList)
+                {
+                    if (cls.condition instanceof Function)
+                    {
+                        if (needSpace)
+                            tlb.raw(" ");
+                        tlb.expr(`${format_callback(cls.condition)} ? ${htmlEncode(cls.name)} : ""`);
+                        needSpace = true;
+                    }
+                    else if (cls.condition)
+                    {
+                        if (needSpace)
+                            tlb.raw(" ");
+                        tlb.text(cls.name);
+                        needSpace = true;
+                    }
+                    tlb.raw(" ");
+                }
+                tlb.raw(`"`);
             }
-            closure.current_xmlns = save_xmlns;
+
+            // Styles
+            if (styleList.length > 0)
+            {
+                tlb.raw(` style="`);
+                tlb.raw(`"`);
+            }
+
+            if (ni.template.text || ni.childNodes.length > 0)
+            {
+                tlb.raw(">");
+
+                // Inner Text?
+                if (ni.template.text)
+                    tlb_dynamic(ni.template.text);
+
+                // Emit child nodes
+                emit_child_nodes(ni);
+
+                tlb.raw(`</${this.template.type}`);
+            }
+            else
+            {
+                if (this.template.type.match(/^(area|base|br|col|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)$/i))
+                {
+                    tlb.raw("/>");
+                }
+                else
+                {
+                    tlb.raw(`></${this.template.type}`);
+                }
+            }
+            
         }
 
         // Emit the child nodes of an element or fragment node
@@ -601,49 +483,13 @@ export function compileTemplateCode(rootTemplate, copts)
                 return true;
 
             if (key == "export")
-            {
-                if (typeof(ni.template.export) !== 'string')
-                    throw new Error("'export' must be a string");
-                if (exports.has(ni.template.export))
-                    throw new Error(`duplicate export name '${ni.template.export}'`);
-                exports.set(ni.template.export, ni.name);
                 return true;
-            }
 
             if (key == "bind")
-            {
-                if (typeof(ni.template.bind) !== 'string')
-                    throw new Error("'bind' must be a string");
-                if (bindings.has(ni.template.export))
-                    throw new Error(`duplicate bind name '${ni.template.bind}'`);
-
-                // Remember binding
-                bindings.set(ni.template.bind, true);
-
-                // Generate it
-                closure.bind.append(`model${member(ni.template.bind)} = ${ni.name};`);
-                closure.unbind.append(`model${member(ni.template.bind)} = null;`);
                 return true;
-            }
 
             if (key.startsWith("on_"))
-            {
-                let eventName = key.substring(3);
-                if (!(ni.template[key] instanceof Function))
-                    throw new Error(`event handler for '${key}' is not a function`);
-
-                // create a variable name for the listener
-                if (!ni.listenerCount)
-                    ni.listenerCount = 0;
-                ni.listenerCount++;
-                let listener_name = `${ni.name}_ev${ni.listenerCount}`;
-                closure.addLocal(listener_name);
-
-                // Add listener
-                closure.create.append(`${listener_name} = helpers.addEventListener(() => model, ${ni.name}, ${JSON.stringify(eventName)}, refs[${refs.length}]);`);
-                refs.push(ni.template[key]);
                 return true;
-            }
 
             if (key == "debug_create")
             {
@@ -657,21 +503,20 @@ export function compileTemplateCode(rootTemplate, copts)
                     closure.create.append("debugger;");
                 return true;
             }
-            if (key == "debug_update")
+            if (key == "debug_render")
             {
                 if (typeof(ni.template[key]) === 'function')
                 {
-                    closure.update.append(`if (${format_callback(refs.length)})`);
-                    closure.update.append(`  debugger;`);
+                    closure.render.append(`if (${format_callback(refs.length)})`);
+                    closure.render.append(`  debugger;`);
                     refs.push(ni.template[key]);
                 }
                 else if (ni.template[key])
-                    closure.update.append("debugger;");
+                    closure.render.append("debugger;");
                 return true;
             }
-            if (key == "debug_render")
+            if (key == "debug_update")
                 return true;
-
 
             return false;
         }
@@ -685,6 +530,24 @@ export function compileTemplateCode(rootTemplate, copts)
         {
             return `refs[${index}].call(model, model, context)`
         }
+
+        function tlb_dynamic(value)
+        {
+            if (value instanceof Function)
+            {
+                tlb.expr(helpers.rawText(format_callback(refs.length)));
+                refs.push(value);
+            }
+            else if (value instanceof HtmlString)
+            {
+                tlb.raw(value.html);
+            }
+            else
+            {
+                tlb.text(value);
+            }
+        }
+
 
         // Helper to format a dynamic value on a node (ie: a callback)
         function format_dynamic(value, formatter)
@@ -717,21 +580,8 @@ export function compileTemplateCode(rootTemplate, copts)
             if (ni.isComponent || ni.isIntegrated)
             {
                 closure.destroy.append(`${ni.name}.destroy();`);
+                closure.destroy.append(`${ni.name} = null;`);
             }            
-
-            if (ni.listenerCount)
-            {
-                for (let i=0; i<ni.listenerCount; i++)
-                {
-                    closure.destroy.append(`${ni.name}_ev${i+1}?.();`);
-                    closure.destroy.append(`${ni.name}_ev${i+1} = null;`);
-                }
-            }
-
-            if (ni.kind == 'html' && ni.nodes.length == 0)
-                return;
-
-            closure.destroy.append(`${ni.name} = null;`);
         }
     }
 }
@@ -756,10 +606,6 @@ export function compileTemplate(rootTemplate, compilerOptions)
         context.$instanceId = _nextInstanceId++;
         return templateFunction(Environment, code.refs, TemplateHelpers, context ?? {});
     }
-
-    // Store meta data about the component on the function since we need this before 
-    // construction
-    compiledTemplate.isSingleRoot = code.isSingleRoot;
 
     return compiledTemplate;
 }

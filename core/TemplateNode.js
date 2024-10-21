@@ -47,14 +47,20 @@ export class TemplateNode
             this.kind = "text";
         else if (template instanceof HtmlString)
         {
-            // Use div to parse HTML
-            let div = Environment.document.createElement('div');
-            div.innerHTML = template.html;
-
-            // Store nodes
+            // HTML
             this.kind = "html";
-            this.nodes = [...div.childNodes];
-            this.nodes.forEach(x => x.remove());
+            this.html = template.html;
+
+            if (Environment.document)
+            {
+                // Use div to parse HTML
+                let div = Environment.document.createElement('div');
+                div.innerHTML = template.html;
+
+                // Store nodes
+                this.nodes = [...div.childNodes];
+                this.nodes.forEach(x => x.remove());
+            }
         }
         else if (template instanceof Function)
             this.kind = "dynamic_text";

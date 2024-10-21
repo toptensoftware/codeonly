@@ -212,3 +212,13 @@ export function compareStringsI(a, b)
         return 1;
     return 0;
 }
+
+let rxIdentifier = /^[a-zA-Z$][a-zA-Z0-9_$]*$/;
+
+export function member(name)
+{
+    if (name.match(rxIdentifier))
+        return `.${name}`;
+    else
+        return `[${JSON.stringify(name)}]`;
+}

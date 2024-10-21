@@ -1,7 +1,16 @@
 import { HtmlString } from "./HtmlString.js";
+import { htmlEncode } from "./htmlEncode.js";
 
 export class TemplateHelpers 
 {
+    static rawText(text)
+    {
+        if (text instanceof HtmlString)
+            return text.html;
+        else
+            return htmlEncode(text);
+    }
+
     // Create either a text node from a string, or
     // a SPAN from an HtmlString
     static createTextNode(text)
