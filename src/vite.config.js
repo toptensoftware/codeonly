@@ -6,6 +6,7 @@ import replace from '@rollup/plugin-replace';
 
 export default defineConfig({
   build: {
+    outDir: '../dist',
     lib: {
       // Could also be a dictionary or array of multiple entry points
       entry: resolve(__dirname, './codeonly.js'),

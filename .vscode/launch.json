@@ -2,7 +2,7 @@
     "configurations": [
     {
         "name": "Launch Program",
-        "program": "${workspaceFolder}/ssrdemo/server.js",
+        "program": "${workspaceFolder}/samples/ssrdemo/server.js",
         "request": "launch",
         "skipFiles": [
             "<node_internals>/**"

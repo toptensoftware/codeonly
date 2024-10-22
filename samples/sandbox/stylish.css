@@ -1,0 +1,802 @@
+*, *::before, *::after 
+{
+    box-sizing: border-box;
+}
+
+:root
+{
+    /* dark colors */
+    --dark-fore-color: white;
+    --dark-back-color: black;
+    --dark-button-color: #444;
+    --dark-accent-color: #7160E8;
+    --dark-success-color: #00bc8c;
+    --dark-info-color: #3498db;
+    --dark-warning-color: #f39c12;
+    --dark-danger-color: #e74c3c;
+    --dark-body-back-color: #1e1e1e;
+
+    /* light colors */
+    --light-fore-color: black;
+    --light-back-color: white;
+    --light-button-color: #444;
+    --light-accent-color: #7160E8;
+    --light-success-color: #18bc9c;
+    --light-info-color: #3498db;
+    --light-warning-color: #f39c12;
+    --light-danger-color: #e74c3c;
+    --light-body-back-color: white;
+
+    --dark-fore-color-l: 100;
+    --dark-back-color-l: 0;
+    --light-fore-color-l: 0;
+    --light-back-color-l: 100;
+
+
+    --font-family: sans-serif;
+    --color-scheme: dark;
+
+    --contrast-color: white;
+    --class-text-color: inherit; 
+    --class-back-color: var(--button-color); 
+    --class-fore-color: var(--contrast-color); 
+    --class-accent-color: var(--accent-color);
+    --link-color: var(--accent-color);
+    --focus-color: rgb(from var(--fore-color) r g b / 30%);
+    /* Use this to blend accent color into focus color
+        --focus-color: color-mix(in hsl, 
+                hsl(from var(--accent-color) h s l), 
+                hsl(from var(--accent-color) h s var(--fore-color-l)) 100%
+            );
+    */
+    /*
+    --code-color: color-mix(in hsl, 
+            hsl(from var(--accent-color) h s l), 
+            hsl(from var(--accent-color) h s var(--fore-color-l)) 30%
+        );
+        */
+    --code-color: var(--accent-color);
+    --gridline-color: rgb(from var(--fore-color) r g b / 20%);
+    --disabled-color: color-mix(in srgb, #808080, var(--back-color) 30%);
+    --input-back-color: color-mix(in srgb, #808080, var(--back-color) 85%);
+
+    color-scheme: var(--color-scheme);
+    color: var(--fore-color);
+
+    font-family: var(--font-family);
+    font-size: 1.2rem;
+    line-height: 1.2;
+}
+
+/* These styles are used when html class set to "dark" or "light" */
+:root.dark
+{
+    --color-scheme: dark;
+    --fore-color-l: 100;
+    --back-color-l: 0;
+    --fore-color: var(--dark-fore-color);
+    --back-color: var(--dark-back-color);
+    --button-color: var(--dark-button-color);
+    --accent-color: var(--dark-accent-color);
+    --info-color: var(--dark-info-color);
+    --warning-color: var(--dark-warning-color);
+    --danger-color: var(--dark-danger-color);
+    --success-color: var(--dark-success-color);
+    --body-back-color: var(--dark-body-back-color);
+}
+:root.light
+{
+    --color-scheme: light;
+    --fore-color-l: 0;
+    --back-color-l: 100;
+    --fore-color: var(--light-fore-color);
+    --back-color: var(--light-back-color);
+    --button-color: var(--light-button-color);
+    --accent-color: var(--light-accent-color);
+    --info-color: var(--light-info-color);
+    --warning-color: var(--light-warning-color);
+    --danger-color: var(--light-danger-color);
+    --success-color: var(--light-success-color);
+    --body-back-color: var(--light-body-back-color);
+}
+
+/* These styles are used when html class not set */
+@media (prefers-color-scheme: dark)
+{
+    :root
+    {
+        --color-scheme: dark;
+        --fore-color-l: 100;
+        --back-color-l: 0;
+        --fore-color: var(--dark-fore-color);
+        --back-color: var(--dark-back-color);
+        --button-color: var(--dark-button-color);
+        --accent-color: var(--dark-accent-color);
+        --info-color: var(--dark-info-color);
+        --warning-color: var(--dark-warning-color);
+        --danger-color: var(--dark-danger-color);
+        --success-color: var(--dark-success-color);
+        --body-back-color: var(--dark-body-back-color);
+    }
+}
+@media (prefers-color-scheme: light)
+{
+    :root
+    {
+        --color-scheme: light;
+        --fore-color-l: 0;
+        --back-color-l: 100;
+        --fore-color: var(--light-fore-color);
+        --back-color: var(--light-back-color);
+        --button-color: var(--light-button-color);
+        --accent-color: var(--light-accent-color);
+        --info-color: var(--dark-info-color);
+        --warning-color: var(--dark-warning-color);
+        --danger-color: var(--dark-danger-color);
+        --success-color: var(--light-success-color);
+        --body-back-color: var(--light-body-back-color);
+    }
+}
+
+body
+{
+    background-color: var(--body-back-color);
+}
+
+svg
+{
+    fill: currentColor;
+}
+
+.accent
+{ 
+    --class-text-color: var(--accent-color); 
+    --class-back-color: var(--accent-color); 
+    --class-fore-color: var(--contrast-color); 
+    --class-accent-color: var(--accent-color); 
+    --focus-color: rgb(from var(--accent-color) r g b / 50%);
+}
+.success 
+{ 
+    --class-text-color: var(--success-color); 
+    --class-back-color: var(--success-color); 
+    --class-fore-color: var(--contrast-color); 
+    --class-accent-color: var(--success-color); 
+    --focus-color: rgb(from var(--success-color) r g b / 50%);
+}
+.info 
+{ 
+    --class-text-color: var(--info-color); 
+    --class-back-color: var(--info-color); 
+    --class-fore-color: var(--contrast-color); 
+    --class-accent-color: var(--info-color); 
+    --focus-color: rgb(from var(--info-color) r g b / 50%);
+}
+.warning 
+{ 
+    --class-text-color: var(--warning-color); 
+    --class-back-color: var(--warning-color); 
+    --class-fore-color: var(--contrast-color); 
+    --class-accent-color: var(--warning-color); 
+    --focus-color: rgb(from var(--warning-color) r g b / 50%);
+}
+.danger 
+{ 
+    --class-text-color: var(--danger-color); 
+    --class-back-color: var(--danger-color); 
+    --class-fore-color: var(--contrast-color); 
+    --class-accent-color: var(--danger-color); 
+    --focus-color: rgb(from var(--danger-color) r g b / 50%);
+}
+
+p, span, h1, h2, h3, h4, h5, h6
+{ color: var(--class-text-color); }
+
+code
+{
+    color: var(--code-color);
+}
+
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.75rem; }
+h4 { font-size: 1.5rem; }
+h5 { font-size: 1.25rem; }
+h6 { font-size: 1rem; }
+
+.muted { opacity: 0.5; }
+.left { text-align: left; }
+.center { text-align: center; }
+.right { text-align: right; }
+.hidden { visibility: hidden; }
+
+a
+{
+    --link-class-text-color: var(--class-text-color, var(--link-color));
+    color: var(--link-class-text-color);
+    text-decoration: none;
+
+    &:hover
+    {
+        text-decoration: underline;
+        color: color-mix(in hsl, 
+                hsl(from var(--link-class-text-color) h s l), 
+                hsl(from var(--link-class-text-color) h s var(--fore-color-l)) 20%
+            );
+
+    }
+}
+
+input, button
+{
+    font-family: var(--font-family);
+    font-size: 1rem;
+}
+
+button, 
+a.button,
+input[type=button],
+input[type="file"]::file-selector-button
+{
+    cursor: pointer;
+    display:inline-block;
+    text-decoration: none;
+    background-color: var(--class-back-color);
+    color: var(--class-fore-color);
+    padding: .575rem .75rem;
+    border-width: 0;
+    border-radius: 0.3rem;
+    border-style: solid;
+    font-size: 1rem;
+    line-height: 1rem;
+    white-space: nowrap;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+
+    &:hover:not(:disabled)
+    {
+        background-color: rgb(from var(--class-back-color) r g b / 80%);
+    }
+
+    &:active:not(:disabled)
+    {
+        background-color: rgb(from var(--class-back-color) r g b / 60%);
+    }    
+
+    &:focus-visible
+    {
+        outline: none;
+        box-shadow: 0 0 0 0.20rem var(--focus-color);
+    }
+
+    &:disabled
+    {
+        opacity: 0.5;
+    }
+
+    &.subtle:not(:focus-visible):not(:hover)
+    {
+        background: none;
+        color: var(--fore-color);
+    }
+
+    &.dropdown
+    {
+        &::after 
+        { 
+            content:'';
+            display: inline-block;
+            margin-left: 0.25em;
+            vertical-align: .1em;
+            border-top: 0.3em solid;
+            border-right: 0.3em solid transparent;
+            border-bottom: 0;
+            border-left: 0.3em solid transparent;        
+        }
+    }
+
+    /* <button class="dropdown standalone">&nbsp;</button> */
+    &.dropdown.standalone
+    {
+        &::after 
+        { 
+            margin-left: 0;
+            transform: translateX(-0.15rem);
+        }
+    }
+
+    &.small
+    {
+        font-size: 0.75rem;
+        padding: .24rem .56rem;
+    }
+
+    &.large
+    {
+        font-size: 1.2rem;
+        padding: .7rem .9rem;
+    }
+
+}
+
+/* Radio buttons and Checkboxes styled to look like buttons */
+input.button[type='radio'],
+input.button[type='checkbox']
+{
+    position: absolute;
+    clip: rect(0, 0, 0, 0);
+    pointer-events: none;
+    & + label
+    {
+        margin-right: 0;
+        display:inline-block;
+        background-color: transparent;
+        color: var(--fore-color);
+        border-radius: 0.3rem;
+        border-width: 1px;
+        border-color: var(--class-back-color);
+        padding-top: calc(0.575rem - 1px);
+        padding-bottom: calc(0.575rem - 1px);
+        padding-left: calc(0.75rem - 1px);
+        padding-right: calc(0.75rem - 1px);
+        border-style: solid;
+        font-size: 1rem;
+        line-height: 1rem;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+
+        &:hover
+        {
+            background-color: rgb(from var(--class-back-color) r g b / 30%);
+        }
+    }
+    & + label.subtle
+    {
+        padding: .575rem .75rem;
+        border: none;
+
+        &:hover
+        {
+            background-color: rgb(from var(--class-fore-color) r g b / 10%);
+        }
+    }
+    &:checked
+    {
+        & + label
+        {
+            background-color: var(--class-back-color);
+            color: var(--class-fore-color);
+
+            &:hover
+            {
+                background-color: rgb(from var(--class-back-color) r g b / 80%);
+            }
+        }
+
+    }
+    &:active
+    {
+        & + label
+        {
+            &:hover
+            {
+                background-color: rgb(from var(--class-back-color) r g b / 20%);
+            }
+        }
+
+    }
+    &:active:checked
+    {
+        & + label
+        {
+            &:hover
+            {
+                background-color: rgb(from var(--class-back-color) r g b / 40%);
+            }
+        }
+    }
+    &:focus-visible 
+    {
+        & + label
+        {
+            outline: none;
+            box-shadow: 0 0 0 0.20rem var(--focus-color);
+        }
+    }
+}
+
+
+input[type="file"]::file-selector-button:hover
+{
+    background-color: rgb(from var(--class-back-color) r g b / 80%);
+}
+input[type="file"]::file-selector-button:active
+{
+    background-color: rgb(from var(--class-back-color) r g b / 60%);
+}    
+
+
+/* Standard checkbox/radio button  (common)*/
+input[type="checkbox"],
+input[type="radio"]
+{
+    appearance: none;
+    outline: none;
+    display: inline-block;
+    height: 1rem;
+    width: 1rem;
+    position: relative;
+    margin: 0;
+    cursor: pointer;
+    border: 1px solid var(--fore-color);
+    background: var(--input-back-color);
+    transform: translateY(0.1rem);
+    margin-right: 0.4rem;
+    transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+
+    &:checked
+    {
+        background-color: var(--class-accent-color);
+        border-color: var(--class-accent-color);
+    }
+
+    &:focus-visible
+    {
+        outline: none;
+        box-shadow: 0 0 0 0.20rem var(--focus-color);
+    }
+
+    &:disabled
+    {
+        background-color: var(--disabled-color);
+        border-color: var(--disabled-color);
+    }
+
+    &:disabled + label
+    {
+        color: var(--disabled-color);
+    }
+
+}
+
+label:has(input)
+{
+    margin-right: 0.75rem;     /* A bit of space to the right for when stacked horizontally */
+}
+
+label:has(input:disabled)
+{
+    color:var(--disabled-color);
+}
+
+/* Checkbox */
+input[type="checkbox"]
+{
+    border-radius: 3px;
+    &:checked
+    {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+    }
+}
+
+/* Radio Button */
+input[type="radio"]
+{
+    border-radius: 10px;
+    &:checked
+    {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%23fff'/%3e%3c/svg%3e");
+    }
+}
+
+/* Switch Style Checkbox */
+input.switch[type="checkbox"]
+{
+    width:30px;
+    border-radius:10px;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23888'/%3e%3c/svg%3e");
+    background-position: left center;
+    background-repeat: no-repeat;
+    transition: background-position 0.15s ease-in-out;
+
+    &:checked
+    {
+        background-position: right center;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+    }
+    &:disabled
+    {
+        background-image: none;
+    }
+}
+
+hr
+{
+    border-color: var(--gridline-color);
+}
+
+.spinner
+{
+    display:inline-block;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    border-width: 2px;
+    border-color: var(--class-text-color);
+    border-style: solid;
+    border-top-color: transparent;
+    animation: spinner .75s linear infinite;
+
+    &.xsmall
+    {
+        width: 0.75rem;
+        height: 0.75rem;
+        border-width: 2px;
+    }
+
+    &.small
+    {
+        width: 1rem;
+        height: 1rem;
+        border-width: 2px;
+    }
+
+    &.large
+    {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-width: 3.5px;
+    }
+
+    &.xlarge
+    {
+        width: 4rem;
+        height: 4rem;
+        border-width: 5.3px;
+    }
+}
+
+@keyframes spinner 
+{
+    to { transform: rotate(360deg); }
+}
+
+span.pill
+{
+    background-color: var(--class-back-color);
+    color: var(--class-fore-color);
+    display:inline-block;
+    padding: .15rem .65rem;
+    border-radius: 1rem;
+    font-weight: 700;
+
+    &.small
+    {
+        font-size: .75em;
+    }
+    &.large
+    {
+        font-size: 1.25em;
+    }
+}
+
+input[type=date],
+input[type=datedatetime-local],
+input[type=email],
+input[type=month],
+input[type=number],
+input[type=password],
+input[type=search],
+input[type=tel],
+input[type=text],
+input[type=time],
+input[type=url],
+input[type=week],
+input[type=file],
+textarea
+{
+    padding: .575rem .75rem;
+    background-color: var(--input-back-color);
+    color: var(--fore-color);
+    border-width: 1px;
+    border-radius: 5px;
+    border-style: solid;
+    border-color: var(--class-back-color);
+    font-family: var(--font-family);
+    font-size: 1rem;
+    line-height: 1rem;
+    outline: none;
+    padding: .575rem .75rem;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+
+
+    &::selection 
+    {
+        background-color: var(--accent-color);
+        color: var(--class-fore-color);
+    }
+      
+    &:focus-visible:not(:disabled)
+    {
+        outline: none;
+        box-shadow: 0 0 0 0.20rem var(--focus-color);
+    }
+
+    &::placeholder
+    {
+        color: rgb(from var(--fore-color) r g b / 33%);
+    }
+    
+}
+
+input[type=file]
+{
+    padding: 0.3rem;
+}
+
+input[type=file]::file-selector-button
+{
+    padding: .275rem .45rem;
+}
+
+.control-group
+{
+    position: relative;
+    display: inline-flex;
+    align-items: baseline;
+
+    span
+    {
+        background-color: var(--class-back-color);
+        border-radius: 5px;
+        padding: .575rem .75rem;
+        border-top: 1px solid var(--class-back-color);
+        border-bottom: 1px solid var(--class-back-color);
+        color: var(--class-fore-color);
+        z-index: -1;
+    }
+
+    :not(:first-child),
+    label:not(:first-of-type),
+    input.button[type='radio'] + label:not(:first-of-type),
+    input.button[type='checkbox'] + label:not(:first-of-type)
+    {
+        border-top-left-radius: 0px;
+        border-bottom-left-radius: 0px;
+    }
+
+    :not(:last-child),
+    label:not(:last-of-type),
+    input.button[type='radio'] + label:not(:last-of-type),
+    input.button[type='checkbox'] + label:not(:last-of-type)
+    {
+        border-top-right-radius: 0px;
+        border-bottom-right-radius: 0px;
+    }
+
+    input[type=date],
+    input[type=datedatetime-local],
+    input[type=email],
+    input[type=month],
+    input[type=number],
+    input[type=password],
+    input[type=search],
+    input[type=tel],
+    input[type=text],
+    input[type=time],
+    input[type=url],
+    input[type=week]
+    {
+        margin: 0;
+    }
+}
+
+
+
+dialog
+{
+    all: revert;
+    padding: 0;
+    border-radius: 10px;
+    border-color: var(--accent-color);
+    form
+    {
+        all: revert;
+        margin: 0;
+    }
+    header
+    {
+        all: revert;
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid var(--gridline-color);
+
+        button.close
+        {
+            padding: 0.2rem;
+            margin: 0.2rem;
+            border-radius: 50%;
+            width: 2rem;
+            height: 2rem;
+            &::before
+            {
+                content: "✖";
+                /* -- back button style --
+                content: "➜";
+                display: inline-block;
+                transform: rotate(180deg);   
+                */
+            }
+        }
+
+        .title
+        {
+            font-weight: bold;
+        }
+    }
+    main
+    {
+        all: revert;
+        margin: 1rem;
+    }
+    footer
+    {
+        all: revert;
+        display: flex;
+        gap: 10px;
+        padding: 10px;
+        justify-content: end;
+        border-top: 1px solid var(--gridline-color);
+    }
+    &::backdrop 
+    {
+        all: revert;
+        background-color: rgba(0, 0, 0, 0.75);
+    }
+}
+
+
+.grid
+{
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    align-items: center;
+    grid-row-gap: 0.5rem;
+    grid-column-gap: 0.5rem;
+    .cell-right { text-align: right; }
+    .cell-left { text-align: left; }
+    .cell-center { text-align: center; }
+
+    .cell-1-1 { grid-column: 1 / -1; }
+    .cell-1-2 { grid-column: 1 / 7; }
+    .cell-2-2 { grid-column: 7 / -1; }
+    .cell-1-3 { grid-column: 1 / 5; }
+    .cell-2-3 { grid-column: 5 / 9; }
+    .cell-3-3 { grid-column: 9 / -1; }
+    .cell-12-3 { grid-column: 1 / 9; }
+    .cell-23-3 { grid-column: 5 / -1; }
+    .cell-1-4 { grid-column: 1 / 4; }
+    .cell-2-4 { grid-column: 4 / 7; }
+    .cell-3-4 { grid-column: 7 / 10; }
+    .cell-4-4 { grid-column: 10 / -1; }
+    .cell-13-4 { grid-column: 1 / 10; }
+    .cell-23-4 { grid-column: 4 / 10; }
+    .cell-24-4 { grid-column: 4 / -1; }
+    .cell-1-6 { grid-column: 1 / 3; }
+    .cell-2-6 { grid-column: 3 / 5; }
+    .cell-3-6 { grid-column: 5 / 7; }
+    .cell-4-6 { grid-column: 7 / 9; }
+    .cell-5-6 { grid-column: 9 / 11; }
+    .cell-6-6 { grid-column: 11 / -1; }
+    .cell-23-6 { grid-column: 3 / 7; }
+    .cell-45-6 { grid-column: 7 / 11; }
+}
+
+.cell-x
+{
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: center;
+    grid-row-gap: 0.5rem;
+    grid-column-gap: 0.5rem;
+}
