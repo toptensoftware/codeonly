@@ -1,139 +1,126 @@
-var lt = Object.defineProperty;
-var Me = (o) => {
-  throw TypeError(o);
+var at = Object.defineProperty;
+var je = (r) => {
+  throw TypeError(r);
 };
-var at = (o, e, t) => e in o ? lt(o, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : o[e] = t;
-var oe = (o, e, t) => at(o, typeof e != "symbol" ? e + "" : e, t), we = (o, e, t) => e.has(o) || Me("Cannot " + t);
-var a = (o, e, t) => (we(o, e, "read from private field"), t ? t.call(o) : e.get(o)), S = (o, e, t) => e.has(o) ? Me("Cannot add the same private member more than once") : e instanceof WeakSet ? e.add(o) : e.set(o, t), y = (o, e, t, n) => (we(o, e, "write to private field"), n ? n.call(o, t) : e.set(o, t), t), x = (o, e, t) => (we(o, e, "access private method"), t);
-let L = {};
-typeof document < "u" && (L.document = document);
-typeof window < "u" && (L.window = window);
-typeof Node < "u" && (L.Node = Node);
-function bt(o) {
-  L = o;
+var dt = (r, e, t) => e in r ? at(r, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : r[e] = t;
+var re = (r, e, t) => dt(r, typeof e != "symbol" ? e + "" : e, t), ve = (r, e, t) => e.has(r) || je("Cannot " + t);
+var a = (r, e, t) => (ve(r, e, "read from private field"), t ? t.call(r) : e.get(r)), S = (r, e, t) => e.has(r) ? je("Cannot add the same private member more than once") : e instanceof WeakSet ? e.add(r) : e.set(r, t), g = (r, e, t, i) => (ve(r, e, "write to private field"), i ? i.call(r, t) : e.set(r, t), t), x = (r, e, t) => (ve(r, e, "access private method"), t);
+function bt(r, e) {
+  for (let t = 0; t < r.length; t++)
+    e(r[t], t) || (r.splice(t, 1), t--);
 }
-class V {
+function Se(r) {
+  return r.replace(/[A-Z]/g, (e) => `-${e.toLowerCase()}`);
+}
+function _e(r) {
+  return r instanceof Function && !!r.prototype && !!r.prototype.constructor;
+}
+function wt(r, e) {
+  if (r === e) return !0;
+  if (r.size !== e.size) return !1;
+  for (const t of r) if (!e.has(t)) return !1;
+  return !0;
+}
+function ht(r, e) {
+  if (r === e || r === void 0 && e === void 0)
+    return !0;
+  if (r === void 0 || e === void 0)
+    return !1;
+  if (r === null && e === null)
+    return !0;
+  if (r === null || e === null || typeof r != "object" || typeof e != "object")
+    return !1;
+  let t = Object.getOwnPropertyNames(r), i = Object.getOwnPropertyNames(e);
+  if (t.length != i.length)
+    return !1;
+  for (let n of t)
+    if (!Object.hasOwn(e, n) || !ht(r[n], e[n]))
+      return !1;
+  return !0;
+}
+function Nt(r, e, t) {
+  let i = 0, n = r.length - 1;
+  for (; i <= n; ) {
+    let o = Math.floor((i + n) / 2), d = r[o], h = e(d, t);
+    if (h == 0)
+      return o;
+    h < 0 ? i = o + 1 : n = o - 1;
+  }
+  return -1 - i;
+}
+function vt(r, e) {
+  return r < e ? -1 : r > e ? 1 : 0;
+}
+function St(r, e) {
+  return r = r.toLowerCase(), e = e.toLowerCase(), r < e ? -1 : r > e ? 1 : 0;
+}
+let ut = /^[a-zA-Z$][a-zA-Z0-9_$]*$/;
+function Z(r) {
+  return r.match(ut) ? `.${r}` : `[${JSON.stringify(r)}]`;
+}
+class I {
   constructor(e) {
     this.html = e;
   }
 }
-function Nt(o) {
-  return new V(o);
+function xt(r) {
+  return new I(r);
 }
-class He {
+class Pe {
   constructor(e) {
     this.value = e;
   }
 }
-function wt(o) {
-  return new He(o);
-}
-let ge = [], ce = null;
-class vt {
-  static declare(e) {
-    ge.push(e), requestAnimationFrame(dt);
-  }
-}
-function dt() {
-  ge.length != 0 && (ce == null && (ce = document.createElement("style")), ce.innerHTML += ge.join(`
-`), ge = [], ce.parentNode || document.head.appendChild(ce));
-}
-function St(o, e) {
-  for (let t = 0; t < o.length; t++)
-    e(o[t], t) || (o.splice(t, 1), t--);
-}
-function ve(o) {
-  return o.replace(/[A-Z]/g, (e) => `-${e.toLowerCase()}`);
-}
-function xe(o) {
-  return o instanceof Function && !!o.prototype && !!o.prototype.constructor;
-}
-function xt(o, e) {
-  if (o === e) return !0;
-  if (o.size !== e.size) return !1;
-  for (const t of o) if (!e.has(t)) return !1;
-  return !0;
-}
-function ht(o, e) {
-  if (o === e || o === void 0 && e === void 0)
-    return !0;
-  if (o === void 0 || e === void 0)
-    return !1;
-  if (o === null && e === null)
-    return !0;
-  if (o === null || e === null || typeof o != "object" || typeof e != "object")
-    return !1;
-  let t = Object.getOwnPropertyNames(o), n = Object.getOwnPropertyNames(e);
-  if (t.length != n.length)
-    return !1;
-  for (let i of t)
-    if (!Object.hasOwn(e, i) || !ht(o[i], e[i]))
-      return !1;
-  return !0;
-}
-function _t(o, e, t) {
-  let n = 0, i = o.length - 1;
-  for (; n <= i; ) {
-    let r = Math.floor((n + i) / 2), d = o[r], h = e(d, t);
-    if (h == 0)
-      return r;
-    h < 0 ? n = r + 1 : i = r - 1;
-  }
-  return -1 - n;
-}
-function Et(o, e) {
-  return o < e ? -1 : o > e ? 1 : 0;
-}
-function Ct(o, e) {
-  return o = o.toLowerCase(), e = e.toLowerCase(), o < e ? -1 : o > e ? 1 : 0;
+function _t(r) {
+  return new Pe(r);
 }
 function me() {
-  let o = [], e = "";
-  function t(...g) {
-    for (let m = 0; m < g.length; m++) {
-      let c = g[m];
-      c.lines ? o.push(...c.lines.map(($) => e + $)) : Array.isArray(c) ? o.push(...c.filter(($) => $ != null).map(($) => e + $)) : o.push(...c.split(`
+  let r = [], e = "";
+  function t(...y) {
+    for (let m = 0; m < y.length; m++) {
+      let c = y[m];
+      c.lines ? r.push(...c.lines.map(($) => e + $)) : Array.isArray(c) ? r.push(...c.filter(($) => $ != null).map(($) => e + $)) : r.push(...c.split(`
 `).map(($) => e + $));
     }
   }
-  function n() {
+  function i() {
     e += "  ";
   }
-  function i() {
+  function n() {
     e = e.substring(2);
   }
-  function r() {
-    return o.join(`
+  function o() {
+    return r.join(`
 `) + `
 `;
   }
-  function d(g) {
-    t("{"), n(), g(this), i(), t("}");
+  function d(y) {
+    t("{"), i(), y(this), n(), t("}");
   }
-  function h(...g) {
+  function h(...y) {
     let m = {
       pos: this.lines.length
     };
-    return this.append(g), m.headerLineCount = this.lines.length - m.pos, m;
+    return this.append(y), m.headerLineCount = this.lines.length - m.pos, m;
   }
-  function N(g, ...m) {
-    this.lines.length == g.pos + g.headerLineCount ? this.lines.splice(g.pos, g.headerLineCount) : this.append(m);
+  function N(y, ...m) {
+    this.lines.length == y.pos + y.headerLineCount ? this.lines.splice(y.pos, y.headerLineCount) : this.append(m);
   }
   return {
     append: t,
     enterCollapsibleBlock: h,
     leaveCollapsibleBlock: N,
-    indent: n,
-    unindent: i,
+    indent: i,
+    unindent: n,
     braced: d,
-    toString: r,
-    lines: o,
+    toString: o,
+    lines: r,
     get isEmpty() {
-      return o.length == 0;
+      return r.length == 0;
     }
   };
 }
-class ke {
+class Ie {
   constructor() {
     this.code = me(), this.code.closure = this, this.functions = [], this.locals = [], this.prologs = [], this.epilogs = [];
   }
@@ -158,16 +145,16 @@ class ke {
   // Add a function to this closure
   addFunction(e, t) {
     t || (t = []);
-    let n = {
+    let i = {
       name: e,
       args: t,
-      code: new ke()
+      code: new Ie()
     };
-    return this.functions.push(n), n.code;
+    return this.functions.push(i), i.code;
   }
   getFunction(e) {
     var t;
-    return (t = this.functions.find((n) => n.name == e)) == null ? void 0 : t.code;
+    return (t = this.functions.find((i) => i.name == e)) == null ? void 0 : t.code;
   }
   toString() {
     let e = me();
@@ -184,11 +171,48 @@ class ke {
       e.append(t);
   }
 }
-class Pe {
+function ge(r) {
+  return r == null ? "" : ("" + r).replace(/["'&<>]/g, function(e) {
+    switch (e) {
+      case '"':
+        return "&quot;";
+      case "&":
+        return "&amp;";
+      case "'":
+        return "&#39;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+    }
+  });
+}
+class We {
+  static rawText(e) {
+    return e instanceof I ? e.html : ge(e);
+  }
+  static renderToString(e) {
+    let t = "";
+    return e({
+      write: function(i) {
+        t += i;
+      }
+    }), t;
+  }
+  static rawStyle(e) {
+    let t;
+    return e instanceof I ? t = e.html : t = ge(e), t = t.trim(), t.endsWith(";") || (t += ";"), t;
+  }
+  static rawNamedStyle(e, t) {
+    if (!t)
+      return "";
+    let i;
+    return t instanceof I ? i = t.html : i = ge(t), i = i.trim(), i += ";", `${e}:${i}`;
+  }
   // Create either a text node from a string, or
   // a SPAN from an HtmlString
   static createTextNode(e) {
-    if (e instanceof V) {
+    if (e instanceof I) {
       let t = document.createElement("SPAN");
       return t.innerHTML = e.html, t;
     } else
@@ -197,56 +221,57 @@ class Pe {
   // Set either the inner text of an element to a string
   // or the inner html to a HtmlString
   static setElementText(e, t) {
-    t instanceof V ? e.innerHTML = t.html : e.innerText = t;
+    t instanceof I ? e.innerHTML = t.html : e.innerText = t;
   }
   // Set a node to text or HTML, replacing the 
   // node if it doesn't match the supplied text.
   static setNodeText(e, t) {
-    if (t instanceof V) {
+    if (t instanceof I) {
       if (e.nodeType == 1)
         return e.innerHTML = t.html, e;
-      let n = document.createElement("SPAN");
-      return n.innerHTML = t.html, e.replaceWith(n), n;
+      let i = document.createElement("SPAN");
+      return i.innerHTML = t.html, e.replaceWith(i), i;
     } else {
       if (e.nodeType == 3)
         return e.nodeValue = t, e;
-      let n = document.createTextNode(t);
-      return e.replaceWith(n), n;
+      let i = document.createTextNode(t);
+      return e.replaceWith(i), i;
     }
   }
   // Set or remove a class on an element
-  static setNodeClass(e, t, n) {
-    n ? e.classList.add(t) : e.classList.remove(t);
+  static setNodeClass(e, t, i) {
+    i ? e.classList.add(t) : e.classList.remove(t);
   }
   // Set or remove a style on an element
-  static setNodeStyle(e, t, n) {
-    n == null ? e.style.removeProperty(t) : e.style[t] = n;
+  static setNodeStyle(e, t, i) {
+    i == null ? e.style.removeProperty(t) : e.style[t] = i;
   }
-  static setNodeDisplay(e, t, n) {
+  static setNodeDisplay(e, t, i) {
     if (t === !0) {
-      n === null ? e.style.removeProperty("display") : n !== void 0 && e.style.display != n && (e.style.display = n);
+      i === null ? e.style.removeProperty("display") : i !== void 0 && e.style.display != i && (e.style.display = i);
       return;
     } else if (t === !1 || t === null || t === void 0) {
-      let i = e.style.display;
-      return e.style.display != "none" && (e.style.display = "none"), i ?? null;
+      let n = e.style.display;
+      return e.style.display != "none" && (e.style.display = "none"), n ?? null;
     } else if (typeof t == "string") {
-      let i = e.style.display;
-      return e.style.display != t && (e.style.display = t), i ?? null;
+      let n = e.style.display;
+      return e.style.display != t && (e.style.display = t), n ?? null;
     }
   }
   static replaceMany(e, t) {
-    if (e[0].parentNode) {
+    var i;
+    if ((i = e == null ? void 0 : e[0]) != null && i.parentNode) {
       e[0].replaceWith(...t);
       for (let n = 1; n < e.length; n++)
         e[n].remove();
     }
   }
-  static addEventListener(e, t, n, i) {
-    function r(d) {
-      return i(e(), d);
+  static addEventListener(e, t, i, n) {
+    function o(d) {
+      return n(e(), d);
     }
-    return t.addEventListener(n, r), function() {
-      t.removeEventListener(n, r);
+    return t.addEventListener(i, o), function() {
+      t.removeEventListener(i, o);
     };
   }
   /*
@@ -267,9 +292,10 @@ class Pe {
       }
       */
 }
-function Ve(o) {
+function qe(r) {
   let e = function() {
-    let t = L.document.createComment(o);
+    var i;
+    let t = (i = T.document) == null ? void 0 : i.createComment(r);
     return {
       get rootNode() {
         return t;
@@ -283,27 +309,30 @@ function Ve(o) {
       destroy() {
       },
       update() {
+      },
+      render(n) {
+        n.write(`<!--${ge(r)}-->`);
       }
     };
   };
   return e.isSingleRoot = !0, e;
 }
-class $e {
+class be {
   static integrate(e) {
-    let t = [], n = [], i = !1, r = !0;
+    let t = [], i = [], n = !1, o = !0;
     for (let d = 0; d < e.branches.length; d++) {
       let h = e.branches[d], N = {};
-      if (t.push(N), h.condition instanceof Function ? (N.condition = h.condition, i = !1) : h.condition !== void 0 ? (N.condition = () => h.condition, i = !!h.condition) : (N.condition = () => !0, i = !0), h.template !== void 0) {
-        let g = new ie(h.template);
-        g.isSingleRoot || (r = !1), N.nodeIndex = n.length, n.push(g);
+      if (t.push(N), h.condition instanceof Function ? (N.condition = h.condition, n = !1) : h.condition !== void 0 ? (N.condition = () => h.condition, n = !!h.condition) : (N.condition = () => !0, n = !0), h.template !== void 0) {
+        let y = new G(h.template);
+        y.isSingleRoot || (o = !1), N.nodeIndex = i.length, i.push(y);
       }
     }
-    return delete e.branches, i || t.push({
+    return delete e.branches, n || t.push({
       condition: () => !0
     }), {
-      isSingleRoot: r,
+      isSingleRoot: o,
       wantsUpdate: !0,
-      nodes: n,
+      nodes: i,
       data: t
     };
   }
@@ -311,7 +340,7 @@ class $e {
     if (e.if === void 0)
       return e;
     let t = {
-      type: $e,
+      type: be,
       branches: [
         {
           template: e,
@@ -323,32 +352,32 @@ class $e {
   }
   static transformGroup(e) {
     let t = null;
-    for (let n = 0; n < e.length; n++) {
-      let i = e[n];
-      if (i.if)
+    for (let i = 0; i < e.length; i++) {
+      let n = e[i];
+      if (n.if)
         t = {
-          type: $e,
+          type: be,
           branches: [
             {
-              condition: i.if,
-              template: i
+              condition: n.if,
+              template: n
             }
           ]
-        }, delete i.if, e.splice(n, 1, t);
-      else if (i.elseif) {
+        }, delete n.if, e.splice(i, 1, t);
+      else if (n.elseif) {
         if (!t)
           throw new Error("template has 'elseif' without a preceeding condition");
         t.branches.push({
-          condition: i.elseif,
-          template: i
-        }), delete i.elseif, e.splice(n, 1), n--;
-      } else if (i.else !== void 0) {
+          condition: n.elseif,
+          template: n
+        }), delete n.elseif, e.splice(i, 1), i--;
+      } else if (n.else !== void 0) {
         if (!t)
           throw new Error("template has 'else' without a preceeding condition");
         t.branches.push({
           condition: !0,
-          template: i
-        }), delete i.else, t = null, e.splice(n, 1), n--;
+          template: n
+        }), delete n.else, t = null, e.splice(i, 1), i--;
       } else
         t = null;
     }
@@ -356,19 +385,17 @@ class $e {
   constructor(e) {
     this.branches = e.data, this.branch_constructors = [], this.context = e.context;
     for (let t of this.branches)
-      t.nodeIndex !== void 0 ? this.branch_constructors.push(e.nodes[t.nodeIndex]) : this.branch_constructors.push(Ve(" IfBlock placeholder "));
-    this.activeBranchIndex = -1, this.activeBranch = Ve(" IfBlock placeholder ")();
+      t.nodeIndex !== void 0 ? this.branch_constructors.push(e.nodes[t.nodeIndex]) : this.branch_constructors.push(qe(" IfBlock placeholder "));
+    this.activeBranchIndex = -1, this.activeBranch = qe(" IfBlock placeholder ")();
   }
   destroy() {
     this.activeBranch.destroy();
   }
   update() {
-    let e = this.resolveActiveBranch();
-    if (e != this.activeBranchIndex) {
-      let t = this.activeBranch;
-      this.activeBranchIndex = e, this.activeBranch = this.branch_constructors[e](), Pe.replaceMany(t.rootNodes, this.activeBranch.rootNodes), t.destroy();
-    }
-    this.activeBranch.update();
+    this.switchActiveBranch(), this.activeBranch.update();
+  }
+  render(e) {
+    this.activeBranch.render(e);
   }
   unbind() {
     var e, t;
@@ -377,6 +404,13 @@ class $e {
   bind() {
     var e, t;
     (t = (e = this.activeBranch).bind) == null || t.call(e);
+  }
+  switchActiveBranch(e) {
+    let t = this.resolveActiveBranch();
+    if (t != this.activeBranchIndex) {
+      let i = this.activeBranch;
+      this.activeBranchIndex = t, this.activeBranch = this.branch_constructors[t](), We.replaceMany(i.rootNodes, this.activeBranch.rootNodes), i.destroy();
+    }
   }
   resolveActiveBranch() {
     for (let e = 0; e < this.branches.length; e++)
@@ -391,51 +425,51 @@ class $e {
     return this.activeBranch.rootNode;
   }
 }
-function ut(o, e) {
-  let t = Math.min(o.length, e.length), n = Math.max(o.length, e.length), i = 0;
-  for (; i < t && o[i] == e[i]; )
-    i++;
-  if (i == n)
+function ct(r, e) {
+  let t = Math.min(r.length, e.length), i = Math.max(r.length, e.length), n = 0;
+  for (; n < t && r[n] == e[n]; )
+    n++;
+  if (n == i)
     return [];
-  if (i == o.length)
+  if (n == r.length)
     return [{
       op: "insert",
-      index: o.length,
-      count: e.length - o.length
+      index: r.length,
+      count: e.length - r.length
     }];
-  let r = 0;
-  for (; r < t - i && o[o.length - r - 1] == e[e.length - r - 1]; )
-    r++;
-  if (r == o.length)
+  let o = 0;
+  for (; o < t - n && r[r.length - o - 1] == e[e.length - o - 1]; )
+    o++;
+  if (o == r.length)
     return [{
       op: "insert",
       index: 0,
-      count: e.length - o.length
+      count: e.length - r.length
     }];
-  if (i + r == o.length)
+  if (n + o == r.length)
     return [{
       op: "insert",
-      index: i,
-      count: e.length - o.length
+      index: n,
+      count: e.length - r.length
     }];
-  if (i + r == e.length)
+  if (n + o == e.length)
     return [{
       op: "delete",
-      index: i,
-      count: o.length - e.length
+      index: n,
+      count: r.length - e.length
     }];
-  let d = o.length - r, h = e.length - r, N = Z(e, i, h), g = null, m = [], c = i, $ = i;
+  let d = r.length - o, h = e.length - o, N = z(e, n, h), y = null, m = [], c = n, $ = n;
   for (; c < h; ) {
-    for (; c < h && o[$] == e[c]; )
+    for (; c < h && r[$] == e[c]; )
       N.delete(e[c], c), c++, $++;
-    let u = c, w = $;
-    for (; $ < d && !N.has(o[$]); )
+    let u = c, v = $;
+    for (; $ < d && !N.has(r[$]); )
       $++;
-    if ($ > w) {
-      m.push({ op: "delete", index: u, count: $ - w });
+    if ($ > v) {
+      m.push({ op: "delete", index: u, count: $ - v });
       continue;
     }
-    for (g || (g = Z(o, c, d)); c < h && !g.has(e[c]); )
+    for (y || (y = z(r, c, d)); c < h && !y.has(e[c]); )
       N.delete(e[c], c), c++;
     if (c > u) {
       m.push({ op: "insert", index: u, count: c - u });
@@ -445,98 +479,99 @@ function ut(o, e) {
   }
   if (c == h)
     return m;
-  let l = 0, D = new je();
+  let l = 0, O = new Ae();
   for (; $ < d; ) {
     let u = $;
-    for (; $ < d && !N.has(o[$]); )
+    for (; $ < d && !N.has(r[$]); )
       $++;
     if ($ > u) {
       m.push({ op: "delete", index: c, count: $ - u });
       continue;
     }
-    for (; $ < d && N.consume(o[$]) !== void 0; )
-      D.add(o[$], l++), $++;
+    for (; $ < d && N.consume(r[$]) !== void 0; )
+      O.add(r[$], l++), $++;
     $ > u && m.push({ op: "store", index: c, count: $ - u });
   }
   for (; c < h; ) {
     let u = c;
-    for (; c < h && !D.has(e[c]); )
+    for (; c < h && !O.has(e[c]); )
       c++;
     if (c > u) {
       m.push({ op: "insert", index: u, count: c - u });
       continue;
     }
-    let w = { op: "restore", index: c, count: 0 };
-    for (m.push(w); c < h; ) {
-      let k = D.consume(e[c]);
-      if (k === void 0)
+    let v = { op: "restore", index: c, count: 0 };
+    for (m.push(v); c < h; ) {
+      let B = O.consume(e[c]);
+      if (B === void 0)
         break;
-      w.count == 0 ? (w.storeIndex = k, w.count = 1) : w.storeIndex + w.count == k ? w.count++ : (w = { op: "restore", index: c, storeIndex: k, count: 1 }, m.push(w)), c++;
+      v.count == 0 ? (v.storeIndex = B, v.count = 1) : v.storeIndex + v.count == B ? v.count++ : (v = { op: "restore", index: c, storeIndex: B, count: 1 }, m.push(v)), c++;
     }
   }
   return m;
-  function Z(u, w, k) {
-    let ne = new je();
-    for (let se = w; se < k; se++)
+  function z(u, v, B) {
+    let ne = new Ae();
+    for (let se = v; se < B; se++)
       ne.add(u[se], se);
     return ne;
   }
 }
-var q;
-class je {
+var J;
+class Ae {
   constructor() {
-    S(this, q, /* @__PURE__ */ new Map());
+    S(this, J, /* @__PURE__ */ new Map());
   }
   // Add a value to a key
   add(e, t) {
-    let n = a(this, q).get(e);
-    n ? n.push(t) : a(this, q).set(e, [t]);
+    let i = a(this, J).get(e);
+    i ? i.push(t) : a(this, J).set(e, [t]);
   }
   delete(e, t) {
-    let n = a(this, q).get(e);
-    if (n) {
-      let i = n.indexOf(t);
-      if (i >= 0) {
-        n.splice(i, 1);
+    let i = a(this, J).get(e);
+    if (i) {
+      let n = i.indexOf(t);
+      if (n >= 0) {
+        i.splice(n, 1);
         return;
       }
     }
     throw new Error("key/value pair not found");
   }
   consume(e) {
-    let t = a(this, q).get(e);
+    let t = a(this, J).get(e);
     if (!(!t || t.length == 0))
       return t.shift();
   }
   // Check if have a key
   has(e) {
-    return a(this, q).has(e);
+    return a(this, J).has(e);
   }
 }
-q = new WeakMap();
-var b, Ee, ye, H, Y, Q, K, We, Ce, Ge, Te, ze, Le, Ze, De, X;
-const re = class re {
+J = new WeakMap();
+var b, Ce, ye, U, Y, Q, K, Ge, Te, ze, Le, Ze, De, Xe, Oe, X;
+const oe = class oe {
   constructor(e) {
     S(this, b);
-    S(this, H);
+    S(this, U);
     S(this, Y);
     S(this, Q);
     S(this, K);
-    this.itemConstructor = e.data.itemConstructor, this.outer = e.context, this.items = e.data.template.items, this.condition = e.data.template.condition, this.itemKey = e.data.template.itemKey, this.emptyConstructor = e.nodes.length ? e.nodes[0] : null, this.itemDoms = [], this.headSentinal = L.document.createComment(" enter foreach block "), this.tailSentinal = L.document.createComment(" leave foreach block "), this.itemConstructor.isSingleRoot ? (y(this, H, x(this, b, ze)), y(this, Q, x(this, b, Ze)), y(this, Y, x(this, b, Le)), y(this, K, x(this, b, De))) : (y(this, H, x(this, b, We)), y(this, Q, x(this, b, Ge)), y(this, Y, x(this, b, Ce)), y(this, K, x(this, b, Te)));
+    var t, i;
+    this.itemConstructor = e.data.itemConstructor, this.outer = e.context, this.items = e.data.template.items, this.condition = e.data.template.condition, this.itemKey = e.data.template.itemKey, this.emptyConstructor = e.nodes.length ? e.nodes[0] : null, this.itemDoms = [], this.headSentinal = (t = T.document) == null ? void 0 : t.createComment(" enter foreach block "), this.tailSentinal = (i = T.document) == null ? void 0 : i.createComment(" leave foreach block "), this.itemConstructor.isSingleRoot ? (g(this, U, x(this, b, Ze)), g(this, Q, x(this, b, Xe)), g(this, Y, x(this, b, De)), g(this, K, x(this, b, Oe))) : (g(this, U, x(this, b, Ge)), g(this, Q, x(this, b, ze)), g(this, Y, x(this, b, Te)), g(this, K, x(this, b, Le)));
   }
-  static integrate(e) {
-    let t = {
-      itemConstructor: Ae.compile(e.template),
+  static integrate(e, t) {
+    let i = {
+      itemConstructor: t.compilerOptions.compileTemplate(e.template),
       template: {
         items: e.items,
         condition: e.condition,
         itemKey: e.itemKey
       }
     }, n;
-    return e.empty && (n = [new ie(e.empty)]), delete e.template, delete e.items, delete e.condition, delete e.itemKey, delete e.empty, {
+    return e.empty && (n = [new G(e.empty)]), delete e.template, delete e.items, delete e.condition, delete e.itemKey, delete e.empty, {
       isSingleRoot: !1,
       wantsUpdate: !0,
-      data: t,
+      data: i,
       nodes: n
     };
   }
@@ -545,26 +580,26 @@ const re = class re {
       return e;
     let t;
     return e.foreach instanceof Function || Array.isArray(e.foreach) ? (t = {
-      type: re,
+      type: oe,
       template: e,
       items: e.foreach
     }, delete e.foreach) : (t = Object.assign({}, e.foreach, {
-      type: re,
+      type: oe,
       template: e
     }), delete e.foreach), t;
   }
   static transformGroup(e) {
     for (let t = 1; t < e.length; t++)
-      e[t].else !== void 0 && (e[t - 1].foreach !== void 0 && (e[t - 1] = re.transform(e[t - 1])), e[t - 1].type === re && !e[t - 1].else && (delete e[t].else, e[t - 1].empty = e[t], e.splice(t, 1), t--));
+      e[t].else !== void 0 && (e[t - 1].foreach !== void 0 && (e[t - 1] = oe.transform(e[t - 1])), e[t - 1].type === oe && !e[t - 1].else && (delete e[t].else, e[t - 1].empty = e[t], e.splice(t, 1), t--));
   }
-  onObservableUpdate(e, t, n) {
-    let i = { outer: this.outer };
-    if (n == 0 && t == 0) {
-      let r = this.observableItems[e], d = [r], h = null;
-      this.itemKey && (i.model = r, h = [this.itemKey.call(r, r, i)]), x(this, b, X).call(this, d, h, e, 0, 1);
+  onObservableUpdate(e, t, i) {
+    let n = { outer: this.outer };
+    if (i == 0 && t == 0) {
+      let o = this.observableItems[e], d = [o], h = null;
+      this.itemKey && (n.model = o, h = [this.itemKey.call(o, o, n)]), x(this, b, X).call(this, d, h, e, 0, 1);
     } else {
-      let r = null, d = this.observableItems.slice(e, e + n);
-      this.itemKey && (r = d.map((h) => (i.model = h, this.itemKey.call(h, h, i)))), n && t ? x(this, b, Ee).call(this, e, t, d, r) : t != 0 ? a(this, Q).call(this, e, t) : n != 0 && a(this, H).call(this, d, r, e, 0, n), x(this, b, ye).call(this);
+      let o = null, d = this.observableItems.slice(e, e + i);
+      this.itemKey && (o = d.map((h) => (n.model = h, this.itemKey.call(h, h, n)))), i && t ? x(this, b, Ce).call(this, e, t, d, o) : t != 0 ? a(this, Q).call(this, e, t) : i != 0 && a(this, U).call(this, d, o, e, 0, i), x(this, b, ye).call(this);
     }
   }
   get rootNodes() {
@@ -573,8 +608,8 @@ const re = class re {
       return [this.headSentinal, ...this.itemDoms.map((t) => t.rootNode), ...e, this.tailSentinal];
     {
       let t = [this.headSentinal];
-      for (let n = 0; n < this.itemDoms.length; n++)
-        t.push(...this.itemDoms[n].rootNodes);
+      for (let i = 0; i < this.itemDoms.length; i++)
+        t.push(...this.itemDoms[i].rootNodes);
       return t.push(...e), t.push(this.tailSentinal), t;
     }
   }
@@ -583,12 +618,18 @@ const re = class re {
     this.items instanceof Function ? e = this.items.call(this.outer.model, this.outer.model, this.outer) : e = this.items, e = e ?? [], this.observableItems != null && this.observableItems != e && this.observableItems.removeListener(this._onObservableUpdate), Array.isArray(e) && e.isObservable && this.observableItems != e && (this._onObservableUpdate = this.onObservableUpdate.bind(this), this.observableItems = e, this.observableItems.addListener(this._onObservableUpdate), a(this, Q).call(this, 0, this.itemDoms.length), this.itemsLoaded = !1);
     let t = {
       outer: this.outer
-    }, n = null;
-    if (this.observableItems || this.condition && (e = e.filter((i) => (t.model = i, this.condition.call(i, i, t)))), this.itemKey && (n = e.map((i) => (t.model = i, this.itemKey.call(i, i, t)))), !this.itemsLoaded) {
-      this.itemsLoaded = !0, a(this, H).call(this, e, n, 0, 0, e.length), x(this, b, ye).call(this);
+    }, i = null;
+    if (this.observableItems || this.condition && (e = e.filter((n) => (t.model = n, this.condition.call(n, n, t)))), this.itemKey && (i = e.map((n) => (t.model = n, this.itemKey.call(n, n, t)))), !this.itemsLoaded) {
+      this.itemsLoaded = !0, a(this, U).call(this, e, i, 0, 0, e.length), x(this, b, ye).call(this);
       return;
     }
-    this.observableItems || x(this, b, Ee).call(this, 0, this.itemDoms.length, e, n);
+    this.observableItems || x(this, b, Ce).call(this, 0, this.itemDoms.length, e, i);
+  }
+  render(e) {
+    e.write("<!-- enter foreach block -->");
+    for (let t = 0; t < this.itemDoms.length; t++)
+      this.itemDoms[t].render(e);
+    e.write("<!-- leave foreach block -->");
   }
   bind() {
     var e, t;
@@ -604,156 +645,164 @@ const re = class re {
       this.itemDoms[e].destroy();
     this.itemDoms = null;
   }
+  get isAttached() {
+    var e;
+    return ((e = this.tailSentinal) == null ? void 0 : e.parentNode) != null;
+  }
 };
-b = new WeakSet(), Ee = function(e, t, n, i) {
-  let r = e + t, d;
-  e == 0 && t == this.itemDoms.length ? d = this.itemDoms : d = this.itemDoms.slice(e, r);
+b = new WeakSet(), Ce = function(e, t, i, n) {
+  let o = e + t, d;
+  e == 0 && t == this.itemDoms.length ? d = this.itemDoms : d = this.itemDoms.slice(e, o);
   let h;
-  if (i ? h = ut(d.map((u) => u.context.key), i) : n.length > d.length ? h = [{
+  if (n ? h = ct(d.map((u) => u.context.key), n) : i.length > d.length ? h = [{
     op: "insert",
     index: d.length,
-    count: n.length - d.length
-  }] : n.length < d.length ? h = [{
+    count: i.length - d.length
+  }] : i.length < d.length ? h = [{
     op: "delete",
-    index: n.length,
-    count: d.length - n.length
+    index: i.length,
+    count: d.length - i.length
   }] : h = [], h.length == 0) {
-    x(this, b, X).call(this, n, i, e, 0, t);
+    x(this, b, X).call(this, i, n, e, 0, t);
     return;
   }
-  let N = [], g = [], m = {
+  let N = [], y = [], m = {
     insert: $,
     delete: l,
-    store: D,
-    restore: Z
+    store: O,
+    restore: z
   }, c = 0;
   for (let u of h)
-    u.index > c && (x(this, b, X).call(this, n, i, e + c, c, u.index - c), c = u.index), m[u.op].call(this, u);
-  c < n.length && x(this, b, X).call(this, n, i, e + c, c, n.length - c);
-  for (let u = g.length - 1; u >= 0; u--)
-    g[u].destroy();
+    u.index > c && (x(this, b, X).call(this, i, n, e + c, c, u.index - c), c = u.index), m[u.op].call(this, u);
+  c < i.length && x(this, b, X).call(this, i, n, e + c, c, i.length - c);
+  for (let u = y.length - 1; u >= 0; u--)
+    y[u].destroy();
   x(this, b, ye).call(this);
   function $(u) {
     c += u.count;
-    let w = Math.min(g.length, u.count);
-    w && (a(this, Y).call(this, u.index + e, g.splice(0, w)), x(this, b, X).call(this, n, i, u.index + e, u.index, w)), w < u.count && a(this, H).call(this, n, i, u.index + e + w, u.index + w, u.count - w);
+    let v = Math.min(y.length, u.count);
+    v && (a(this, Y).call(this, u.index + e, y.splice(0, v)), x(this, b, X).call(this, i, n, u.index + e, u.index, v)), v < u.count && a(this, U).call(this, i, n, u.index + e + v, u.index + v, u.count - v);
   }
   function l(u) {
-    g.push(...a(this, K).call(this, u.index + e, u.count));
+    y.push(...a(this, K).call(this, u.index + e, u.count));
   }
-  function D(u) {
+  function O(u) {
     N.push(...a(this, K).call(this, u.index + e, u.count));
   }
-  function Z(u) {
-    c += u.count, a(this, Y).call(this, u.index + e, N.slice(u.storeIndex, u.storeIndex + u.count)), x(this, b, X).call(this, n, i, u.index + e, u.index, u.count);
+  function z(u) {
+    c += u.count, a(this, Y).call(this, u.index + e, N.slice(u.storeIndex, u.storeIndex + u.count)), x(this, b, X).call(this, i, n, u.index + e, u.index, u.count);
   }
 }, ye = function() {
   if (this.itemDoms.length == 0)
-    !this.emptyDom && this.emptyConstructor && (this.emptyDom = this.emptyConstructor(), this.tailSentinal.parentNode && this.tailSentinal.before(...this.emptyDom.rootNodes)), this.emptyDom && this.emptyDom.update();
+    !this.emptyDom && this.emptyConstructor && (this.emptyDom = this.emptyConstructor(), this.isAttached && this.tailSentinal.before(...this.emptyDom.rootNodes)), this.emptyDom && this.emptyDom.update();
   else if (this.emptyDom) {
-    if (this.tailSentinal.parentNode)
+    if (this.isAttached)
       for (var e of this.emptyDom.rootNodes)
         e.remove();
     this.emptyDom.destroy(), this.emptyDom = null;
   }
-}, H = new WeakMap(), Y = new WeakMap(), Q = new WeakMap(), K = new WeakMap(), We = function(e, t, n, i, r) {
+}, U = new WeakMap(), Y = new WeakMap(), Q = new WeakMap(), K = new WeakMap(), Ge = function(e, t, i, n, o) {
   let d = [];
-  for (let h = 0; h < r; h++) {
+  for (let h = 0; h < o; h++) {
     let N = {
       outer: this.outer,
-      model: e[i + h],
-      key: t == null ? void 0 : t[i + h],
-      index: n + h
+      model: e[n + h],
+      key: t == null ? void 0 : t[n + h],
+      index: i + h
     };
     d.push(this.itemConstructor(N));
   }
-  x(this, b, Ce).call(this, n, d);
-}, Ce = function(e, t) {
-  this.itemDoms.splice(e, 0, ...t);
-  let n = [];
-  if (t.forEach((i) => n.push(...i.rootNodes)), this.tailSentinal.parentNode) {
-    let i;
-    e + t.length < this.itemDoms.length ? i = this.itemDoms[e + t.length].rootNodes[0] : i = this.tailSentinal, i.before(...n);
-  }
-}, Ge = function(e, t) {
-  let n = x(this, b, Te).call(this, e, t);
-  for (let i = n.length - 1; i >= 0; i--)
-    itemsDoms[i].destroy();
+  x(this, b, Te).call(this, i, d);
 }, Te = function(e, t) {
-  let n = this.tailSentinal.parentNode != null;
-  for (let i = 0; i < t; i++)
-    if (n) {
-      let r = this.itemDoms[e + i].rootNodes;
-      for (let d = 0; d < r.length; d++)
-        r[d].remove();
+  if (this.itemDoms.splice(e, 0, ...t), this.isAttached) {
+    let i = [];
+    t.forEach((o) => i.push(...o.rootNodes));
+    let n;
+    e + t.length < this.itemDoms.length ? n = this.itemDoms[e + t.length].rootNodes[0] : n = this.tailSentinal, n.before(...i);
+  }
+}, ze = function(e, t) {
+  let i = x(this, b, Le).call(this, e, t);
+  for (let n = i.length - 1; n >= 0; n--)
+    i[n].destroy();
+}, Le = function(e, t) {
+  let i = this.isAttached;
+  for (let n = 0; n < t; n++)
+    if (i) {
+      let o = this.itemDoms[e + n].rootNodes;
+      for (let d = 0; d < o.length; d++)
+        o[d].remove();
     }
   return this.itemDoms.splice(e, t);
-}, ze = function(e, t, n, i, r) {
+}, Ze = function(e, t, i, n, o) {
   let d = [];
-  for (let h = 0; h < r; h++) {
+  for (let h = 0; h < o; h++) {
     let N = {
       outer: this.outer,
-      model: e[i + h],
-      key: t == null ? void 0 : t[i + h],
-      index: n + h
+      model: e[n + h],
+      key: t == null ? void 0 : t[n + h],
+      index: i + h
     };
     d.push(this.itemConstructor(N));
   }
-  x(this, b, Le).call(this, n, d);
-}, Le = function(e, t) {
-  this.itemDoms.splice(e, 0, ...t);
-  let n = t.map((i) => i.rootNode);
-  if (this.tailSentinal.parentNode) {
-    let i;
-    e + t.length < this.itemDoms.length ? i = this.itemDoms[e + t.length].rootNode : i = this.tailSentinal, i.before(...n);
-  }
-}, Ze = function(e, t) {
-  let n = x(this, b, De).call(this, e, t);
-  for (let i = n.length - 1; i >= 0; i--)
-    n[i].destroy();
+  x(this, b, De).call(this, i, d);
 }, De = function(e, t) {
-  let n = this.tailSentinal.parentNode != null;
-  for (let i = 0; i < t; i++)
-    n && this.itemDoms[e + i].rootNode.remove();
+  if (this.itemDoms.splice(e, 0, ...t), this.isAttached) {
+    let i = t.map((o) => o.rootNode), n;
+    e + t.length < this.itemDoms.length ? n = this.itemDoms[e + t.length].rootNode : n = this.tailSentinal, n.before(...i);
+  }
+}, Xe = function(e, t) {
+  let i = x(this, b, Oe).call(this, e, t);
+  for (let n = i.length - 1; n >= 0; n--)
+    i[n].destroy();
+}, Oe = function(e, t) {
+  let i = this.isAttached;
+  for (let n = 0; n < t; n++)
+    i && this.itemDoms[e + n].rootNode.remove();
   return this.itemDoms.splice(e, t);
-}, X = function(e, t, n, i, r) {
-  for (let d = 0; d < r; d++) {
-    let h = this.itemDoms[n + d];
-    h.context.key = t == null ? void 0 : t[i + d], h.context.index = n + d, h.context.model = e[i + d], h.rebind(), h.update();
+}, X = function(e, t, i, n, o) {
+  for (let d = 0; d < o; d++) {
+    let h = this.itemDoms[i + d];
+    h.context.key = t == null ? void 0 : t[n + d], h.context.index = i + d, h.context.model = e[n + d], h.rebind(), h.update();
   }
 };
-let _e = re;
-var I, B, R, ee, O, P, ae, W, G;
+let Ee = oe;
+var R, M, k, ee, D, te, ae, H, P;
 const le = class le {
   constructor(e) {
-    S(this, I);
-    S(this, B);
     S(this, R);
+    S(this, M);
+    S(this, k);
     // either #content, or if #content is a function the return value from the function
     S(this, ee);
-    S(this, O);
-    S(this, P);
+    S(this, D);
+    S(this, te);
     S(this, ae);
-    S(this, W);
+    S(this, H);
     // When ownsContent to false old content
     // wont be `destroy()`ed
-    S(this, G, !0);
-    y(this, I, e.context), y(this, ae, e.nodes.length > 0 ? e.nodes[0] : null), y(this, ee, L.document.createTextNode("")), y(this, P, L.document.createTextNode("")), y(this, O, []), y(this, G, e.data.ownsContent ?? !0), this.content = e.data.content;
+    S(this, P, !0);
+    var t, i;
+    g(this, R, e.context), g(this, ae, e.nodes[1]), g(this, ee, (t = T.document) == null ? void 0 : t.createTextNode("")), g(this, te, (i = T.document) == null ? void 0 : i.createTextNode("")), g(this, D, []), g(this, P, e.data.ownsContent ?? !0), e.nodes[0] ? this.content = e.nodes[0]() : this.content = e.data.content;
   }
   static integrate(e) {
-    let t = {
+    let t = null;
+    e.content && typeof e.content == "object" && (t = e.content, delete e.content);
+    let i = {
       isSingleRoot: !1,
       wantsUpdate: !0,
       data: {
-        content: e.content,
-        ownsContent: e.ownsContent ?? !0
+        ownsContent: e.ownsContent ?? !0,
+        content: e.content
       },
-      nodes: e.placeholder ? [new ie(e.placeholder)] : []
+      nodes: [
+        t ? new G(t) : null,
+        e.placeholder ? new G(e.placeholder) : null
+      ]
     };
-    return delete e.content, delete e.placeholder, delete e.ownsContent, t;
+    return delete e.content, delete e.placeholder, delete e.ownsContent, i;
   }
   static transform(e) {
-    return e instanceof Function && !xe(e) ? {
+    return e instanceof Function && !_e(e) ? {
       type: le,
       content: e
     } : (e.type == "embed-slot" && (e.type = le), e);
@@ -765,71 +814,81 @@ const le = class le {
   get rootNodes() {
     return [
       a(this, ee),
-      ...a(this, O),
-      a(this, P)
+      ...a(this, D),
+      a(this, te)
     ];
   }
   get isSingleRoot() {
     return !1;
   }
   get ownsContent() {
-    return a(this, G);
+    return a(this, P);
   }
   set ownsContent(e) {
-    y(this, G, e);
+    g(this, P, e);
   }
   get content() {
-    return a(this, B);
+    return a(this, M);
   }
   set content(e) {
-    y(this, B, e), a(this, B) instanceof Function ? this.replaceContent(a(this, B).call(a(this, I).model, a(this, I).model, a(this, I))) : this.replaceContent(a(this, B));
+    g(this, M, e), a(this, M) instanceof Function ? this.replaceContent(a(this, M).call(a(this, R).model, a(this, R).model, a(this, R))) : this.replaceContent(a(this, M));
   }
   update() {
-    a(this, B) instanceof Function && this.replaceContent(a(this, B).call(a(this, I).model, a(this, I).model, a(this, I)));
+    a(this, M) instanceof Function && this.replaceContent(a(this, M).call(a(this, R).model, a(this, R).model, a(this, R)));
   }
   bind() {
     var e, t;
-    a(this, W) && ((t = (e = a(this, R)) == null ? void 0 : e.bind) == null || t.call(e));
+    a(this, H) && ((t = (e = a(this, k)) == null ? void 0 : e.bind) == null || t.call(e));
   }
   unbind() {
     var e, t;
-    a(this, W) && ((t = (e = a(this, R)) == null ? void 0 : e.unbind) == null || t.call(e));
+    a(this, H) && ((t = (e = a(this, k)) == null ? void 0 : e.unbind) == null || t.call(e));
+  }
+  get isAttached() {
+    var e;
+    return ((e = a(this, ee)) == null ? void 0 : e.parentNode) != null;
   }
   replaceContent(e) {
-    var t, n;
-    if (!(e == a(this, R) || !e && a(this, W))) {
-      if (a(this, ee).parentNode != null) {
-        let i = a(this, ee).nextSibling;
-        for (; i != a(this, P); ) {
-          let r = i.nextSibling;
-          i.remove(), i = r;
+    var t, i;
+    if (!(e == a(this, k) || !e && a(this, H))) {
+      if (this.isAttached) {
+        let n = a(this, ee).nextSibling;
+        for (; n != a(this, te); ) {
+          let o = n.nextSibling;
+          n.remove(), n = o;
         }
       }
-      if (y(this, O, []), a(this, G) && ((n = (t = a(this, R)) == null ? void 0 : t.destroy) == null || n.call(t)), y(this, R, e), y(this, W, !1), !e)
-        a(this, ae) && (y(this, R, a(this, ae).call(this, a(this, I))), y(this, W, !0), y(this, O, a(this, R).rootNodes));
+      if (g(this, D, []), a(this, P) && ((i = (t = a(this, k)) == null ? void 0 : t.destroy) == null || i.call(t)), g(this, k, e), g(this, H, !1), !e)
+        a(this, ae) && (g(this, k, a(this, ae).call(this, a(this, R))), g(this, H, !0), g(this, D, a(this, k).rootNodes));
       else if (e.rootNodes !== void 0)
-        y(this, O, e.rootNodes);
+        g(this, D, e.rootNodes);
       else if (Array.isArray(e))
-        y(this, O, e);
-      else if (e instanceof L.Node)
-        y(this, O, [e]);
-      else if (e instanceof V) {
-        let i = L.document.createElement("span");
-        i.innerHTML = e.html, y(this, O, [...i.childNodes]);
+        g(this, D, e);
+      else if (T.Node !== void 0 && e instanceof T.Node)
+        g(this, D, [e]);
+      else if (e instanceof I) {
+        let n = T.document.createElement("span");
+        n.innerHTML = e.html, g(this, D, [...n.childNodes]);
       } else if (typeof e == "string")
-        y(this, O, [L.document.createTextNode(e)]);
+        g(this, D, [T.document.createTextNode(e)]);
+      else if (e.render)
+        g(this, D, []);
       else
         throw new Error("Embed slot requires component, array of HTML nodes or a single HTML node");
-      a(this, P).parentNode && a(this, P).before(...a(this, O));
+      this.isAttached && a(this, te).before(...a(this, D));
     }
   }
   destroy() {
     var e, t;
-    a(this, G) && ((t = (e = a(this, R)) == null ? void 0 : e.destroy) == null || t.call(e));
+    a(this, P) && ((t = (e = a(this, k)) == null ? void 0 : e.destroy) == null || t.call(e));
+  }
+  render(e) {
+    var t, i;
+    a(this, k) && ((i = (t = a(this, k)).render) == null || i.call(t, e));
   }
 };
-I = new WeakMap(), B = new WeakMap(), R = new WeakMap(), ee = new WeakMap(), O = new WeakMap(), P = new WeakMap(), ae = new WeakMap(), W = new WeakMap(), G = new WeakMap();
-let Oe = le;
+R = new WeakMap(), M = new WeakMap(), k = new WeakMap(), ee = new WeakMap(), D = new WeakMap(), te = new WeakMap(), ae = new WeakMap(), H = new WeakMap(), P = new WeakMap();
+let ke = le;
 class Fe {
   static register(e) {
     this.plugins.push(e);
@@ -841,32 +900,34 @@ class Fe {
   }
   static transformGroup(e) {
     var t;
-    for (let n of this.plugins)
-      (t = n.transformGroup) == null || t.call(n, e);
+    for (let i of this.plugins)
+      (t = i.transformGroup) == null || t.call(i, e);
   }
 }
-oe(Fe, "plugins", [
-  _e,
-  Oe,
-  $e
+re(Fe, "plugins", [
+  Ee,
+  ke,
+  be
 ]);
-class ie {
+class G {
   // Constructs a new TemplateNode
   // - name: the variable name for this node (eg: "n1")
   // - template: the user supplied template object this node is derived from
   constructor(e) {
-    if (Array.isArray(e) && (e = { $: e }), e._ && !e.type && (e.type = e._, delete e._), e = Fe.transform(e), xe(e) && (e = { type: e }), this.template = e, xe(e.type))
+    if (Array.isArray(e) && (e = { $: e }), e._ && !e.type && (e.type = e._, delete e._), e = Fe.transform(e), _e(e) && (e = { type: e }), this.template = e, _e(e.type))
       e.type.integrate ? this.kind = "integrated" : this.kind = "component";
     else if (typeof e == "string")
       this.kind = "text";
-    else if (e instanceof V) {
-      let t = L.document.createElement("div");
-      t.innerHTML = e.html, this.kind = "html", this.nodes = [...t.childNodes], this.nodes.forEach((n) => n.remove());
+    else if (e instanceof I) {
+      if (this.kind = "html", this.html = e.html, T.document) {
+        let t = T.document.createElement("div");
+        t.innerHTML = e.html, this.nodes = [...t.childNodes], this.nodes.forEach((i) => i.remove());
+      }
     } else e instanceof Function ? this.kind = "dynamic_text" : e.type === "comment" ? this.kind = "comment" : e.type === void 0 ? this.kind = "fragment" : this.kind = "element";
-    if (this.kind === "integrated" && (this.integrated = this.template.type.integrate(this.template)), this.kind == "element" && e.$ && !e.text && (typeof e.$ == "string" || e.$ instanceof V) && (e.text = e.$, delete e.$), this.kind == "element" || this.kind == "fragment")
+    if (this.kind === "integrated" && e.$ && !e.content && (e.content = e.$, delete e.$), this.kind == "element" && e.$ && !e.text && (typeof e.$ == "string" || e.$ instanceof I) && (e.text = e.$, delete e.$), this.kind == "element" || this.kind == "fragment")
       e.$ && !e.childNodes && (e.childNodes = e.$, delete e.$), e.childNodes ? (Array.isArray(e.childNodes) ? e.childNodes = e.childNodes.flat() : e.childNodes = [e.childNodes], e.childNodes.forEach((t) => {
         t._ && !t.type && (t.type = t._, delete t._);
-      }), Fe.transformGroup(e.childNodes), this.childNodes = this.template.childNodes.map((t) => new ie(t))) : this.childNodes = [];
+      }), Fe.transformGroup(e.childNodes), this.childNodes = this.template.childNodes.map((t) => new G(t))) : this.childNodes = [];
     else if (this.isComponent)
       e.$ && !e.content && (e.content = e.$, delete e.$);
     else if (e.childNodes)
@@ -900,8 +961,8 @@ class ie {
   spreadChildDomNodes() {
     return Array.from(e(this)).filter((t) => t.length > 0).join(", ");
     function* e(t) {
-      for (let n = 0; n < t.childNodes.length; n++)
-        yield t.childNodes[n].spreadDomNodes();
+      for (let i = 0; i < t.childNodes.length; i++)
+        yield t.childNodes[i].spreadDomNodes();
     }
   }
   // Returns a string descibing all the DOM nodes of this node
@@ -928,35 +989,35 @@ class ie {
     }
   }
 }
-function ct(o, e) {
-  let t = 1, n = 1, i = [], r = null, d = new ie(o), h = /* @__PURE__ */ new Map();
+function ft(r, e) {
+  let t = 1, i = 1, n = [], o = null, d = new G(r), h = /* @__PURE__ */ new Map();
   return {
-    code: g(d, !0).toString(),
+    code: y(d, !0).toString(),
     isSingleRoot: d.isSingleRoot,
-    refs: i
+    refs: n
   };
-  function g(m, c) {
+  function y(m, c) {
     let $ = {
       emit_text_node: se,
-      emit_html_node: Ye,
-      emit_dynamic_text_node: Qe,
-      emit_comment_node: Ke,
-      emit_fragment_node: it,
-      emit_element_node: nt,
-      emit_integrated_node: et,
-      emit_component_node: tt
-    }, l = new ke();
+      emit_html_node: Qe,
+      emit_dynamic_text_node: Ke,
+      emit_comment_node: et,
+      emit_fragment_node: nt,
+      emit_element_node: st,
+      emit_integrated_node: tt,
+      emit_component_node: it
+    }, l = new Ie();
     l.create = l.addFunction("create").code, l.bind = l.addFunction("bind").code, l.update = l.addFunction("update").code, l.unbind = l.addFunction("unbind").code, l.destroy = l.addFunction("destroy").code;
-    let D;
-    c && (D = l.addFunction("rebind").code);
-    let Z = /* @__PURE__ */ new Map();
-    c && (r = l, r.code.append("let model = context.model;"), r.code.append("let document = Environment.document;")), l.code.append("create();"), l.code.append("bind();"), l.code.append("update();"), ne(m);
+    let O;
+    c && (O = l.addFunction("rebind").code);
+    let z = /* @__PURE__ */ new Map();
+    c && (o = l, o.code.append("let model = context.model;"), o.code.append("let document = Environment.document;")), l.code.append("create();"), l.code.append("bind();"), l.code.append("update();"), ne(m);
     for (let s of m.enumLocalNodes())
       ot(s);
     l.bind.closure.isEmpty || (l.create.append("bind();"), l.destroy.closure.addProlog().append("unbind();"));
     let u = [];
-    return m.isSingleRoot && u.push(`  get rootNode() { return ${m.spreadDomNodes()}; },`), c ? (u.push("  context,"), m == d && h.forEach((s, f) => u.push(`  get ${f}() { return ${s}; },`)), l.getFunction("bind").isEmpty ? D.append("model = context.model") : (D.append("if (model != context.model)"), D.braced(() => {
-      D.append("unbind();"), D.append("model = context.model"), D.append("bind();");
+    return m.isSingleRoot && u.push(`  get rootNode() { return ${m.spreadDomNodes()}; },`), c ? (u.push("  context,"), m == d && h.forEach((s, f) => u.push(`  get ${f}() { return ${s}; },`)), l.getFunction("bind").isEmpty ? O.append("model = context.model") : (O.append("if (model != context.model)"), O.braced(() => {
+      O.append("unbind();"), O.append("model = context.model"), O.append("bind();");
     })), u.push("  rebind,")) : (u.push("  bind,"), u.push("  unbind,")), l.code.append([
       "return { ",
       "  update,",
@@ -966,120 +1027,125 @@ function ct(o, e) {
       ...u,
       "};"
     ]), l;
-    function w(s) {
-      s.template.export ? r.addLocal(s.name) : l.addLocal(s.name);
+    function v(s) {
+      s.template.export ? o.addLocal(s.name) : l.addLocal(s.name);
     }
-    function k() {
+    function B() {
       l.update.temp_declared || (l.update.temp_declared = !0, l.update.append("let temp;"));
     }
     function ne(s) {
       s.name = `n${t++}`, $[`emit_${s.kind}_node`](s);
     }
     function se(s) {
-      w(s), l.create.append(`${s.name} = document.createTextNode(${JSON.stringify(s.template)});`);
-    }
-    function Ye(s) {
-      s.nodes.length != 0 && (w(s), s.nodes.length == 1 ? (l.create.append(`${s.name} = refs[${i.length}].cloneNode(true);`), i.push(s.nodes[0])) : (l.create.append(`${s.name} = refs[${i.length}].map(x => x.cloneNode(true));`), i.push(s.nodes)));
+      v(s), l.create.append(`${s.name} = document.createTextNode(${JSON.stringify(s.template)});`);
     }
     function Qe(s) {
-      w(s);
-      let f = `p${n++}`;
-      l.addLocal(f), l.create.append(`${s.name} = helpers.createTextNode("");`), k(), l.update.append(`temp = ${j(i.length)};`), l.update.append(`if (temp !== ${f})`), l.update.append(`  ${s.name} = helpers.setNodeText(${s.name}, ${f} = ${j(i.length)});`), i.push(s.template);
+      s.nodes.length != 0 && (v(s), s.nodes.length == 1 ? (l.create.append(`${s.name} = refs[${n.length}].cloneNode(true);`), n.push(s.nodes[0])) : (l.create.append(`${s.name} = refs[${n.length}].map(x => x.cloneNode(true));`), n.push(s.nodes)));
     }
     function Ke(s) {
-      if (w(s), s.template.text instanceof Function) {
-        let f = `p${n++}`;
-        l.addLocal(f), l.create.append(`${s.name} = document.createComment("");`), k(), l.update.append(`temp = ${j(i.length)};`), l.update.append(`if (temp !== ${f})`), l.update.append(`  ${s.name}.nodeValue = ${f} = temp;`), i.push(s.template.text);
+      v(s);
+      let f = `p${i++}`;
+      l.addLocal(f), l.create.append(`${s.name} = helpers.createTextNode("");`), B(), l.update.append(`temp = ${j(n.length)};`), l.update.append(`if (temp !== ${f})`), l.update.append(`  ${s.name} = helpers.setNodeText(${s.name}, ${f} = ${j(n.length)});`), n.push(s.template);
+    }
+    function et(s) {
+      if (v(s), s.template.text instanceof Function) {
+        let f = `p${i++}`;
+        l.addLocal(f), l.create.append(`${s.name} = document.createComment("");`), B(), l.update.append(`temp = ${j(n.length)};`), l.update.append(`if (temp !== ${f})`), l.update.append(`  ${s.name}.nodeValue = ${f} = temp;`), n.push(s.template.text);
       } else
         l.create.append(`${s.name} = document.createComment(${JSON.stringify(s.template.text)});`);
     }
-    function et(s) {
+    function tt(s) {
+      s.integrated = s.template.type.integrate(s.template, { compilerOptions: e });
       let f = [], C = !1;
       if (s.integrated.nodes)
         for (let p = 0; p < s.integrated.nodes.length; p++) {
-          let v = s.integrated.nodes[p];
-          v.name = `n${t++}`;
-          let _ = g(v, !1);
+          let w = s.integrated.nodes[p];
+          if (!w) {
+            f.push(null);
+            continue;
+          }
+          w.name = `n${t++}`;
+          let _ = y(w, !1);
           _.getFunction("bind").isEmpty || (C = !0);
-          let Be = `${v.name}_constructor_${p + 1}`, rt = l.addFunction(Be, []);
-          _.appendTo(rt.code), f.push(Be);
+          let Ve = `${w.name}_constructor_${p + 1}`, lt = l.addFunction(Ve, []);
+          _.appendTo(lt.code), f.push(Ve);
         }
       s.integrated.wantsUpdate && l.update.append(`${s.name}.update()`), C && (l.bind.append(`${s.name}.bind()`), l.unbind.append(`${s.name}.unbind()`));
-      let T = -1;
-      s.integrated.data && (T = i.length, i.push(s.integrated.data)), w(s), l.create.append(
-        `${s.name} = new refs[${i.length}]({`,
+      let L = -1;
+      s.integrated.data && (L = n.length, n.push(s.integrated.data)), v(s), l.create.append(
+        `${s.name} = new refs[${n.length}]({`,
         "  context,",
-        `  data: ${s.integrated.data ? `refs[${T}]` : "null"},`,
+        `  data: ${s.integrated.data ? `refs[${L}]` : "null"},`,
         `  nodes: [ ${f.join(", ")} ],`,
         "});"
-      ), i.push(s.template.type);
+      ), n.push(s.template.type);
       for (let p of Object.keys(s.template))
         if (!Ne(s, p))
           throw new Error(`Unknown element template key: ${p}`);
     }
-    function tt(s) {
-      w(s), l.create.append(`${s.name} = new refs[${i.length}]();`), i.push(s.template.type);
-      let f = new Set(s.template.type.slots ?? []), C = s.template.update === "auto", T = !1;
+    function it(s) {
+      v(s), l.create.append(`${s.name} = new refs[${n.length}]();`), n.push(s.template.type);
+      let f = new Set(s.template.type.slots ?? []), C = s.template.update === "auto", L = !1;
       for (let p of Object.keys(s.template)) {
         if (Ne(s, p) || p == "update")
           continue;
         if (f.has(p)) {
           if (s.template[p] === void 0)
             continue;
-          let _ = new ie(s.template[p]);
-          ne(_), _.isSingleRoot ? l.create.append(`${s.name}${A(p)}.content = ${_.name};`) : l.create.append(`${s.name}${A(p)}.content = [${_.spreadDomNodes()}];`);
+          let _ = new G(s.template[p]);
+          ne(_), _.isSingleRoot ? l.create.append(`${s.name}${Z(p)}.content = ${_.name};`) : l.create.append(`${s.name}${Z(p)}.content = [${_.spreadDomNodes()}];`);
           continue;
         }
-        let v = typeof s.template[p];
-        if (v == "string" || v == "number" || v == "boolean")
-          l.create.append(`${s.name}${A(p)} = ${JSON.stringify(s.template[p])}`);
-        else if (v === "function") {
-          C && !T && (T = `${s.name}_mod`, l.update.append(`let ${T} = false;`));
-          let _ = `p${n++}`;
+        let w = typeof s.template[p];
+        if (w == "string" || w == "number" || w == "boolean")
+          l.create.append(`${s.name}${Z(p)} = ${JSON.stringify(s.template[p])}`);
+        else if (w === "function") {
+          C && !L && (L = `${s.name}_mod`, l.update.append(`let ${L} = false;`));
+          let _ = `p${i++}`;
           l.addLocal(_);
-          let Re = i.length;
-          k(), l.update.append(`temp = ${j(Re)};`), l.update.append(`if (temp !== ${_})`), C && (l.update.append("{"), l.update.append(`  ${T} = true;`)), l.update.append(`  ${s.name}${A(p)} = ${_} = temp;`), C && l.update.append("}"), i.push(s.template[p]);
+          let Me = n.length;
+          B(), l.update.append(`temp = ${j(Me)};`), l.update.append(`if (temp !== ${_})`), C && (l.update.append("{"), l.update.append(`  ${L} = true;`)), l.update.append(`  ${s.name}${Z(p)} = ${_} = temp;`), C && l.update.append("}"), n.push(s.template[p]);
         } else {
           let _ = s.template[p];
-          _ instanceof He && (_ = _.value), l.create.append(`${s.name}${A(p)} = refs[${i.length}];`), i.push(_);
+          _ instanceof Pe && (_ = _.value), l.create.append(`${s.name}${Z(p)} = refs[${n.length}];`), n.push(_);
         }
       }
-      s.template.update && (typeof s.template.update == "function" ? (l.update.append(`if (${j(i.length)})`), l.update.append(`  ${s.name}.update();`), i.push(s.template.update)) : C ? T && (l.update.append(`if (${T})`), l.update.append(`  ${s.name}.update();`)) : l.update.append(`${s.name}.update();`));
-    }
-    function it(s) {
-      Ie(s);
+      s.template.update && (typeof s.template.update == "function" ? (l.update.append(`if (${j(n.length)})`), l.update.append(`  ${s.name}.update();`), n.push(s.template.update)) : C ? L && (l.update.append(`if (${L})`), l.update.append(`  ${s.name}.update();`)) : l.update.append(`${s.name}.update();`));
     }
     function nt(s) {
-      var T;
+      Re(s);
+    }
+    function st(s) {
+      var L;
       let f = l.current_xmlns, C = s.template.xmlns;
-      C === void 0 && s.template.type == "svg" && (C = "http://www.w3.org/2000/svg"), C == null && (C = l.current_xmlns), w(s), C ? (l.current_xmlns = C, l.create.append(`${s.name} = document.createElementNS(${JSON.stringify(C)}, ${JSON.stringify(s.template.type)});`)) : l.create.append(`${s.name} = document.createElement(${JSON.stringify(s.template.type)});`);
+      C === void 0 && s.template.type == "svg" && (C = "http://www.w3.org/2000/svg"), C == null && (C = l.current_xmlns), v(s), C ? (l.current_xmlns = C, l.create.append(`${s.name} = document.createElementNS(${JSON.stringify(C)}, ${JSON.stringify(s.template.type)});`)) : l.create.append(`${s.name} = document.createElement(${JSON.stringify(s.template.type)});`);
       for (let p of Object.keys(s.template))
         if (!Ne(s, p)) {
           if (p == "id") {
-            J(s.template.id, (v) => `${s.name}.setAttribute("id", ${v});`);
+            q(s.template.id, (w) => `${s.name}.setAttribute("id", ${w});`);
             continue;
           }
           if (p == "class") {
-            J(s.template.class, (v) => `${s.name}.setAttribute("class", ${v});`);
+            q(s.template.class, (w) => `${s.name}.setAttribute("class", ${w});`);
             continue;
           }
           if (p.startsWith("class_")) {
-            let v = ve(p.substring(6));
-            J(s.template[p], (_) => `helpers.setNodeClass(${s.name}, ${JSON.stringify(v)}, ${_})`);
+            let w = Se(p.substring(6));
+            q(s.template[p], (_) => `helpers.setNodeClass(${s.name}, ${JSON.stringify(w)}, ${_})`);
             continue;
           }
           if (p == "style") {
-            J(s.template.style, (v) => `${s.name}.setAttribute("style", ${v});`);
+            q(s.template.style, (w) => `${s.name}.setAttribute("style", ${w});`);
             continue;
           }
           if (p.startsWith("style_")) {
-            let v = ve(p.substring(6));
-            J(s.template[p], (_) => `helpers.setNodeStyle(${s.name}, ${JSON.stringify(v)}, ${_})`);
+            let w = Se(p.substring(6));
+            q(s.template[p], (_) => `helpers.setNodeStyle(${s.name}, ${JSON.stringify(w)}, ${_})`);
             continue;
           }
           if (p == "display") {
             if (s.template.display instanceof Function)
-              l.addLocal(`${s.name}_prev_display`), J(s.template[p], (v) => `${s.name}_prev_display = helpers.setNodeDisplay(${s.name}, ${v}, ${s.name}_prev_display)`);
+              l.addLocal(`${s.name}_prev_display`), q(s.template[p], (w) => `${s.name}_prev_display = helpers.setNodeDisplay(${s.name}, ${w}, ${s.name}_prev_display)`);
             else if (typeof s.template.display == "string")
               l.create.append(`${s.name}.style.display = '${s.template.display}';`);
             else if (s.template.display === !1 || s.template.display === null || s.template.display === void 0)
@@ -1089,25 +1155,27 @@ function ct(o, e) {
             continue;
           }
           if (p.startsWith("attr_")) {
-            let v = p.substring(5);
-            l.current_xmlns || (v = ve(v)), J(s.template[p], (_) => `${s.name}.setAttribute(${JSON.stringify(v)}, ${_})`);
+            let w = p.substring(5);
+            if (w == "style" || w == "class" || w == "id")
+              throw new Error(`Incorrect attribute: use '${w}' instead of '${p}'`);
+            l.current_xmlns || (w = Se(w)), q(s.template[p], (_) => `${s.name}.setAttribute(${JSON.stringify(w)}, ${_})`);
             continue;
           }
           if (p == "text") {
-            s.template.text instanceof Function ? J(s.template.text, (v) => `helpers.setElementText(${s.name}, ${v})`) : s.template.text instanceof V && l.create.append(`${s.name}.innerHTML = ${JSON.stringify(s.template.text.html)};`), typeof s.template.text == "string" && l.create.append(`${s.name}.innerText = ${JSON.stringify(s.template.text)};`);
+            s.template.text instanceof Function ? q(s.template.text, (w) => `helpers.setElementText(${s.name}, ${w})`) : s.template.text instanceof I && l.create.append(`${s.name}.innerHTML = ${JSON.stringify(s.template.text.html)};`), typeof s.template.text == "string" && l.create.append(`${s.name}.innerText = ${JSON.stringify(s.template.text)};`);
             continue;
           }
           throw new Error(`Unknown element template key: ${p}`);
         }
-      Ie(s), (T = s.childNodes) != null && T.length && l.create.append(`${s.name}.append(${s.spreadChildDomNodes()});`), l.current_xmlns = f;
+      Re(s), (L = s.childNodes) != null && L.length && l.create.append(`${s.name}.append(${s.spreadChildDomNodes()});`), l.current_xmlns = f;
     }
-    function Ie(s) {
+    function Re(s) {
       if (s.childNodes)
         for (let f = 0; f < s.childNodes.length; f++)
           ne(s.childNodes[f]);
     }
     function Ne(s, f) {
-      if (st(f))
+      if (rt(f))
         return !0;
       if (f == "export") {
         if (typeof s.template.export != "string")
@@ -1119,30 +1187,30 @@ function ct(o, e) {
       if (f == "bind") {
         if (typeof s.template.bind != "string")
           throw new Error("'bind' must be a string");
-        if (Z.has(s.template.export))
+        if (z.has(s.template.export))
           throw new Error(`duplicate bind name '${s.template.bind}'`);
-        return Z.set(s.template.bind, !0), l.bind.append(`model${A(s.template.bind)} = ${s.name};`), l.unbind.append(`model${A(s.template.bind)} = null;`), !0;
+        return z.set(s.template.bind, !0), l.bind.append(`model${Z(s.template.bind)} = ${s.name};`), l.unbind.append(`model${Z(s.template.bind)} = null;`), !0;
       }
       if (f.startsWith("on_")) {
         let C = f.substring(3);
         if (!(s.template[f] instanceof Function))
           throw new Error(`event handler for '${f}' is not a function`);
         s.listenerCount || (s.listenerCount = 0), s.listenerCount++;
-        let T = `${s.name}_ev${s.listenerCount}`;
-        return l.addLocal(T), l.create.append(`${T} = helpers.addEventListener(() => model, ${s.name}, ${JSON.stringify(C)}, refs[${i.length}]);`), i.push(s.template[f]), !0;
+        let L = `${s.name}_ev${s.listenerCount}`;
+        return l.addLocal(L), l.create.append(`${L} = helpers.addEventListener(() => model, ${s.name}, ${JSON.stringify(C)}, refs[${n.length}]);`), n.push(s.template[f]), !0;
       }
-      return f == "debug_create" ? (typeof s.template[f] == "function" ? (l.create.append(`if (${j(i.length)})`), l.create.append("  debugger;"), i.push(s.template[f])) : s.template[f] && l.create.append("debugger;"), !0) : f == "debug_update" ? (typeof s.template[f] == "function" ? (l.update.append(`if (${j(i.length)})`), l.update.append("  debugger;"), i.push(s.template[f])) : s.template[f] && l.update.append("debugger;"), !0) : !1;
+      return f == "debug_create" ? (typeof s.template[f] == "function" ? (l.create.append(`if (${j(n.length)})`), l.create.append("  debugger;"), n.push(s.template[f])) : s.template[f] && l.create.append("debugger;"), !0) : f == "debug_update" ? (typeof s.template[f] == "function" ? (l.update.append(`if (${j(n.length)})`), l.update.append("  debugger;"), n.push(s.template[f])) : s.template[f] && l.update.append("debugger;"), !0) : f == "debug_render";
     }
-    function st(s) {
+    function rt(s) {
       return s == "type" || s == "childNodes" || s == "xmlns";
     }
     function j(s) {
       return `refs[${s}].call(model, model, context)`;
     }
-    function J(s, f) {
+    function q(s, f) {
       if (s instanceof Function) {
-        let C = `p${n++}`;
-        l.addLocal(C), f(), k(), l.update.append(`temp = ${j(i.length)};`), l.update.append(`if (temp !== ${C})`), l.update.append(`  ${f(C + " = temp")};`), i.push(s);
+        let C = `p${i++}`;
+        l.addLocal(C), f(), B(), l.update.append(`temp = ${j(n.length)};`), l.update.append(`if (temp !== ${C})`), l.update.append(`  ${f(C + " = temp")};`), n.push(s);
       } else
         l.create.append(f(JSON.stringify(s)));
     }
@@ -1154,43 +1222,52 @@ function ct(o, e) {
     }
   }
 }
-let ft = 1;
-function pt(o, e) {
-  let t = ct(o), n = new Function("Environment", "refs", "helpers", "context", t.code), i = function(r) {
-    return r || (r = {}), r.$instanceId = ft++, n(L, t.refs, Pe, r ?? {});
+let pt = 1;
+function Be(r, e) {
+  e = e ?? {}, e.compileTemplate = Be;
+  let t = ft(r, e), i = new Function("Environment", "refs", "helpers", "context", t.code), n = function(o) {
+    return o || (o = {}), o.$instanceId = pt++, i(T, t.refs, We, o ?? {});
   };
-  return i.isSingleRoot = t.isSingleRoot, i;
+  return n.isSingleRoot = t.isSingleRoot, n;
 }
-let mt = /^[a-zA-Z$][a-zA-Z0-9_$]*$/;
-function A(o) {
-  return o.match(mt) ? `.${o}` : `[${JSON.stringify(o)}]`;
+let T = {};
+typeof document < "u" && (T.document = document, T.compileTemplate = Be);
+typeof window < "u" && (T.window = window, T.requestAnimationFrame = window.requestAnimationFrame.bind(window));
+typeof Node < "u" && (T.Node = Node);
+function Et(r) {
+  T = r;
 }
-class Ae {
-  static compile() {
-    return pt(...arguments);
+let $e = [], ce = null;
+class Ct {
+  static declare(e) {
+    $e.push(e), requestAnimationFrame(mt);
   }
 }
-let fe = [], Se = !1;
-function Xe(o, e) {
-  o && (e = e ?? 0, e != 0 && (Se = !0), fe.push({
-    callback: o,
+function mt() {
+  $e.length != 0 && (ce == null && (ce = document.createElement("style")), ce.innerHTML += $e.join(`
+`), $e = [], ce.parentNode || document.head.appendChild(ce));
+}
+let fe = [], xe = !1;
+function Ye(r, e) {
+  r && (e = e ?? 0, e != 0 && (xe = !0), fe.push({
+    callback: r,
     order: e
-  }), fe.length == 1 && L.window.requestAnimationFrame(function() {
+  }), fe.length == 1 && T.requestAnimationFrame(function() {
     let t = fe;
-    Se && (t.sort((n, i) => i.order - n.order), Se = !1), fe = [];
-    for (let n = t.length - 1; n >= 0; n--)
-      t[n].callback();
+    xe && (t.sort((i, n) => n.order - i.order), xe = !1), fe = [];
+    for (let i = t.length - 1; i >= 0; i--)
+      t[i].callback();
   }));
 }
-function Tt(o) {
-  fe.length == 0 ? o() : Xe(o, Number.MAX_SAFE_INTEGER);
+function Tt(r) {
+  fe.length == 0 ? r() : Ye(r, Number.MAX_SAFE_INTEGER);
 }
-var F, te, de;
-const U = class U extends EventTarget {
+var F, ie, de;
+const A = class A extends EventTarget {
   constructor() {
     super();
     S(this, F);
-    S(this, te, !1);
+    S(this, ie, !1);
     S(this, de, !1);
     this.update = this.update.bind(this), this.invalidate = this.invalidate.bind(this);
   }
@@ -1198,13 +1275,13 @@ const U = class U extends EventTarget {
     return this._compiledTemplate || (this._compiledTemplate = this.compileTemplate()), this._compiledTemplate;
   }
   static compileTemplate() {
-    return Ae.compile(this.template);
+    return T.compileTemplate(this.template);
   }
   static get isSingleRoot() {
     return this.compiledTemplate.isSingleRoot;
   }
   init() {
-    a(this, F) || y(this, F, new this.constructor.compiledTemplate({ model: this }));
+    a(this, F) || g(this, F, new this.constructor.compiledTemplate({ model: this }));
   }
   get dom() {
     return a(this, F) || this.init(), a(this, F);
@@ -1221,23 +1298,26 @@ const U = class U extends EventTarget {
     return this.dom.rootNodes;
   }
   invalidate() {
-    a(this, F) && (this.invalid || (this.invalid = !0, U.invalidate(this)));
+    a(this, F) && (this.invalid || (this.invalid = !0, A.invalidate(this)));
   }
   validate() {
     this.invalid && this.update();
   }
   static invalidate(t) {
-    this._invalidComponents.push(t), this._invalidComponents.length == 1 && Xe(() => {
-      for (let n = 0; n < this._invalidComponents.length; n++)
-        this._invalidComponents[n].validate();
+    this._invalidComponents.push(t), this._invalidComponents.length == 1 && Ye(() => {
+      for (let i = 0; i < this._invalidComponents.length; i++)
+        this._invalidComponents[i].validate();
       this._invalidComponents = [];
-    }, U.nextFrameOrder);
+    }, A.nextFrameOrder);
   }
   update() {
-    a(this, F) && (this.invalid = !1, this.dom.update(), a(this, de) && !a(this, te) && (y(this, de, !1), this.dispatchEvent(new Event("loaded"))));
+    a(this, F) && (this.invalid = !1, this.dom.update(), a(this, de) && !a(this, ie) && (g(this, de, !1), this.dispatchEvent(new Event("loaded"))));
+  }
+  render(t) {
+    this.dom.render(t);
   }
   destroy() {
-    a(this, F) && (a(this, F).destroy(), y(this, F, null));
+    a(this, F) && (a(this, F).destroy(), g(this, F, null));
   }
   mount(t) {
     return typeof t == "string" && (t = document.querySelector(t)), t.append(...this.rootNodes), this;
@@ -1246,15 +1326,20 @@ const U = class U extends EventTarget {
     a(this, F) && this.rootNodes.forEach((t) => t.remove());
   }
   get loading() {
-    return a(this, te);
+    return a(this, ie);
   }
   set loading(t) {
-    t != a(this, te) && (y(this, te, t), t && y(this, de, !0), this.invalidate());
+    t != a(this, ie) && (g(this, ie, t), t && g(this, de, !0), this.invalidate());
   }
 };
-F = new WeakMap(), te = new WeakMap(), de = new WeakMap(), oe(U, "_compiledTemplate"), oe(U, "nextFrameOrder", -100), oe(U, "_invalidComponents", []), oe(U, "template", {});
-let Je = U;
+F = new WeakMap(), ie = new WeakMap(), de = new WeakMap(), re(A, "_compiledTemplate"), re(A, "nextFrameOrder", -100), re(A, "_invalidComponents", []), re(A, "template", {});
+let Je = A;
 class Lt {
+  static compile() {
+    return Be(...arguments);
+  }
+}
+class Dt {
   static h(e, t) {
     return {
       type: `h${e}`,
@@ -1275,30 +1360,30 @@ class Lt {
     };
   }
   static raw(e) {
-    return new V(e);
+    return new I(e);
   }
 }
-var z;
-const be = class be extends Array {
+var W;
+const we = class we extends Array {
   constructor() {
     super(...arguments);
-    S(this, z, []);
+    S(this, W, []);
   }
   static from() {
-    return new be(...arguments);
+    return new we(...arguments);
   }
   addListener(t) {
-    a(this, z).push(t);
+    a(this, W).push(t);
   }
   removeListener(t) {
-    let n = a(this, z).indexOf(fn);
-    n >= 0 && a(this, z).splice(n, 1);
+    let i = a(this, W).indexOf(fn);
+    i >= 0 && a(this, W).splice(i, 1);
   }
-  fire(t, n, i) {
-    (n != 0 || i != 0) && a(this, z).forEach((r) => r(t, n, i));
+  fire(t, i, n) {
+    (i != 0 || n != 0) && a(this, W).forEach((o) => o(t, i, n));
   }
   touch(t) {
-    t >= 0 && t < this.length && a(this, z).forEach((n) => n(t, 0, 0));
+    t >= 0 && t < this.length && a(this, W).forEach((i) => i(t, 0, 0));
   }
   push() {
     let t = this.length;
@@ -1316,93 +1401,77 @@ const be = class be extends Array {
     let t = this.length;
     super.unshift(...arguments), this.fire(0, 0, this.length - t);
   }
-  splice(t, n) {
-    t < 0 && (t += this.length), t >= this.length && (n = 0, t = this.length), n === void 0 && (n = this.length - t), n < 0 && (n = 0);
-    let i = super.splice(...arguments);
-    return this.fire(t, n, arguments.length > 2 ? arguments.length - 2 : 0), i;
+  splice(t, i) {
+    t < 0 && (t += this.length), t >= this.length && (i = 0, t = this.length), i === void 0 && (i = this.length - t), i < 0 && (i = 0);
+    let n = super.splice(...arguments);
+    return this.fire(t, i, arguments.length > 2 ? arguments.length - 2 : 0), n;
   }
   sort() {
     super.sort(...arguments), this.fire(0, this.length, this.length);
   }
-  setAt(t, n) {
+  setAt(t, i) {
     if (t < 0 || t >= this.length)
       throw new Error("Observable array index out of range");
-    this[t] = n, this.fire(t, 1, 1);
+    this[t] = i, this.fire(t, 1, 1);
   }
   get isObservable() {
     return !0;
   }
   static from(t) {
-    return new be(...t);
+    return new we(...t);
   }
 };
-z = new WeakMap();
-let Ue = be;
-function gt(o) {
-  let e = "^", t = o.length, n;
-  for (let r = 0; r < t; r++) {
-    n = !0;
-    let d = o[r];
+W = new WeakMap();
+let Ue = we;
+function gt(r) {
+  let e = "^", t = r.length, i;
+  for (let o = 0; o < t; o++) {
+    i = !0;
+    let d = r[o];
     if (d == "?")
       e += "[^\\/]";
     else if (d == "*")
       e += "[^\\/]+";
     else if (d == ":") {
-      r++;
-      let h = r;
-      for (; r < t && i(o[r]); )
-        r++;
-      let N = o.substring(h, r);
+      o++;
+      let h = o;
+      for (; o < t && n(r[o]); )
+        o++;
+      let N = r.substring(h, o);
       if (N.length == 0)
         throw new Error("syntax error in url pattern: expected id after ':'");
-      let g = "[^\\/]+";
-      if (o[r] == "(") {
-        r++, h = r;
+      let y = "[^\\/]+";
+      if (r[o] == "(") {
+        o++, h = o;
         let m = 0;
-        for (; r < t; ) {
-          if (o[r] == "(")
+        for (; o < t; ) {
+          if (r[o] == "(")
             m++;
-          else if (o[r] == ")") {
+          else if (r[o] == ")") {
             if (m == 0)
               break;
             m--;
           }
-          r++;
+          o++;
         }
-        if (r >= t)
+        if (o >= t)
           throw new Error("syntax error in url pattern: expected ')'");
-        g = o.substring(h, r), r++;
+        y = r.substring(h, o), o++;
       }
-      if (r < t && o[r] == "*" || o[r] == "+") {
-        let m = o[r];
-        r++, o[r] == "/" ? (e += `(?<${N}>(?:${g}\\/)${m})`, r++) : m == "*" ? e += `(?<${N}>(?:${g}\\/)*(?:${g})?\\/?)` : e += `(?<${N}>(?:${g}\\/)*(?:${g})\\/?)`, n = !1;
+      if (o < t && r[o] == "*" || r[o] == "+") {
+        let m = r[o];
+        o++, r[o] == "/" ? (e += `(?<${N}>(?:${y}\\/)${m})`, o++) : m == "*" ? e += `(?<${N}>(?:${y}\\/)*(?:${y})?\\/?)` : e += `(?<${N}>(?:${y}\\/)*(?:${y})\\/?)`, i = !1;
       } else
-        e += `(?<${N}>${g})`;
-      r--;
-    } else d == "/" ? (e += "\\" + d, r == o.length - 1 && (e += "?")) : ".$^{}[]()|*+?\\/".indexOf(d) >= 0 ? (e += "\\" + d, n = d != "/") : e += d;
+        e += `(?<${N}>${y})`;
+      o--;
+    } else d == "/" ? (e += "\\" + d, o == r.length - 1 && (e += "?")) : ".$^{}[]()|*+?\\/".indexOf(d) >= 0 ? (e += "\\" + d, i = d != "/") : e += d;
   }
-  return n && (e += "\\/?"), e += "$", e;
-  function i(r) {
-    return r >= "a" && r <= "z" || r >= "A" && r <= "Z" || r >= "0" && r <= "9" || r == "_" || r == "$";
+  return i && (e += "\\/?"), e += "$", e;
+  function n(o) {
+    return o >= "a" && o <= "z" || o >= "A" && o <= "Z" || o >= "0" && o <= "9" || o == "_" || o == "$";
   }
 }
-function Dt(o) {
-  return o == null ? "" : ("" + o).replace(/["'&<>]/g, function(e) {
-    switch (e) {
-      case '"':
-        return "&quot;";
-      case "&":
-        return "&amp;";
-      case "'":
-        return "&#39;";
-      case "<":
-        return "&lt;";
-      case ">":
-        return "&gt;";
-    }
-  });
-}
-class qe {
+class He {
   static get() {
     return {
       top: window.pageYOffset || document.documentElement.scrollTop,
@@ -1413,11 +1482,11 @@ class qe {
     e ? window.scrollTo(e.left, e.top) : window.scrollTo(0, 0);
   }
 }
-var M, pe, E, he, ue;
+var V, pe, E, he, ue;
 class yt extends EventTarget {
   constructor() {
     super(...arguments);
-    S(this, M, {});
+    S(this, V, {});
     // Prefix for all url matching
     S(this, pe);
     // The current route
@@ -1427,29 +1496,29 @@ class yt extends EventTarget {
   }
   start() {
     let t = window.sessionStorage.getItem("codeonly-view-states");
-    t && y(this, M, JSON.parse(t)), this.load(window.location.pathname, window.history.state ?? { sequence: 0 }), window.history.replaceState(a(this, E).state, null), document.body.addEventListener("click", (n) => {
-      let i = n.target.closest("a");
-      if (i) {
-        let r = i.getAttribute("href");
-        this.navigate(r) && n.preventDefault();
+    t && g(this, V, JSON.parse(t)), this.load(window.location.pathname, window.history.state ?? { sequence: 0 }), window.history.replaceState(a(this, E).state, null), document.body.addEventListener("click", (i) => {
+      let n = i.target.closest("a");
+      if (n) {
+        let o = n.getAttribute("href");
+        this.navigate(o) && i.preventDefault();
       }
-    }), window.addEventListener("popstate", (n) => {
-      this.captureCurrentViewState(), this.saveViewStatesToLocalStorage(), this.load(document.location.pathname, n.state);
-    }), window.addEventListener("beforeunload", (n) => {
+    }), window.addEventListener("popstate", (i) => {
+      this.captureCurrentViewState(), this.saveViewStatesToLocalStorage(), this.load(document.location.pathname, i.state);
+    }), window.addEventListener("beforeunload", (i) => {
       this.captureCurrentViewState(), this.saveViewStatesToLocalStorage();
     }), window.history.scrollRestoration && (window.history.scrollRestoration = "manual");
   }
   saveViewStatesToLocalStorage() {
-    window.sessionStorage.setItem("codeonly-view-states", JSON.stringify(a(this, M)));
+    window.sessionStorage.setItem("codeonly-view-states", JSON.stringify(a(this, V)));
   }
   captureCurrentViewState() {
-    a(this, E) && (a(this, M)[a(this, E).state.sequence] = a(this, E).handler.captureViewState());
+    a(this, E) && (a(this, V)[a(this, E).state.sequence] = a(this, E).handler.captureViewState());
   }
   get prefix() {
     return a(this, pe);
   }
   set prefix(t) {
-    y(this, pe, t);
+    g(this, pe, t);
   }
   get current() {
     return a(this, E);
@@ -1458,51 +1527,51 @@ class yt extends EventTarget {
     if (!t.startsWith("/") || this.prefix && t != this.prefix && !t.startsWith(this.prefix + "/"))
       return null;
     this.captureCurrentViewState();
-    for (let i of Object.keys(a(this, M)))
-      parseInt(i) > a(this, E).state.sequence && delete a(this, M)[i];
+    for (let n of Object.keys(a(this, V)))
+      parseInt(n) > a(this, E).state.sequence && delete a(this, V)[n];
     this.saveViewStatesToLocalStorage();
-    let n = this.load(t, { sequence: a(this, E).state.sequence + 1 });
-    return n ? (window.history.pushState(n.state, null, t), !0) : null;
+    let i = this.load(t, { sequence: a(this, E).state.sequence + 1 });
+    return i ? (window.history.pushState(i.state, null, t), !0) : null;
   }
   replace(t) {
-    var n;
-    a(this, E).url = t, this.prefix && (t = this.prefix + t), a(this, E).originalUrl = t, a(this, E).match = (n = a(this, E).handler.pattern) == null ? void 0 : n.match(a(this, E).url), window.history.replaceState(a(this, E).state, null, t);
+    var i;
+    a(this, E).url = t, this.prefix && (t = this.prefix + t), a(this, E).originalUrl = t, a(this, E).match = (i = a(this, E).handler.pattern) == null ? void 0 : i.match(a(this, E).url), window.history.replaceState(a(this, E).state, null, t);
   }
-  load(t, n) {
-    var d, h, N, g, m, c;
-    let i = this.matchUrl(t, n);
-    if (!i)
+  load(t, i) {
+    var d, h, N, y, m, c;
+    let n = this.matchUrl(t, i);
+    if (!n)
       return null;
-    (N = (d = a(this, E)) == null ? void 0 : (h = d.handler).leave) == null || N.call(h, a(this, E)), y(this, E, i);
-    let r = new Event("navigate");
-    return r.route = i, this.dispatchEvent(r), (g = i.page) != null && g.loading ? i.page.addEventListener("loaded", () => {
+    (N = (d = a(this, E)) == null ? void 0 : (h = d.handler).leave) == null || N.call(h, a(this, E)), g(this, E, n);
+    let o = new Event("navigate");
+    return o.route = n, this.dispatchEvent(o), (y = n.page) != null && y.loading ? n.page.addEventListener("loaded", () => {
       var $, l;
-      a(this, E) == i && ((l = ($ = i.handler).restoreViewState) == null || l.call($, i.viewState));
-    }, { once: !0 }) : (c = (m = i.handler).restoreViewState) == null || c.call(m, i.viewState), i;
+      a(this, E) == n && ((l = ($ = n.handler).restoreViewState) == null || l.call($, n.viewState));
+    }, { once: !0 }) : (c = (m = n.handler).restoreViewState) == null || c.call(m, n.viewState), n;
   }
-  matchUrl(t, n) {
-    a(this, ue) && (a(this, he).sort((r, d) => (r.order ?? 0) - (d.order ?? 0)), y(this, ue, !1));
-    let i = {
+  matchUrl(t, i) {
+    a(this, ue) && (a(this, he).sort((o, d) => (o.order ?? 0) - (d.order ?? 0)), g(this, ue, !1));
+    let n = {
       url: t,
-      state: n,
-      viewState: a(this, M)[n.sequence],
+      state: i,
+      viewState: a(this, V)[i.sequence],
       originalUrl: t
     };
     if (this.prefix) {
       if (!t.startsWith(this.prefix))
         return null;
-      i.url = t.substring(this.prefix.length);
+      n.url = t.substring(this.prefix.length);
     }
-    for (let r of a(this, he)) {
-      if (r.pattern && (i.match = i.url.match(r.pattern), !i.match))
+    for (let o of a(this, he)) {
+      if (o.pattern && (n.match = n.url.match(o.pattern), !n.match))
         continue;
-      let d = r.match(i);
-      if (d === !0 || d == i)
-        return i.handler = r, i;
+      let d = o.match(n);
+      if (d === !0 || d == n)
+        return n.handler = o, n;
       if (d === null)
         return null;
     }
-    return i.handler = {}, i;
+    return n.handler = {}, n;
   }
   back() {
     if (a(this, E).state.sequence == 0) {
@@ -1512,39 +1581,40 @@ class yt extends EventTarget {
       window.history.back();
   }
   register(t) {
-    typeof t.pattern == "string" && (t.pattern = gt(t.pattern)), t.captureViewState === void 0 && t.restoreViewState === void 0 && (t.captureViewState = qe.get, t.restoreViewState = qe.set), a(this, he).push(t), y(this, ue, !0);
+    typeof t.pattern == "string" && (t.pattern = gt(t.pattern)), t.captureViewState === void 0 && t.restoreViewState === void 0 && (t.captureViewState = He.get, t.restoreViewState = He.set), a(this, he).push(t), g(this, ue, !0);
   }
 }
-M = new WeakMap(), pe = new WeakMap(), E = new WeakMap(), he = new WeakMap(), ue = new WeakMap();
+V = new WeakMap(), pe = new WeakMap(), E = new WeakMap(), he = new WeakMap(), ue = new WeakMap();
 let Ot = new yt();
 export {
-  He as CloakedValue,
+  Pe as CloakedValue,
   Je as Component,
-  qe as DocumentScrollPosition,
-  Oe as EmbedSlot,
-  L as Environment,
-  _e as ForEachBlock,
-  Lt as Html,
-  V as HtmlString,
-  $e as IfBlock,
+  He as DocumentScrollPosition,
+  ke as EmbedSlot,
+  T as Environment,
+  Ee as ForEachBlock,
+  Dt as Html,
+  I as HtmlString,
+  be as IfBlock,
   Ue as ObservableArray,
   yt as Router,
-  vt as Style,
-  Ae as Template,
-  xt as areSetsEqual,
-  _t as binarySearch,
-  ve as camel_to_dash,
-  wt as cloak,
-  Et as compareStrings,
-  Ct as compareStringsI,
+  Ct as Style,
+  Lt as Template,
+  wt as areSetsEqual,
+  Nt as binarySearch,
+  Se as camel_to_dash,
+  _t as cloak,
+  vt as compareStrings,
+  St as compareStringsI,
   ht as deepEqual,
-  Nt as html,
-  Dt as htmlEncode,
-  St as inplace_filter_array,
-  xe as is_constructor,
-  Xe as nextFrame,
+  xt as html,
+  ge as htmlEncode,
+  bt as inplace_filter_array,
+  _e as is_constructor,
+  Z as member,
+  Ye as nextFrame,
   Tt as postNextFrame,
   Ot as router,
-  bt as setEnvironment,
+  Et as setEnvironment,
   gt as urlPattern
 };

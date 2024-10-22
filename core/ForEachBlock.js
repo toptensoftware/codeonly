@@ -1,14 +1,13 @@
 import { diff_tiny } from "./diff_tiny.js";
-import { Template } from "./Template.js";
 import { TemplateNode } from "./TemplateNode.js";
-import { Environment } from "./Enviroment.js";
+import { Environment } from "./Environment.js";
 
 export class ForEachBlock
 {
-    static integrate(template)
+    static integrate(template, compilerOptions)
     {
         let data = {
-            itemConstructor: Template.compile(template.template),
+            itemConstructor: compilerOptions.compileTemplate(template.template),
             template: {
                 items: template.items,
                 condition: template.condition,
@@ -20,7 +19,7 @@ export class ForEachBlock
         let nodes;
         if (template.empty)
         {
-            nodes = [ new TemplateNode(template.empty) ];
+            nodes = [ new TemplateNode(template.empty, compilerOptions) ];
         }
 
         delete template.template;
@@ -110,8 +109,8 @@ export class ForEachBlock
         this.itemDoms = [];
 
         // Sentinal nodes
-        this.headSentinal = Environment.document.createComment(" enter foreach block ");
-        this.tailSentinal = Environment.document.createComment(" leave foreach block ");
+        this.headSentinal = Environment.document?.createComment(" enter foreach block ");
+        this.tailSentinal = Environment.document?.createComment(" leave foreach block ");
 
         // Single vs multi-root op helpers
         let insert, insert_dom, remove_dom;
@@ -284,6 +283,15 @@ export class ForEachBlock
         this.#update_range(0, this.itemDoms.length, newItems, newKeys);
     }
     
+    render(w)
+    {
+        w.write(`<!-- enter foreach block -->`);
+        for (let i=0; i<this.itemDoms.length; i++)
+        {
+            this.itemDoms[i].render(w);
+        }
+        w.write(`<!-- leave foreach block -->`);
+    }
 
     #update_range(range_start, range_length, newItems, newKeys)
     {
@@ -439,7 +447,7 @@ export class ForEachBlock
             if (!this.emptyDom && this.emptyConstructor)
             {
                 this.emptyDom = this.emptyConstructor();
-                if (this.tailSentinal.parentNode)
+                if (this.isAttached)
                     this.tailSentinal.before(...this.emptyDom.rootNodes);
             }
             if (this.emptyDom)
@@ -451,7 +459,7 @@ export class ForEachBlock
         {
             if (this.emptyDom)
             {
-                if (this.tailSentinal.parentNode)
+                if (this.isAttached)
                 {
                     for (var n of this.emptyDom.rootNodes)
                     {
@@ -469,6 +477,10 @@ export class ForEachBlock
     #delete;
     #remove_dom;
 
+    get isAttached()
+    {
+        return this.tailSentinal?.parentNode != null;
+    }
 
     #multi_root_insert(newItems, newKeys, index, src_index, count)
     {
@@ -496,10 +508,11 @@ export class ForEachBlock
         this.itemDoms.splice(index, 0, ...itemDoms);
 
         // Insert the nodes
-        let newNodes = [];
-        itemDoms.forEach(x => newNodes.push(...x.rootNodes));
-        if (this.tailSentinal.parentNode)
+        if (this.isAttached)
         {
+            let newNodes = [];
+            itemDoms.forEach(x => newNodes.push(...x.rootNodes));
+
             let insertBefore;
             if (index + itemDoms.length < this.itemDoms.length)
             {
@@ -518,14 +531,14 @@ export class ForEachBlock
         let itemDoms = this.#multi_root_remove_dom(index, count);
         for (let i = itemDoms.length-1; i>=0; i--)
         {
-            itemsDoms[i].destroy();
+            itemDoms[i].destroy();
         }
     }
 
     #multi_root_remove_dom(index, count)
     {
         // Destroy the items
-        let isAttached = this.tailSentinal.parentNode != null;
+        let isAttached = this.isAttached;
         for (let i=0; i<count; i++)
         {
             // Remove child nodes
@@ -569,9 +582,10 @@ export class ForEachBlock
         this.itemDoms.splice(index, 0, ...itemDoms);
 
         // Insert the nodes
-        let newNodes = itemDoms.map(x => x.rootNode);;
-        if (this.tailSentinal.parentNode)
+        if (this.isAttached)
         {
+            let newNodes = itemDoms.map(x => x.rootNode);
+
             let insertBefore;
             if (index + itemDoms.length < this.itemDoms.length)
             {
@@ -597,7 +611,7 @@ export class ForEachBlock
     #single_root_remove_dom(index, count)
     {
         // Remove
-        let isAttached = this.tailSentinal.parentNode != null;
+        let isAttached = this.isAttached;
         for (let i=0; i<count; i++)
         {
             // Remove child nodes

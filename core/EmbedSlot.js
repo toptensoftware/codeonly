@@ -1,20 +1,29 @@
 import { is_constructor } from "./Utils.js";
 import { HtmlString } from "./HtmlString.js";
 import { TemplateNode } from "./TemplateNode.js";
-import { Environment } from "./Enviroment.js";
+import { Environment } from "./Environment.js";
 
 export class EmbedSlot
 {
-    static integrate(template)
+    static integrate(template, compilerOptions)
     {
+        let contentTemplate = null;
+        if (template.content && typeof(template.content) === "object")
+        {
+            contentTemplate = template.content;
+            delete template.content;
+        }
         let retv = {
             isSingleRoot: false,
             wantsUpdate: true,
             data: { 
-                content: template.content,
                 ownsContent: template.ownsContent ?? true,
+                content: template.content,
             },
-            nodes: template.placeholder ? [ new TemplateNode(template.placeholder) ] : [],
+            nodes: [
+                contentTemplate ? new TemplateNode(contentTemplate, compilerOptions) : null,
+                template.placeholder ? new TemplateNode(template.placeholder, compilerOptions) : null,
+            ]
         }
 
         delete template.content;
@@ -77,14 +86,17 @@ export class EmbedSlot
     constructor(options)
     {
         this.#context = options.context;
-        this.#placeholderConstructor = options.nodes.length > 0 ? options.nodes[0] : null;
-        this.#headSentinal = Environment.document.createTextNode("");
-        this.#tailSentinal = Environment.document.createTextNode("");
+        this.#placeholderConstructor = options.nodes[1];
+        this.#headSentinal = Environment.document?.createTextNode("");
+        this.#tailSentinal = Environment.document?.createTextNode("");
         this.#nodes = [];
         this.#ownsContent = options.data.ownsContent ?? true;
 
         // Load now
-        this.content = options.data.content;
+        if (options.nodes[0])
+            this.content = options.nodes[0]();
+        else
+            this.content = options.data.content;
     }
 
     get rootNodes() 
@@ -153,6 +165,8 @@ export class EmbedSlot
             this.#resolvedContent?.unbind?.()
     }
 
+    get isAttached() { return this.#headSentinal?.parentNode != null; }
+
     replaceContent(value)
     {
         // Quit if redundant (same value, or still need placeholder)
@@ -160,7 +174,7 @@ export class EmbedSlot
             return;
 
         // Remove old content
-        if (this.#headSentinal.parentNode != null)
+        if (this.isAttached)
         {
             let n = this.#headSentinal.nextSibling;
             while (n != this.#tailSentinal)
@@ -197,7 +211,7 @@ export class EmbedSlot
             // Array of HTML nodes
             this.#nodes = value;
         }
-        else if (value instanceof Environment.Node)
+        else if (Environment.Node !== undefined && value instanceof Environment.Node)
         {
             // Single HTML node
             this.#nodes = [ value ];
@@ -212,12 +226,17 @@ export class EmbedSlot
         {
             this.#nodes = [ Environment.document.createTextNode(value) ];
         }
+        else if (value.render)
+        {
+            // Render only component, ignore it
+            this.#nodes = [];
+        }
         else
         {
             throw new Error("Embed slot requires component, array of HTML nodes or a single HTML node");
         }
 
-        if (this.#tailSentinal.parentNode)
+        if (this.isAttached)
             this.#tailSentinal.before(...this.#nodes);
 
     }
@@ -226,5 +245,11 @@ export class EmbedSlot
     {
         if (this.#ownsContent)
             this.#resolvedContent?.destroy?.();
+    }
+
+    render(w)
+    {
+        if (this.#resolvedContent)
+            this.#resolvedContent.render?.(w);
     }
 }

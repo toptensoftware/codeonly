@@ -14,7 +14,7 @@ test("Expression", () => {
 
     let t = new TemplateLiteralBuilder();
     t.raw("Hello World, ");
-    t.raw_expr("name");
+    t.expr("name");
     t.raw(" was here");
     assert.equal(t.resolve(), "`Hello World, ${name} was here`");
 
@@ -43,13 +43,3 @@ test("HTML encoding (text)", () => {
     assert.equal(t.resolve(), "`A &amp; B`");
 
 });
-
-
-test("HTML encoding (raw)", () => {
-
-    let t = new TemplateLiteralBuilder();
-    t.text_expr("A & B");
-    assert.equal(t.resolve(), "`${htmlEncode(A & B)}`");
-
-});
-

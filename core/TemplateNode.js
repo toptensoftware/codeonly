@@ -1,7 +1,7 @@
 import { HtmlString } from "./HtmlString.js";
 import { is_constructor } from "./Utils.js";
 import { Plugins } from "./Plugins.js";
-import { Environment } from "./Enviroment.js";
+import { Environment } from "./Environment.js";
 
 // Manages information about a node in a template
 export class TemplateNode
@@ -9,7 +9,7 @@ export class TemplateNode
     // Constructs a new TemplateNode
     // - name: the variable name for this node (eg: "n1")
     // - template: the user supplied template object this node is derived from
-    constructor(template)
+    constructor(template, compilerOptions)
     {
         // Automatically wrap array as a fragment with the array
         // as the child nodes.
@@ -73,8 +73,12 @@ export class TemplateNode
 
         if (this.kind === 'integrated')
         {
-            // Prepare template if the component wants it
-            this.integrated = this.template.type.integrate(this.template);
+            if (template.$ && !template.content)
+            {
+                template.content = template.$;
+                delete template.$;
+            }
+            this.integrated = this.template.type.integrate(this.template, compilerOptions);
         }
 
         // If $ is a string or HtmlString convert to text property
@@ -121,12 +125,12 @@ export class TemplateNode
                 EmbedSlot.transformGroup(template.childNodes);
                 IfBlock.transformGroup(template.childNodes);
                 */
-                this.childNodes = this.template.childNodes.map(x => new TemplateNode(x));
+                this.childNodes = this.template.childNodes.map(x => new TemplateNode(x, compilerOptions));
             }
             else
                 this.childNodes = [];
         }
-        else if (this.isComponent)
+        else if (this.isComponent )
         {
             if (template.$ && !template.content)
             {

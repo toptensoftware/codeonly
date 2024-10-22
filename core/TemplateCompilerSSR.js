@@ -1,18 +1,23 @@
 import { camel_to_dash } from "./Utils.js";
+import { htmlEncode } from "./htmlEncode.js";
 import { HtmlString } from "./HtmlString.js";
 import { CloakedValue} from "./CloakedValue.js";
 import { ClosureBuilder } from "./ClosureBuilder.js";
 import { TemplateHelpers } from "./TemplateHelpers.js";
 import { TemplateNode } from "./TemplateNode.js";
-import { Environment } from "./Enviroment.js";
+import { Environment } from "./Environment.js";
 import { member } from "./Utils.js";
 import { TemplateLiteralBuilder} from "./TemplateLiteralBuilder.js";
 
 
-export function compileTemplateCode(rootTemplate, copts)
+export function compileTemplateCode(rootTemplate, compilerOptions)
 {
     // Every node in the template will get an id, starting at 1.
     let nodeId = 1;
+
+    // Every dynamic property gets a variable named pNNN where n increments
+    // using this variable
+    let prevId = 1;
 
     // Any callbacks, arrays etc... referenced directly by the template
     // will be stored here and passed back to the compile code via refs
@@ -21,7 +26,7 @@ export function compileTemplateCode(rootTemplate, copts)
     let rootClosure = null;
 
     // Create root node info        
-    let rootTemplateNode = new TemplateNode(rootTemplate);
+    let rootTemplateNode = new TemplateNode(rootTemplate, compilerOptions);
 
     let closure = create_node_closure(rootTemplateNode, true);
 
@@ -50,6 +55,7 @@ export function compileTemplateCode(rootTemplate, copts)
         // Setup closure functions
         let closure = new ClosureBuilder();
         closure.create = closure.addFunction("create").code;
+        closure.update = closure.addFunction("update").code;
         closure.render = closure.addFunction("render", [ "w" ]).code;
         closure.destroy = closure.addFunction("destroy").code;
 
@@ -63,8 +69,9 @@ export function compileTemplateCode(rootTemplate, copts)
             rootClosure.code.append(`let model = context.model;`);
         }
 
-        // Call create function
+        // Call initialization functions
         closure.code.append(`create();`);
+        closure.code.append(`update();`);
             
         // Render code
         emit_node(ni);
@@ -79,9 +86,11 @@ export function compileTemplateCode(rootTemplate, copts)
         }
 
         // Root context?
+        let otherExports = [];
         if (isRootTemplate)
         {
             otherExports.push(`  context,`);
+            otherExports.push(`  get html() { return helpers.renderToString(render) },`);
         }
 
 
@@ -89,6 +98,8 @@ export function compileTemplateCode(rootTemplate, copts)
         closure.code.append([
             `return { `,
             `  render,`,
+            `  update,`,
+            `  destroy,`,
             ...otherExports,
             `};`]);
 
@@ -107,6 +118,17 @@ export function compileTemplateCode(rootTemplate, copts)
                 rootClosure.addLocal(ni.name);
             else
                 closure.addLocal(ni.name);
+        }
+
+        // Sometimes we need a temp variable.  This function
+        // adds it when needed
+        function need_update_temp()
+        {
+            if (!closure.update.temp_declared)
+            {
+                closure.update.temp_declared = true;
+                closure.update.append(`let temp;`);
+            }
         }
 
         // Recursively emit a node from a template
@@ -166,15 +188,15 @@ export function compileTemplateCode(rootTemplate, copts)
                 {
                     // Create the sub-template node
                     let ni_sub = ni.integrated.nodes[i];
+                    if (!ni_sub)
+                    {
+                        nodeConstructors.push(null);
+                        continue;
+                    }
                     ni_sub.name = `n${nodeId++}`;
 
                     // Emit it
                     let sub_closure = create_node_closure(ni_sub, false);
-
-                    // Track if the closure has any bindings
-                    let fnBind = sub_closure.getFunction("bind");
-                    if (!fnBind.isEmpty)
-                        has_bindings = true;
 
                     // Append to our closure
                     let nodeConstructor = `${ni_sub.name}_constructor_${i+1}`;
@@ -190,6 +212,11 @@ export function compileTemplateCode(rootTemplate, copts)
             {
                 data_index = refs.length;
                 refs.push(ni.integrated.data);
+            }
+
+            if (ni.integrated.wantsUpdate)
+            {
+                closure.update.append(`${ni.name}.update()`);
             }
 
             // Create integrated component
@@ -212,6 +239,9 @@ export function compileTemplateCode(rootTemplate, copts)
 
                 throw new Error(`Unknown element template key: ${key}`);
             }
+
+            flushTlb();
+            closure.render.append(`${ni.name}.render(w);`);
         
         }
 
@@ -225,6 +255,9 @@ export function compileTemplateCode(rootTemplate, copts)
             refs.push(ni.template.type);
 
             let slotNames = new Set(ni.template.type.slots ?? []);
+
+            let auto_update = ni.template.update === "auto";
+            let auto_modified_name = false;
 
             // Process all keys
             flushTlb();
@@ -245,7 +278,7 @@ export function compileTemplateCode(rootTemplate, copts)
                         continue;
 
                     // Emit the template node
-                    let propTemplate = new TemplateNode(ni.template[key]);
+                    let propTemplate = new TemplateNode(ni.template[key], compilerOptions);
                     emit_node(propTemplate);
                     closure.create.append(`${ni.name}${member(key)}.content = ${propTemplate.name};`);
                     continue;
@@ -260,16 +293,31 @@ export function compileTemplateCode(rootTemplate, copts)
                 }
                 else if (propType === 'function')
                 {
-                    // Create
+                    if (auto_update && !auto_modified_name)
+                    {
+                        auto_modified_name = `${ni.name}_mod`;
+                        closure.update.append(`let ${auto_modified_name} = false;`);
+                    }
+
+                        // Create
                     let prevName = `p${prevId++}`;
                     closure.addLocal(prevName);
                     let callback_index = refs.length;
 
                     // Update
                     need_update_temp();
-                    closure.render.append(`temp = ${format_callback(callback_index)};`);
-                    closure.render.append(`if (temp !== ${prevName})`);
-                    closure.render.append(`  ${ni.name}${member(key)} = ${prevName} = temp;`);
+                    closure.update.append(`temp = ${format_callback(callback_index)};`);
+                    closure.update.append(`if (temp !== ${prevName})`);
+                    if (auto_update)
+                    {
+                        closure.update.append(`{`);
+                        closure.update.append(`  ${auto_modified_name} = true;`);
+                    }
+
+                    closure.update.append(`  ${ni.name}${member(key)} = ${prevName} = temp;`);
+
+                    if (auto_update)
+                        closure.update.append(`}`);
 
                     // Store callback
                     refs.push(ni.template[key]);
@@ -287,6 +335,32 @@ export function compileTemplateCode(rootTemplate, copts)
                 }
             }
 
+            // Generate deep update
+            if (ni.template.update)
+            {
+                if (typeof(ni.template.update) === 'function')
+                {
+                    closure.update.append(`if (${format_callback(refs.length)})`);
+                    closure.update.append(`  ${ni.name}.update();`);
+                    refs.push(ni.template.update);
+                }
+                else
+                {
+                    if (auto_update)
+                    {
+                        if (auto_modified_name)
+                        {
+                            closure.update.append(`if (${auto_modified_name})`);
+                            closure.update.append(`  ${ni.name}.update();`);
+                        }
+                    }
+                    else
+                    {
+                        closure.update.append(`${ni.name}.update();`);
+                    }
+                }
+            }
+                
             closure.render.append(`${ni.name}.render(w);`);
         }
 
@@ -314,13 +388,7 @@ export function compileTemplateCode(rootTemplate, copts)
                 if (key == "id")
                 {
                     tlb.raw(` id="`);
-                    if (ni.template.id instanceof Function)
-                    {
-                        tlb.text_expr(format_callback(refs.length))
-                        refs.push(ni.template.id);
-                    }
-                    else
-                        tlb.text(ni.template.id);
+                    tlb_dynamic(ni.template.id);
                     tlb.raw(`"`);
                     continue;
                 }
@@ -345,7 +413,10 @@ export function compileTemplateCode(rootTemplate, copts)
 
                 if (key == "style")
                 {
-                    styleList.push(ni.template[key]);
+                    styleList.push({
+                        name: null,
+                        value: ni.template[key]
+                    });
                     continue;
                 }
 
@@ -355,6 +426,7 @@ export function compileTemplateCode(rootTemplate, copts)
                         name: camel_to_dash(key.substring(6)), 
                         value: ni.template[key] 
                     });
+                    continue;
                 }
 
                 if (key == "display")
@@ -394,7 +466,7 @@ export function compileTemplateCode(rootTemplate, copts)
                         attrName = camel_to_dash(attrName);
 
                     tlb.raw(` ${attrName}="`);
-                    tlb_dynamic(this.template[key]);
+                    tlb_dynamic(ni.template[key]);
                     tlb.raw(`"`);
                     continue;
                 }
@@ -405,33 +477,78 @@ export function compileTemplateCode(rootTemplate, copts)
             // Classes
             if (classList.length > 0)
             {
-                tlb.raw(` class="`);
-                let needSpace = false;
+                let any = false;
                 for (let cls of classList)
                 {
+                    if (!cls.condition)
+                        continue;
+
+                    if (!any)
+                        tlb.raw(` class="`);
+                    else
+                        tlb.raw(" ");
+                    any = true;
+
                     if (cls.condition instanceof Function)
                     {
-                        if (needSpace)
-                            tlb.raw(" ");
-                        tlb.expr(`${format_callback(cls.condition)} ? ${htmlEncode(cls.name)} : ""`);
-                        needSpace = true;
+                        tlb.expr(`${format_callback(refs.length)} ? "${htmlEncode(cls.name)}" : ""`);
+                        refs.push(cls.condition);
                     }
-                    else if (cls.condition)
+                    else if (cls.condition)                    
                     {
-                        if (needSpace)
-                            tlb.raw(" ");
-                        tlb.text(cls.name);
-                        needSpace = true;
+                        tlb_dynamic(cls.name);
                     }
-                    tlb.raw(" ");
                 }
-                tlb.raw(`"`);
+                if (any)
+                    tlb.raw(`"`);
             }
 
             // Styles
             if (styleList.length > 0)
             {
                 tlb.raw(` style="`);
+                
+                for (let style of styleList)
+                {
+                    if (style.name === null)
+                    {
+                        if (style.value instanceof Function)
+                        {
+                            tlb.expr(`helpers.rawStyle(${format_callback(refs.length)})`);
+                            refs.push(style.value);
+                        }
+                        else if (style.value instanceof HtmlString)
+                        {
+                            let s = style.value.html.trim();
+                            if (!s.endsWith(";"))
+                                s += ";";
+                            tlb.raw(s);
+                        }                         
+                        else 
+                        {
+                            let s = style.value.toString().trim();
+                            if (!s.endsWith(";"))
+                                s += ";";
+                            tlb.text(s);
+                        }
+                    }
+                    else
+                    {
+                        if (style.value instanceof Function)
+                        {
+                            tlb.expr(`helpers.rawNamedStyle(${JSON.stringify(style.name)}, ${format_callback(refs.length)})`);
+                            refs.push(style.value);
+                        }
+                        else if (style.value !== undefined && style.value !== null)
+                        {
+                            tlb.raw(style.name);
+                            tlb.raw(":");
+                            tlb_dynamic(style.value);
+                            tlb.raw(";");
+                        }
+                    }
+                }
+
                 tlb.raw(`"`);
             }
 
@@ -446,17 +563,17 @@ export function compileTemplateCode(rootTemplate, copts)
                 // Emit child nodes
                 emit_child_nodes(ni);
 
-                tlb.raw(`</${this.template.type}`);
+                tlb.raw(`</${ni.template.type}>`);
             }
             else
             {
-                if (this.template.type.match(/^(area|base|br|col|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)$/i))
+                if (ni.template.type.match(/^(area|base|br|col|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)$/i))
                 {
                     tlb.raw("/>");
                 }
                 else
                 {
-                    tlb.raw(`></${this.template.type}`);
+                    tlb.raw(`></${ni.template.type}>`);
                 }
             }
             
@@ -535,7 +652,7 @@ export function compileTemplateCode(rootTemplate, copts)
         {
             if (value instanceof Function)
             {
-                tlb.expr(helpers.rawText(format_callback(refs.length)));
+                tlb.expr(`helpers.rawText(${format_callback(refs.length)})`);
                 refs.push(value);
             }
             else if (value instanceof HtmlString)
@@ -545,33 +662,6 @@ export function compileTemplateCode(rootTemplate, copts)
             else
             {
                 tlb.text(value);
-            }
-        }
-
-
-        // Helper to format a dynamic value on a node (ie: a callback)
-        function format_dynamic(value, formatter)
-        {
-            if (value instanceof Function)
-            {
-                let prevName = `p${prevId++}`;
-                closure.addLocal(prevName);
-                
-                // Render the update code
-                let code = formatter();
-
-                need_update_temp();
-                closure.update.append(`temp = ${format_callback(refs.length)};`);
-                closure.update.append(`if (temp !== ${prevName})`);
-                closure.update.append(`  ${formatter(prevName + " = temp")};`);
-
-                // Store the callback in the context callback array
-                refs.push(value);
-            }
-            else
-            {
-                // Static value, just output it directly
-                closure.create.append(formatter(JSON.stringify(value)));
             }
         }
 
@@ -591,9 +681,12 @@ let _nextInstanceId = 1;
 
 export function compileTemplate(rootTemplate, compilerOptions)
 {
+    compilerOptions = compilerOptions ?? {};
+    compilerOptions.compileTemplate = compileTemplate;
+
     // Compile code
     let code = compileTemplateCode(rootTemplate, compilerOptions);
-    //console.log(code.code);
+    console.log(code.code);
 
     // Put it in a function
     let templateFunction = new Function("Environment", "refs", "helpers", "context", code.code);

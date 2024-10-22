@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Template, EmbedSlot, Component, Environment } from "../codeonly.js";
+import { Template, Component, Environment } from "../codeonly.js";
+import { EmbedSlot } from "../codeonly.js";
 import "./mockdom.js";
 
 
@@ -11,7 +12,7 @@ test("Empty Embed", () => {
         $: [
             "pre",
             {
-                _: EmbedSlot,
+                _: "embed-slot",
                 export: "slot",
             },
             "post",
@@ -29,7 +30,7 @@ test("Embedded Single Element", () => {
         $: [
             "pre",
             {
-                _: EmbedSlot,
+                _: "embed-slot",
                 export: "slot",
             },
             "post",
@@ -54,7 +55,7 @@ test("Embedded Multiple Elements", () => {
         $: [
             "pre",
             {
-                _: EmbedSlot,
+                _: "embed-slot",
                 export: "slot",
             },
             "post",
@@ -83,7 +84,7 @@ test("Embedded with Placeholder", () => {
         $: [
             "pre",
             {
-                _: EmbedSlot,
+                _: "embed-slot",
                 export: "slot",
             },
             {
@@ -141,7 +142,7 @@ test("Embedded Component", () => {
         $: [
             "pre",
             {
-                _: EmbedSlot,
+                _: "embed-slot",
                 export: "slot",
             },
             "post",
@@ -167,7 +168,7 @@ test("Embedded Component destroyed", () => {
         $: [
             "pre",
             {
-                _: EmbedSlot,
+                _: "embed-slot",
                 export: "slot",
             },
             "post",

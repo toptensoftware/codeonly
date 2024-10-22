@@ -4,11 +4,11 @@ import { CloakedValue} from "./CloakedValue.js";
 import { ClosureBuilder } from "./ClosureBuilder.js";
 import { TemplateHelpers } from "./TemplateHelpers.js";
 import { TemplateNode } from "./TemplateNode.js";
-import { Environment } from "./Enviroment.js";
+import { Environment } from "./Environment.js";
 import { member } from "./Utils.js";
 
 
-export function compileTemplateCode(rootTemplate, copts)
+export function compileTemplateCode(rootTemplate, compilerOptions)
 {
     // Every node in the template will get an id, starting at 1.
     let nodeId = 1;
@@ -24,7 +24,7 @@ export function compileTemplateCode(rootTemplate, copts)
     let rootClosure = null;
 
     // Create root node info        
-    let rootTemplateNode = new TemplateNode(rootTemplate);
+    let rootTemplateNode = new TemplateNode(rootTemplate, compilerOptions);
 
     // Storarge for export and bindings
     let exports = new Map();
@@ -265,6 +265,12 @@ export function compileTemplateCode(rootTemplate, copts)
                 {
                     // Create the sub-template node
                     let ni_sub = ni.integrated.nodes[i];
+                    if (!ni_sub)
+                    {
+                        nodeConstructors.push(null);
+                        continue;
+                    }
+
                     ni_sub.name = `n${nodeId++}`;
 
                     // Emit it
@@ -359,7 +365,7 @@ export function compileTemplateCode(rootTemplate, copts)
                         continue;
 
                     // Emit the template node
-                    let propTemplate = new TemplateNode(ni.template[key]);
+                    let propTemplate = new TemplateNode(ni.template[key], compilerOptions);
                     emit_node(propTemplate);
                     if (propTemplate.isSingleRoot)
                         closure.create.append(`${ni.name}${member(key)}.content = ${propTemplate.name};`);
@@ -741,6 +747,9 @@ let _nextInstanceId = 1;
 
 export function compileTemplate(rootTemplate, compilerOptions)
 {
+    compilerOptions = compilerOptions ?? {};
+    compilerOptions.compileTemplate = compileTemplate;
+
     // Compile code
     let code = compileTemplateCode(rootTemplate, compilerOptions);
     //console.log(code.code);

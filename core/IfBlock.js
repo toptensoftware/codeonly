@@ -4,7 +4,7 @@ import { TemplateHelpers } from "./TemplateHelpers.js";
 
 export class IfBlock
 {
-    static integrate(template)
+    static integrate(template, compilerOptions)
     {
         let branches = [];
         let nodes = [];
@@ -40,7 +40,7 @@ export class IfBlock
             if (branch.template !== undefined)
             {
                 // Check if branch template has a single root
-                let ni_branch = new TemplateNode(branch.template);
+                let ni_branch = new TemplateNode(branch.template, compilerOptions);
                 if (!ni_branch.isSingleRoot)
                     isSingleRoot = false;
 
@@ -178,6 +178,32 @@ export class IfBlock
 
     update()
     {
+        // Make sure correct branch is active
+        this.switchActiveBranch();
+
+        // Update the active branch
+        this.activeBranch.update();
+    }
+
+    render(w)
+    {
+        // Update the active branch
+        this.activeBranch.render(w);
+    }
+
+
+    unbind()
+    {
+        this.activeBranch.unbind?.();
+    }
+
+    bind()
+    {
+        this.activeBranch.bind?.();
+    }
+
+    switchActiveBranch(updateDom)
+    {
         // Switch branch
         let newActiveBranchIndex = this.resolveActiveBranch();
         if (newActiveBranchIndex != this.activeBranchIndex)
@@ -188,19 +214,6 @@ export class IfBlock
             TemplateHelpers.replaceMany(oldActiveBranch.rootNodes, this.activeBranch.rootNodes);
             oldActiveBranch.destroy();
         }
-
-        // Update the active branch
-        this.activeBranch.update();
-    }
-
-    unbind()
-    {
-        this.activeBranch.unbind?.();
-    }
-
-    bind()
-    {
-        this.activeBranch.bind?.();
     }
 
     resolveActiveBranch()

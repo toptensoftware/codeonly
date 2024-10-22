@@ -1,4 +1,4 @@
-export * from "./core/Enviroment.js";
+export * from "./core/Environment.js";
 export * from "./core/HtmlString.js";
 export * from "./core/CloakedValue.js";
 export * from "./core/Style.js";

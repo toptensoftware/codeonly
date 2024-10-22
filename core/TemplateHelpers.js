@@ -11,6 +11,43 @@ export class TemplateHelpers
             return htmlEncode(text);
     }
 
+    static renderToString(renderFn)
+    {
+        let str = "";
+        renderFn({
+            write: function(x) { str += x; }
+        });
+        return str;
+    }
+
+    static rawStyle(text)
+    {
+        let style;
+        if (text instanceof HtmlString)
+            style = text.html;
+        else
+            style = htmlEncode(text);
+        style = style.trim();
+        if (!style.endsWith(";"))
+            style += ";"
+        return style;
+    }
+
+    static rawNamedStyle(styleName, text)
+    {
+        if (!text)
+            return "";
+
+        let style;
+        if (text instanceof HtmlString)
+            style = text.html;
+        else
+            style = htmlEncode(text);
+        style = style.trim();
+        style += ";"
+        return `${styleName}:${style}`;
+    }
+
     // Create either a text node from a string, or
     // a SPAN from an HtmlString
     static createTextNode(text)
@@ -124,7 +161,7 @@ export class TemplateHelpers
 
     static replaceMany(oldNodes, newNodes)
     {
-        if (!oldNodes[0].parentNode)
+        if (!oldNodes?.[0]?.parentNode)
             return;
         // Insert the place holder
         oldNodes[0].replaceWith(...newNodes);
