@@ -1,5 +1,5 @@
 import { nextFrame } from "./nextFrame.js";
-import { Environment } from "./Environment.js";
+import { Template } from "./Template.js";
 
 export class Component extends EventTarget
 {
@@ -22,7 +22,7 @@ export class Component extends EventTarget
 
     static compileTemplate()
     {
-        return Environment.compileTemplate(this.template);
+        return Template.compile(this.template);
     }
 
     static get isSingleRoot()
