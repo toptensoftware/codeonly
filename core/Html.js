@@ -2,6 +2,41 @@ import { HtmlString } from "./HtmlString.js";
 
 export class Html
 {
+    static title(text)
+    {
+        return {
+            type: "title",
+            text: text,
+        }
+    }
+
+    static style(content)
+    {
+        return {
+            type: "style",
+            text: content,
+        }
+    }
+
+    static linkStyle(url)
+    {
+        return {
+            type: "link",
+            attr_href: url,
+            attr_type: "text/css",
+            attr_rel: "stylesheet",
+        }
+    }
+
+
+    static embed(content)
+    {
+        return {
+            type: "embed-slot",
+            content,
+        }
+    }
+
     static h(level, text)
     {
         return {

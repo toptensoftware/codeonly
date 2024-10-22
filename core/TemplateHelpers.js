@@ -20,6 +20,15 @@ export class TemplateHelpers
         return str;
     }
 
+    static renderComponentToString(comp)
+    {
+        let str = "";
+        comp.render({
+            write: function(x) { str += x; }
+        });
+        return str;
+    }
+
     static rawStyle(text)
     {
         let style;

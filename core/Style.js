@@ -1,3 +1,6 @@
+import { Environment } from "./Environment.js";
+
+let allStyles = [];
 let pendingStyles = [];
 let styleNode = null;
 
@@ -5,8 +8,15 @@ export class Style
 {
     static declare(css)
     {
+        allStyles.push(css);
         pendingStyles.push(css);
-        requestAnimationFrame(mountStyles);
+        if (Environment.document)
+            Environment.requestAnimationFrame(mountStyles);
+    }
+
+    static get all()
+    {
+        return allStyles.join("\n");
     }
 }
 
