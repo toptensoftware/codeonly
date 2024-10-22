@@ -1,4 +1,4 @@
-import { Component, Html, Style } from "../codeonly.js";
+import { Component, Style, Html } from "../codeonly.js";
 
 export class Layout extends Component
 {

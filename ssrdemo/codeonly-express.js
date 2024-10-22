@@ -2,18 +2,8 @@ import express from 'express';
 
 import { Environment } from "../codeonly.js";
 import { compileTemplate } from "../core/TemplateCompilerSSR.js";
-import { TemplateHelpers } from "../core/TemplateHelpers.js";
 
 Environment.compileTemplate = compileTemplate;
-
-
-/*
-express.response.sendComponent = function(component)
-{
-    layout.body = component;
-    this.send(TemplateHelpers.renderComponentToString(layout));
-}
-*/
 
 let defaultLayout;
 
@@ -35,9 +25,7 @@ export function sendComponent(res, component, layout)
     }
 
     // Render the component, writing to the response stream
-    component.render({
-        write: res.write.bind(res),
-    });
+    component.render(res);
 
     // Done!
     res.end();

@@ -33,7 +33,6 @@ app.get("/styles.css", (req, res) => {
     res.send(Style.all);
 });
 
-
 // Start server
 let server = app.listen(3000, null, function () {
     console.log(`Server running on [${server.address().address}]:${server.address().port} (${server.address().family})`);
