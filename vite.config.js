@@ -2,6 +2,7 @@
 // vite.config.js
 import { resolve } from 'path'
 import { defineConfig } from 'vite'
+import replace from '@rollup/plugin-replace';
 
 export default defineConfig({
   build: {
@@ -17,6 +18,14 @@ export default defineConfig({
       // into your library
       external: [],
       output: {},
-    }
+      plugins: [
+        replace({
+          preventAssignment: true,
+          values: {
+            'Environment.browser': true,
+          }
+        }),
+      ]
+    },
   }
 })

@@ -1,34 +1,8 @@
 import { HtmlString } from "./HtmlString.js";
+import { Environment } from "./Environment.js";
 
 export class Html
 {
-    static title(text)
-    {
-        return {
-            type: "title",
-            text: text,
-        }
-    }
-
-    static style(content)
-    {
-        return {
-            type: "style",
-            text: content,
-        }
-    }
-
-    static linkStyle(url)
-    {
-        return {
-            type: "link",
-            attr_href: url,
-            attr_type: "text/css",
-            attr_rel: "stylesheet",
-        }
-    }
-
-
     static embed(content)
     {
         return {
@@ -69,4 +43,40 @@ export class Html
 
     
 
+}
+
+class HtmlSSR
+{
+    static title(text)
+    {
+        return {
+            type: "title",
+            text: text,
+        }
+    }
+
+    static style(content)
+    {
+        return {
+            type: "style",
+            text: content,
+        }
+    }
+
+    static linkStyle(url)
+    {
+        return {
+            type: "link",
+            attr_href: url,
+            attr_type: "text/css",
+            attr_rel: "stylesheet",
+        }
+    }
+}
+
+if (!Environment.browser)
+{
+    Object.getOwnPropertyNames(HtmlSSR)
+        .filter(x => HtmlSSR[x] instanceof Function)
+        .forEach(x => Html[x] = HtmlSSR[x]);
 }

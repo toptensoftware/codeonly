@@ -1351,26 +1351,6 @@ const A = class A extends EventTarget {
 O = new WeakMap(), ie = new WeakMap(), de = new WeakMap(), re(A, "_compiledTemplate"), re(A, "nextFrameOrder", -100), re(A, "_invalidComponents", []), re(A, "template", {});
 let Je = A;
 class kt {
-  static title(e) {
-    return {
-      type: "title",
-      text: e
-    };
-  }
-  static style(e) {
-    return {
-      type: "style",
-      text: e
-    };
-  }
-  static linkStyle(e) {
-    return {
-      type: "link",
-      attr_href: e,
-      attr_type: "text/css",
-      attr_rel: "stylesheet"
-    };
-  }
   static embed(e) {
     return {
       type: "embed-slot",
