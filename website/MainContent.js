@@ -1,4 +1,4 @@
-import { Component, Style, Html, nextFrame } from "@toptensoftware/codeonly";
+import { Component, Style, Html } from "@toptensoftware/codeonly";
 import { Document } from "./Document.js";
 import { appState } from "./AppState.js";
 
