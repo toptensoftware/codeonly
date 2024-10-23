@@ -15,4 +15,5 @@ export * from "./core/htmlEncode.js";
 export * from "./core/DocumentScrollPosition.js";
 export * from "./core/Router.js";
 export * from "./core/Utils.js";
+export * from "./core/Transition.js";
 

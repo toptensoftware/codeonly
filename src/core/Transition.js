@@ -52,7 +52,7 @@ export class Transition
         this.pendingTransitions = [];
 
         // It takes three animation frames before transitionrun event is fired
-        Html.nextFrame(() => requestAnimationFrame(() => {
+        requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => {
 
             this.detecting = false;
             if (this.pendingTransitions.length == 0)
@@ -60,7 +60,7 @@ export class Transition
                 this.onTransitionsFinished();
             }
 
-        }));
+        })));
     }
 
     onTransitionsFinished()
@@ -103,7 +103,9 @@ export class Transition
         this.entered = true;
         this.detectTransitions();
         this.el.classList.add(this.targetClass, `${this.targetClass}-enter`, `${this.targetClass}-start-enter`);
-        Html.nextFrame(() => this.el.classList.remove(`${this.targetClass}-start-enter`));
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            this.el.classList.remove(`${this.targetClass}-start-enter`);
+        }));
     }
 
     leave(immediate)
@@ -125,5 +127,13 @@ export class Transition
         this.detectTransitions();
         this.el.classList.add(`${this.targetClass}-leave`, `${this.targetClass}-start-leave`);
         Html.nextFrame(() => this.el.classList.remove(`${this.targetClass}-start-leave`));
+    }
+
+    toggle(immediate)
+    {
+        if (this.entered)
+            this.leave();
+        else
+            this.enter();
     }
 }
