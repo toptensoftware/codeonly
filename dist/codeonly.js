@@ -5,7 +5,7 @@ var qe = (r) => {
 var ht = (r, e, t) => e in r ? dt(r, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : r[e] = t;
 var re = (r, e, t) => ht(r, typeof e != "symbol" ? e + "" : e, t), ve = (r, e, t) => e.has(r) || qe("Cannot " + t);
 var a = (r, e, t) => (ve(r, e, "read from private field"), t ? t.call(r) : e.get(r)), S = (r, e, t) => e.has(r) ? qe("Cannot add the same private member more than once") : e instanceof WeakSet ? e.add(r) : e.set(r, t), y = (r, e, t, i) => (ve(r, e, "write to private field"), i ? i.call(r, t) : e.set(r, t), t), x = (r, e, t) => (ve(r, e, "access private method"), t);
-function vt(r, e) {
+function Nt(r, e) {
   for (let t = 0; t < r.length; t++)
     e(r[t], t) || (r.splice(t, 1), t--);
 }
@@ -15,7 +15,7 @@ function Se(r) {
 function _e(r) {
   return r instanceof Function && !!r.prototype && !!r.prototype.constructor;
 }
-function St(r, e) {
+function vt(r, e) {
   if (r === e) return !0;
   if (r.size !== e.size) return !1;
   for (const t of r) if (!e.has(t)) return !1;
@@ -38,7 +38,7 @@ function ut(r, e) {
       return !1;
   return !0;
 }
-function xt(r, e, t) {
+function St(r, e, t) {
   let i = 0, n = r.length - 1;
   for (; i <= n; ) {
     let o = Math.floor((i + n) / 2), d = r[o], h = e(d, t);
@@ -48,10 +48,10 @@ function xt(r, e, t) {
   }
   return -1 - i;
 }
-function _t(r, e) {
+function xt(r, e) {
   return r < e ? -1 : r > e ? 1 : 0;
 }
-function Tt(r, e) {
+function _t(r, e) {
   return r = r.toLowerCase(), e = e.toLowerCase(), r < e ? -1 : r > e ? 1 : 0;
 }
 let ct = /^[a-zA-Z$][a-zA-Z0-9_$]*$/;
@@ -63,7 +63,7 @@ class I {
     this.html = e;
   }
 }
-function Ct(r) {
+function Tt(r) {
   return new I(r);
 }
 class Pe {
@@ -71,7 +71,7 @@ class Pe {
     this.value = e;
   }
 }
-function Et(r) {
+function Ct(r) {
   return new Pe(r);
 }
 function me() {
@@ -1241,11 +1241,11 @@ let C = {};
 typeof document < "u" && (C.document = document, C.compileTemplate = Ye);
 typeof window < "u" && (C.window = window, C.requestAnimationFrame = window.requestAnimationFrame.bind(window));
 typeof Node < "u" && (C.Node = Node);
-function Lt(r) {
+function Et(r) {
   C = r;
 }
 let je = [], $e = [], ce = null;
-class Dt {
+class Lt {
   static declare(e) {
     je.push(e), $e.push(e), C.document && C.requestAnimationFrame(gt);
   }
@@ -1270,7 +1270,7 @@ function Qe(r, e) {
       t[i].callback();
   }));
 }
-function Ft(r) {
+function Dt(r) {
   fe.length == 0 ? r() : Qe(r, Number.MAX_SAFE_INTEGER);
 }
 class yt {
@@ -1350,7 +1350,7 @@ const j = class j extends EventTarget {
 };
 k = new WeakMap(), ie = new WeakMap(), de = new WeakMap(), re(j, "_compiledTemplate"), re(j, "nextFrameOrder", -100), re(j, "_invalidComponents", []), re(j, "template", {});
 let Je = j;
-class $t {
+class Ft {
   static embed(e) {
     return {
       type: "embed-slot",
@@ -1440,7 +1440,7 @@ const we = class we extends Array {
 };
 W = new WeakMap();
 let Ue = we;
-function bt(r) {
+function $t(r) {
   let e = "^", t = r.length, i;
   for (let o = 0; o < t; o++) {
     i = !0;
@@ -1500,7 +1500,7 @@ class He {
   }
 }
 var q, pe, T, he, ue;
-class wt extends EventTarget {
+class bt extends EventTarget {
   constructor() {
     super(...arguments);
     S(this, q, {});
@@ -1598,11 +1598,11 @@ class wt extends EventTarget {
       window.history.back();
   }
   register(t) {
-    typeof t.pattern == "string" && (t.pattern = bt(t.pattern)), t.captureViewState === void 0 && t.restoreViewState === void 0 && (t.captureViewState = He.get, t.restoreViewState = He.set), a(this, he).push(t), y(this, ue, !0);
+    typeof t.pattern == "string" && (t.pattern = $t(t.pattern)), t.captureViewState === void 0 && t.restoreViewState === void 0 && (t.captureViewState = He.get, t.restoreViewState = He.set), a(this, he).push(t), y(this, ue, !0);
   }
 }
 q = new WeakMap(), pe = new WeakMap(), T = new WeakMap(), he = new WeakMap(), ue = new WeakMap();
-let Ot = new wt();
+let Ot = new bt();
 class kt {
   constructor(e, t) {
     this.el = e, this.targetClass = t, this.entered = !1, this.pendingTransitions = [], this.detecting = !1, this.transitioning = !1, this.el.addEventListener("transitionend", this.onTransitionEndOrCancel.bind(this)), this.el.addEventListener("transitioncancel", this.onTransitionEndOrCancel.bind(this)), this.el.addEventListener("transitionrun", this.onTransitionRun.bind(this));
@@ -1643,7 +1643,9 @@ class kt {
       (this.transitioning || this.entered) && (this.entered = !1, this.onTransitionsFinished());
       return;
     }
-    this.entered && (this.entered = !1, this.detectTransitions(), this.el.classList.add(`${this.targetClass}-leave`, `${this.targetClass}-start-leave`), $t.nextFrame(() => this.el.classList.remove(`${this.targetClass}-start-leave`)));
+    this.entered && (this.entered = !1, this.detectTransitions(), this.el.classList.add(`${this.targetClass}-leave`, `${this.targetClass}-start-leave`), requestAnimationFrame(() => requestAnimationFrame(() => {
+      this.el.classList.remove(`${this.targetClass}-start-leave`);
+    })));
   }
   toggle(e) {
     this.entered ? this.leave() : this.enter();
@@ -1656,29 +1658,29 @@ export {
   Oe as EmbedSlot,
   C as Environment,
   Te as ForEachBlock,
-  $t as Html,
+  Ft as Html,
   I as HtmlString,
   be as IfBlock,
   Ue as ObservableArray,
-  wt as Router,
-  Dt as Style,
+  bt as Router,
+  Lt as Style,
   yt as Template,
   kt as Transition,
-  St as areSetsEqual,
-  xt as binarySearch,
+  vt as areSetsEqual,
+  St as binarySearch,
   Se as camel_to_dash,
-  Et as cloak,
-  _t as compareStrings,
-  Tt as compareStringsI,
+  Ct as cloak,
+  xt as compareStrings,
+  _t as compareStringsI,
   ut as deepEqual,
-  Ct as html,
+  Tt as html,
   ge as htmlEncode,
-  vt as inplace_filter_array,
+  Nt as inplace_filter_array,
   _e as is_constructor,
   Z as member,
   Qe as nextFrame,
-  Ft as postNextFrame,
+  Dt as postNextFrame,
   Ot as router,
-  Lt as setEnvironment,
-  bt as urlPattern
+  Et as setEnvironment,
+  $t as urlPattern
 };

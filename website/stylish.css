@@ -15,6 +15,7 @@
     --dark-warning-color: #f39c12;
     --dark-danger-color: #e74c3c;
     --dark-body-back-color: #1e1e1e;
+    --dark-body-fore-color: #dedede;
 
     /* light colors */
     --light-fore-color: black;
@@ -26,6 +27,7 @@
     --light-warning-color: #f39c12;
     --light-danger-color: #e74c3c;
     --light-body-back-color: white;
+    --light-body-fore-color: black;
 
     --dark-fore-color-l: 100;
     --dark-back-color-l: 0;
@@ -56,16 +58,16 @@
         );
         */
     --code-color: var(--accent-color);
-    --gridline-color: rgb(from var(--fore-color) r g b / 20%);
+    --gridline-color: rgb(from var(--body-fore-color) r g b / 20%);
     --disabled-color: color-mix(in srgb, #808080, var(--back-color) 30%);
     --input-back-color: color-mix(in srgb, #808080, var(--back-color) 85%);
 
     color-scheme: var(--color-scheme);
-    color: var(--fore-color);
+    color: var(--body-fore-color);
 
     font-family: var(--font-family);
-    font-size: 1rem;
-    line-height: 1.2;
+    font-size: 1.1rem;
+    line-height: 1.5;
 }
 
 /* These styles are used when html class set to "dark" or "light" */
@@ -83,6 +85,7 @@
     --danger-color: var(--dark-danger-color);
     --success-color: var(--dark-success-color);
     --body-back-color: var(--dark-body-back-color);
+    --body-fore-color: var(--dark-body-fore-color);
 }
 :root.light
 {
@@ -98,6 +101,7 @@
     --danger-color: var(--light-danger-color);
     --success-color: var(--light-success-color);
     --body-back-color: var(--light-body-back-color);
+    --body-fore-color: var(--light-body-fore-color);
 }
 
 /* These styles are used when html class not set */
@@ -117,6 +121,7 @@
         --danger-color: var(--dark-danger-color);
         --success-color: var(--dark-success-color);
         --body-back-color: var(--dark-body-back-color);
+        --body-fore-color: var(--dark-body-fore-color);
     }
 }
 @media (prefers-color-scheme: light)
@@ -135,6 +140,7 @@
         --danger-color: var(--dark-danger-color);
         --success-color: var(--light-success-color);
         --body-back-color: var(--light-body-back-color);
+        --body-fore-color: var(--light-body-fore-color);
     }
 }
 
@@ -213,17 +219,29 @@ h6 { font-size: 1rem;    margin-bottom: 1rem; margin-top: 2.5rem; }
 a
 {
     --link-class-text-color: var(--class-text-color, var(--link-color));
-    color: var(--link-class-text-color);
+    color: rgb(from var(--link-class-text-color) r g b / 70%);
     text-decoration: none;
+    transition: color 0.2s;
 
     &:hover
     {
-        text-decoration: underline;
-        color: color-mix(in hsl, 
-                hsl(from var(--link-class-text-color) h s l), 
-                hsl(from var(--link-class-text-color) h s var(--fore-color-l)) 20%
-            );
+        color: var(--link-class-text-color);
+    }
+}
 
+nav
+{
+    --link-color: var(--body-fore-color);
+
+    ul
+    {
+        padding: 0;
+        li
+        {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
     }
 }
 
@@ -615,7 +633,7 @@ textarea
 {
     padding: .475rem .65rem;
     background-color: var(--input-back-color);
-    color: var(--fore-color);
+    color: var(--body-fore-color);
     border-width: 1px;
     border-radius: 5px;
     border-style: solid;

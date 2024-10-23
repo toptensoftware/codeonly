@@ -75,7 +75,7 @@ class Application extends Component
     };
 }
 
-const maxContentWidth = 900;
+const maxContentWidth = 720;
 const headerHeight = 40;
 const sidePanelWidth = 250;
 
@@ -234,7 +234,7 @@ body
                 position: relative;
                 max-height: 50vh;
                 overflow: auto;
-                padding: 0.5rem;
+                padding: 1rem;
             }
         }
 

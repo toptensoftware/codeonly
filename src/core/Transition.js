@@ -126,7 +126,9 @@ export class Transition
         this.entered = false;
         this.detectTransitions();
         this.el.classList.add(`${this.targetClass}-leave`, `${this.targetClass}-start-leave`);
-        Html.nextFrame(() => this.el.classList.remove(`${this.targetClass}-start-leave`));
+        requestAnimationFrame(() => requestAnimationFrame(() => { 
+            this.el.classList.remove(`${this.targetClass}-start-leave`);
+        }));
     }
 
     toggle(immediate)

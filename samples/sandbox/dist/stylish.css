@@ -64,7 +64,7 @@
     color: var(--fore-color);
 
     font-family: var(--font-family);
-    font-size: 1.2rem;
+    font-size: 1rem;
     line-height: 1.2;
 }
 
@@ -197,12 +197,12 @@ code
     color: var(--code-color);
 }
 
-h1 { font-size: 2.5rem; }
-h2 { font-size: 2rem; }
-h3 { font-size: 1.75rem; }
-h4 { font-size: 1.5rem; }
-h5 { font-size: 1.25rem; }
-h6 { font-size: 1rem; }
+h1 { font-size: 2.0rem;  margin-bottom: 1rem; margin-top: 2.5rem; }
+h2 { font-size: 1.75rem; margin-bottom: 1rem; margin-top: 2.5rem; }
+h3 { font-size: 1.5rem;  margin-bottom: 1rem; margin-top: 2.5rem; }
+h4 { font-size: 1.25rem; margin-bottom: 1rem; margin-top: 2.5rem; }
+h5 { font-size: 1.1rem;  margin-bottom: 1rem; margin-top: 2.5rem; }
+h6 { font-size: 1rem;    margin-bottom: 1rem; margin-top: 2.5rem; }
 
 .muted { opacity: 0.5; }
 .left { text-align: left; }
@@ -243,14 +243,14 @@ input[type="file"]::file-selector-button
     text-decoration: none;
     background-color: var(--class-back-color);
     color: var(--class-fore-color);
-    padding: .575rem .75rem;
+    padding: .475rem .65rem;
     border-width: 0;
     border-radius: 0.3rem;
     border-style: solid;
     font-size: 1rem;
     line-height: 1rem;
     white-space: nowrap;
-    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, opacity 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 
     &:hover:not(:disabled)
     {
@@ -273,11 +273,29 @@ input[type="file"]::file-selector-button
         opacity: 0.5;
     }
 
-    &.subtle:not(:focus-visible):not(:hover)
+    &.subtle
     {
         background: none;
-        color: var(--fore-color);
+        color: var(--class-text-color);
+
+        &:hover
+        {
+            color: var(--class-fore-color);
+        }
+
+        &.muted
+        {
+            color: var(--class-text-color);
+            opacity: 0.5;
+
+            &:hover
+            {
+                opacity: 1.0;
+                background: none;
+            }
+        }
     }
+
 
     &.dropdown
     {
@@ -334,10 +352,10 @@ input.button[type='checkbox']
         border-radius: 0.3rem;
         border-width: 1px;
         border-color: var(--class-back-color);
-        padding-top: calc(0.575rem - 1px);
-        padding-bottom: calc(0.575rem - 1px);
-        padding-left: calc(0.75rem - 1px);
-        padding-right: calc(0.75rem - 1px);
+        padding-top: calc(0.475rem - 1px);
+        padding-bottom: calc(0.475rem - 1px);
+        padding-left: calc(0.65rem - 1px);
+        padding-right: calc(0.65rem - 1px);
         border-style: solid;
         font-size: 1rem;
         line-height: 1rem;
@@ -352,7 +370,7 @@ input.button[type='checkbox']
     }
     & + label.subtle
     {
-        padding: .575rem .75rem;
+        padding: .475rem .65rem;
         border: none;
 
         &:hover
@@ -595,7 +613,7 @@ input[type=week],
 input[type=file],
 textarea
 {
-    padding: .575rem .75rem;
+    padding: .475rem .65rem;
     background-color: var(--input-back-color);
     color: var(--fore-color);
     border-width: 1px;
@@ -606,7 +624,7 @@ textarea
     font-size: 1rem;
     line-height: 1rem;
     outline: none;
-    padding: .575rem .75rem;
+    padding: .475rem .65rem;
     transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 
 
@@ -649,7 +667,7 @@ input[type=file]::file-selector-button
     {
         background-color: var(--class-back-color);
         border-radius: 5px;
-        padding: .575rem .75rem;
+        padding: .475rem .65rem;
         border-top: 1px solid var(--class-back-color);
         border-bottom: 1px solid var(--class-back-color);
         color: var(--class-fore-color);

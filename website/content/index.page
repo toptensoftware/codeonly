@@ -24,4 +24,15 @@ so you get the best of both worlds.
 
 Use the menu at the left (or top-left on mobile) to learn more.
 
+## Heading  2
 
+Content
+
+## Another Heading 2
+
+```js
+for (let i=0; i<100; i++)
+{
+    console.log(i);
+}
+```

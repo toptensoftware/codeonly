@@ -1,5 +1,6 @@
 import { Component, Style, Html, nextFrame } from "@toptensoftware/codeonly";
-import { fake_content } from "./MainNavigation.js";
+import { Document } from "./Document.js";
+import { appState } from "./AppState.js";
 
 // The main header
 export class MainContent extends Component
@@ -8,11 +9,17 @@ export class MainContent extends Component
     {
         super();
         this.load();
+
+        appState.addEventListener("documentChanged", () => {
+            this.bodyContent = appState.document?.render();
+            this.invalidate();
+        });
     }
 
     async load()
     {
         this.loading = true;
+        this.error = false;
 
         try 
         {
@@ -21,39 +28,63 @@ export class MainContent extends Component
             if (!response.ok)
                 throw new Error(`Response status: ${response.status}`);
       
-          let markdown = await response.text();
-          let reader = new commonmark.Parser();
-          let writer = new commonmark.HtmlRenderer();
-          let parsed = reader.parse(markdown.replace(/^---[\s\S]*?---\n/, ""));
-          this.bodyContent = writer.render(parsed);
-          this.invalidate();
-          nextFrame(() => {
-            hljs.highlightAll();
-          });
+            let markdown = await response.text();
+            let doc = new Document(markdown);
+            appState.document = doc;
         } 
         catch (error) 
         {
-          console.error(error.message);
+            appState.document = null;
+            this.error = true;
+            console.error(error.message);
         }
 
         this.loading = false;
-
     }
 
     location = "index";
     bodyContent = "";
+    error = true;
     
-
     static template = {
         type: "main",
-        $: c => Html.raw(c.bodyContent),
+        $: [
+            {
+                if: c => c.error,
+                type: "div",
+                class: "error",
+                $: [
+                    {
+                        type: "h1",
+                        class: "danger",
+                        text: "Page not found! 😟",
+                    },
+                    {
+                        type: "p",
+                        text: c => `The page '${c.location}' doesn't exist!`
+                    },
+                    {
+                        type: "p",
+                        $: {
+                            type: "a",
+                            attr_href: "/",
+                            text: "Return Home",
+                        }
+                    }
+                ],
+            },
+            {
+                else: true,
+                $: c => Html.raw(c.bodyContent),
+            }
+        ]
     }
 }
 
 Style.declare(`
 main
 {
-    padding: 10px 80px;
+    padding: 10px 50px;
     margin: 0;
     margin-top: -1rem;
 
@@ -61,6 +92,17 @@ main
     {
         background-color: #282828;
         font-size: 0.9rem;
+    }
+
+    a.hlink
+    {
+        float: left;
+        margin-left: -1.5rem;
+    }
+
+    .error
+    {
+        text-align: center;
     }
 }
 
