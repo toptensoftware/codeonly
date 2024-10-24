@@ -1,6 +1,6 @@
 import { diff_tiny } from "./diff_tiny.js";
 import { TemplateNode } from "./TemplateNode.js";
-import { Environment } from "./Environment.js";
+import { env } from "./Environment.js";
 
 export class ForEachBlock
 {
@@ -109,8 +109,8 @@ export class ForEachBlock
         this.itemDoms = [];
 
         // Sentinal nodes
-        this.headSentinal = Environment.document?.createComment(" enter foreach block ");
-        this.tailSentinal = Environment.document?.createComment(" leave foreach block ");
+        this.headSentinal = env.document?.createComment(" enter foreach block ");
+        this.tailSentinal = env.document?.createComment(" leave foreach block ");
 
         // Single vs multi-root op helpers
         let insert, insert_dom, remove_dom;

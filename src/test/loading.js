@@ -1,12 +1,12 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Component, Environment } from "../codeonly.js";
-
 import "./mockdom.js";
+import { Component, env } from "../codeonly.js";
 
-Environment.window.blockAnimationFrames();
 
-test("loading", () => {
+env.window.blockAnimationFrames();
+
+test("loading", async () => {
 
     let comp = new Component();
     comp.init();
@@ -15,38 +15,55 @@ test("loading", () => {
     assert.equal(comp.loading, false);
 
     // Mark as loading
-    comp.loading = true;
-    assert.equal(comp.loading, true);
+    await comp.load(async () => {
+        assert.equal(comp.loading, true);
+    });
 
     // Marking as loading should also invalidate
     assert.equal(comp.invalid, true);
 });
 
-test("loaded event", () => {
+test("loaded event", async () => {
 
     let comp = new Component();
     comp.init();
 
 
-    let triggered = 0;
+    let loaded = 0;
     comp.addEventListener("loaded", (ev) => {
-        triggered++;
+        loaded++;
+    });
+    let loading = 0;
+    comp.addEventListener("loading", (ev) => {
+        loading++;
     });
 
-    // Mark as loading
-    comp.loading = true;
-    assert.equal(comp.loading, true);
-    comp.update();
-    assert.equal(triggered, 0);
+    let envloaded = 0;
+    env.addEventListener("loaded", (ev) => {
+        envloaded++;
+    });
+    let envloading = 0;
+    env.addEventListener("loading", (ev) => {
+        envloading++;
+    });
 
-    // Update again
-    assert.equal(comp.loading, true);
-    comp.update();
-    assert.equal(triggered, 0);
+    let result = await comp.load(async () => {
+        assert.equal(comp.loading, true);
+        assert.equal(loading, 1);
 
-    // Mark as loaded
-    comp.loading = false;
+        assert.equal(env.loading, true);
+        assert.equal(envloading, 1);
+        return 23;
+    });
+
+    assert.equal(result, 23);
+
     assert.equal(comp.loading, false);
-    comp.update();
-    assert.equal(triggered, 1);
+    assert.equal(loaded, 1);
+    assert.equal(loading, 1);
+
+    assert.equal(env.loading, false);
+    assert.equal(envloaded, 1);
+    assert.equal(envloading, 1);
+
 });

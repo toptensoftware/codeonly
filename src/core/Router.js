@@ -1,5 +1,6 @@
 import { DocumentScrollPosition } from "./DocumentScrollPosition.js";
 import { urlPattern } from "./urlPattern.js";
+import { env } from "./Environment.js";
 
 export class Router extends EventTarget
 {
@@ -150,9 +151,9 @@ export class Router extends EventTarget
         this.dispatchEvent(ev);
 
         // Restore view state
-        if (route.page?.loading)
+        if (env.loading)
         {
-            route.page.addEventListener("loaded", () => {
+            env.addEventListener("loaded", () => {
                 if (this.#current == route)
                 {
                     route.handler.restoreViewState?.(route.viewState);

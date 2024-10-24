@@ -1,17 +1,17 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
+import { SSREnvironment } from "../core/SSREnvironment.js";
 import { compileTemplate } from "../core/TemplateCompilerSSR.js";
 import { Html } from "../core/Html.js";
 import { ObservableArray } from "../core/ObservableArray.js";
 import { Component } from "../core/Component.js";
-import { Environment } from "../core/Environment.js";
+import { env, setEnvironment } from "../core/Environment.js";
 import { Window } from "../minidom/Window.js";
 
-// Tell components to use SSR compiler
-Environment.compileTemplate = compileTemplate;
+setEnvironment(new SSREnvironment());
 
 let w = new Window();
-Environment.requestAnimationFrame = w.requestAnimationFrame.bind(w);
+env.requestAnimationFrame = w.requestAnimationFrame.bind(w);
 w.blockAnimationFrames();
 
 

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Template, ObservableArray, Component, Environment } from "../codeonly.js";
 import "./mockdom.js";
+import { Template, ObservableArray, Component, env } from "../codeonly.js";
 
 function assert_iterables(a, b)
 {
@@ -250,7 +250,7 @@ test("ForEach Content (fragment)", () => {
         ]
     })();
 
-    let outer = Environment.document.createElement("DIV");
+    let outer = env.document.createElement("DIV");
     outer.append(...r.rootNodes);
 
     assert_foreach_content(r, items, actual, expected);
@@ -292,7 +292,7 @@ test("ForEach Content (conditional items)", () => {
         ]
     })();
 
-    let outer = Environment.document.createElement("DIV");
+    let outer = env.document.createElement("DIV");
     outer.append(...r.rootNodes);
 
     assert_foreach_content(r, items, actual, expected);

@@ -1,5 +1,5 @@
 import { HtmlString } from "./HtmlString.js";
-import { Environment } from "./Environment.js";
+import { env } from "./Environment.js";
 
 export class Html
 {
@@ -40,11 +40,9 @@ export class Html
     {
         return new HtmlString(text);
     }
-
-    
-
 }
 
+/*
 class HtmlSSR
 {
     static title(text)
@@ -74,9 +72,10 @@ class HtmlSSR
     }
 }
 
-if (!Environment.browser)
+if (!env.browser)
 {
     Object.getOwnPropertyNames(HtmlSSR)
         .filter(x => HtmlSSR[x] instanceof Function)
         .forEach(x => Html[x] = HtmlSSR[x]);
 }
+*/

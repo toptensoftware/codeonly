@@ -5,7 +5,7 @@ import { CloakedValue} from "./CloakedValue.js";
 import { ClosureBuilder } from "./ClosureBuilder.js";
 import { TemplateHelpers } from "./TemplateHelpers.js";
 import { TemplateNode } from "./TemplateNode.js";
-import { Environment } from "./Environment.js";
+import { env } from "./Environment.js";
 import { member } from "./Utils.js";
 import { TemplateLiteralBuilder} from "./TemplateLiteralBuilder.js";
 
@@ -689,7 +689,7 @@ export function compileTemplate(rootTemplate, compilerOptions)
     //console.log(code.code);
 
     // Put it in a function
-    let templateFunction = new Function("Environment", "refs", "helpers", "context", code.code);
+    let templateFunction = new Function("env", "refs", "helpers", "context", code.code);
 
     // Wrap it in a constructor function
     let compiledTemplate = function(context)
@@ -697,7 +697,7 @@ export function compileTemplate(rootTemplate, compilerOptions)
         if (!context)
             context = {};
         context.$instanceId = _nextInstanceId++;
-        return templateFunction(Environment, code.refs, TemplateHelpers, context ?? {});
+        return templateFunction(env, code.refs, TemplateHelpers, context ?? {});
     }
 
     return compiledTemplate;

@@ -23,8 +23,17 @@ export class Header extends Component
 }
 
 Style.declare(`
+:root
+{
+    --header-height: 40px;
+}
+
 #header
 {
+    position: fixed;
+    width: 100%;
+    height: var(--header-height);
+
     display: flex;
     justify-content: start;
     align-items: center;

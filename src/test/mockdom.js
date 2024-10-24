@@ -1,14 +1,22 @@
-import { setEnvironment  } from "../codeonly.js";
-import { Document, Window, Node } from "../minidom/minidom.js";
+import { EnvironmentBase, setEnvironment  } from "../core/Environment.js";
 import { compileTemplate } from "../core/TemplateCompiler.js";
+import { Document, Window, Node } from "../minidom/minidom.js";
+
 
 let document = new Document();
 let window = new Window();
 
-setEnvironment({
-    document,
-    window,
-    requestAnimationFrame: window.requestAnimationFrame.bind(window),
-    Node: Node,
-    compileTemplate,
-})
+class MockEnvironment extends EnvironmentBase
+{
+    constructor()
+    {
+        super();
+        this.document = new Document(),
+        this.window = new Window(),
+        this.requestAnimationFrame = this.window.requestAnimationFrame.bind(this.window),
+        this.Node = Node,
+        this.compileTemplate = compileTemplate;
+    }
+}
+
+setEnvironment(new MockEnvironment());

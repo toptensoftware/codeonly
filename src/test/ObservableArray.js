@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { ObservableArray } from "../codeonly.js";
+import { ObservableArray } from "../core/ObservableArray.js";
 
 function assert_iterables(a, b)
 {

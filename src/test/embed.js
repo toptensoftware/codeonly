@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Template, Component, Environment } from "../codeonly.js";
-import { EmbedSlot } from "../codeonly.js";
 import "./mockdom.js";
+import { Template, Component, env } from "../codeonly.js";
+import { EmbedSlot } from "../codeonly.js";
 
 
 test("Empty Embed", () => {
@@ -39,7 +39,7 @@ test("Embedded Single Element", () => {
 
     assert(r.slot instanceof EmbedSlot);
 
-    r.slot.content = Environment.document.createElement("span");
+    r.slot.content = env.document.createElement("span");
 
     assert.equal(r.rootNode.childNodes.length, 5);      // pre + post + embed head/tail sentinals + 2x spans
 
@@ -65,8 +65,8 @@ test("Embedded Multiple Elements", () => {
     assert(r.slot instanceof EmbedSlot);
 
     r.slot.content = [
-        Environment.document.createElement("span"),
-        Environment.document.createElement("span"),
+        env.document.createElement("span"),
+        env.document.createElement("span"),
     ]
 
     assert.equal(r.rootNode.childNodes.length, 6);      // pre + post + embed head/tail sentinals + 2x spans
@@ -98,7 +98,7 @@ test("Embedded with Placeholder", () => {
 
     assert(r.slot instanceof EmbedSlot);
 
-    r.slot.content = Environment.document.createElement('span');
+    r.slot.content = env.document.createElement('span');
     r.slot.content.innerText = "embedded content";
 
     assert.equal(r.rootNode.childNodes.length, 5);      // pre + post + embed head/tail sentinals + 2x spans

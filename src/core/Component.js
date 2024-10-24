@@ -1,5 +1,6 @@
 import { nextFrame } from "./nextFrame.js";
 import { Template } from "./Template.js";
+import { env } from "./Environment.js";
 
 export class Component extends EventTarget
 {
@@ -117,13 +118,42 @@ export class Component extends EventTarget
         
         this.invalid = false;
         this.dom.update();
+    }
 
-        // Fire loaded event
-        if (this.#wasLoading && !this.#loading)
+    async load(callback)
+    {
+        this.#loading++;
+        if (this.#loading == 1)
         {
-            this.#wasLoading = false;
-            this.dispatchEvent(new Event("loaded"));
+            this.invalidate();  
+            env.enterLoading();
+            this.dispatchEvent(new Event("loading"));
         }
+        try
+        {
+            return await callback();
+        }
+        finally
+        {
+            this.#loading--;
+            if (this.#loading == 0)
+            {
+                this.invalidate();
+                this.dispatchEvent(new Event("loaded"));
+                env.leaveLoading();
+            }
+        }
+    }
+
+    #loading = 0;
+
+    get loading()
+    {
+        return this.#loading != 0;
+    }
+    set loading(value)
+    {
+        throw new Error("setting Component.loading not supported, use load() function");
     }
 
     render(w)
@@ -155,22 +185,6 @@ export class Component extends EventTarget
         if (!this.#dom)
             return;
         this.rootNodes.forEach(x => x. remove());
-    }
-
-    #loading = false;
-    #wasLoading = false;
-    get loading()
-    {
-        return this.#loading
-    }
-    set loading(value)
-    {
-        if (value == this.#loading)
-            return;
-        this.#loading = value;
-        if (value)
-            this.#wasLoading = true;
-        this.invalidate();
     }
 
     static template = {};
