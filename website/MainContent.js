@@ -26,7 +26,7 @@ export class MainContent extends Component
             let url = `./content/${this.location}.page`;
             const response = await fetch(url);
             if (!response.ok)
-                throw new Error(`Response status: ${response.status}`);
+                throw new Error(`Response status: ${response.status} - ${response.statusText}`);
       
             let markdown = await response.text();
             let doc = new Document(markdown);
