@@ -57,7 +57,7 @@
             hsl(from var(--accent-color) h s var(--fore-color-l)) 30%
         );
         */
-    --code-color: var(--accent-color);
+    --code-color: rgb(from var(--body-fore-color) r g b / 70%);
     --gridline-color: rgb(from var(--body-fore-color) r g b / 20%);
     --disabled-color: color-mix(in srgb, #808080, var(--back-color) 30%);
     --input-back-color: color-mix(in srgb, #808080, var(--back-color) 85%);
@@ -66,7 +66,7 @@
     color: var(--body-fore-color);
 
     font-family: var(--font-family);
-    font-size: 1.1rem;
+    font-size: 13.5pt;
     line-height: 1.5;
 }
 
@@ -203,11 +203,11 @@ code
     color: var(--code-color);
 }
 
-h1 { font-size: 2.0rem;  margin-bottom: 1rem; margin-top: 2.5rem; }
-h2 { font-size: 1.75rem; margin-bottom: 1rem; margin-top: 2.5rem; }
-h3 { font-size: 1.5rem;  margin-bottom: 1rem; margin-top: 2.5rem; }
-h4 { font-size: 1.25rem; margin-bottom: 1rem; margin-top: 2.5rem; }
-h5 { font-size: 1.1rem;  margin-bottom: 1rem; margin-top: 2.5rem; }
+h1 { font-size: 2.15rem;  margin-bottom: 1rem; margin-top: 2.5rem; }
+h2 { font-size: 1.35rem; margin-bottom: 1rem; margin-top: 2.5rem; }
+h3 { font-size: 1.2rem;  margin-bottom: 1rem; margin-top: 2.5rem; }
+h4 { font-size: 1.1rem; margin-bottom: 1rem; margin-top: 2.5rem; }
+h5 { font-size: 1.05rem;  margin-bottom: 1rem; margin-top: 2.5rem; }
 h6 { font-size: 1rem;    margin-bottom: 1rem; margin-top: 2.5rem; }
 
 .muted { opacity: 0.5; }
@@ -631,7 +631,6 @@ input[type=week],
 input[type=file],
 textarea
 {
-    padding: .475rem .65rem;
     background-color: var(--input-back-color);
     color: var(--body-fore-color);
     border-width: 1px;
@@ -680,16 +679,15 @@ input[type=file]::file-selector-button
     position: relative;
     display: inline-flex;
     align-items: baseline;
+    line-height: 1rem;
 
     span
     {
-        background-color: var(--class-back-color);
         border-radius: 5px;
-        padding: .475rem .65rem;
-        border-top: 1px solid var(--class-back-color);
-        border-bottom: 1px solid var(--class-back-color);
-        color: var(--class-fore-color);
+        padding: calc(.475rem + 1px) calc(.65rem + 1px);
         z-index: -1;
+        background-color: var(--class-back-color);
+        color: var(--class-fore-color);
     }
 
     :not(:first-child),
