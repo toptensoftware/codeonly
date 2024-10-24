@@ -1,0 +1,16 @@
+{
+  "scopeName": "source.js.embedded.css",
+  "injectionSelector": "L:source.js -string -comment",
+  "patterns": [
+    {
+      "begin": "(?:(?:Style.declare\\()|(?:css))\\s*`",
+      "end": "`",
+      "contentName": "meta.embedded.block.css.javascript source.css",
+      "patterns": [
+        {
+          "include": "source.css"
+        }
+      ]
+    }
+  ]
+}

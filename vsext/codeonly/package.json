@@ -1,0 +1,38 @@
+{
+  "name": "codeonly",
+  "displayName": "CodeOnly",
+  "description": "VS Code support for CodeOnly",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.86.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/toptensoftware/codeonly.git"
+  },
+  "license": "Apache-2.0",
+  "contributes": {
+    "languages": [],
+    "grammars": [
+      {
+        "path": "./syntaxes/js-css-injection.tmLanguage.json",
+        "scopeName": "source.js.embedded.css",
+        "injectTo": [
+          "source.js"
+        ],
+        "embeddedLanguages": {
+          "meta.embedded.inline.css.javascript": "css"
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "build": "vsce package"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.2.1"
+  }
+}

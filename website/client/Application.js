@@ -1,9 +1,12 @@
-import { Component, Style, Transition } from "@toptensoftware/codeonly";
+import { Component, Style, Transition, router } from "@toptensoftware/codeonly";
 import { Header } from "./Header.js";
 import { MobileBar } from "./MobileBar.js";
 import { MainContent } from "./MainContent.js";
 import { MainNavigation } from "./MainNavigation.js";
 import { SecondaryNavigation } from "./SecondaryNavigation.js";
+
+import "./ArticlePage.js";
+import "./NotFoundPage.js";
 
 // Main application
 class Application extends Component
@@ -345,4 +348,5 @@ body
 export function main()
 {
     new Application().mount("body");
+    router.start();
 }
