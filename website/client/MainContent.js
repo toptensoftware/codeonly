@@ -23,7 +23,11 @@ export class MainContent extends Component
 
         try 
         {
-            let url = `./content/${this.location}.page`;
+            let url;
+            if (window.location.pathname != "/")
+                url = `./content/${window.location.pathname}.page`;
+            else
+                url = `./content/index.page`;
             const response = await fetch(url);
             if (!response.ok)
                 throw new Error(`Response status: ${response.status} - ${response.statusText}`);
