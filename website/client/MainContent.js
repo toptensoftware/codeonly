@@ -98,10 +98,28 @@ main
         font-size: 0.9rem;
     }
 
+    h2::before
+    {
+        content: " ";
+        display: block;
+        height: 4rem; 
+        margin-top: -4rem;
+    }
+
     a.hlink
     {
         float: left;
-        margin-left: -1.5rem;
+        margin-left: -1.2rem;
+        opacity: 0;
+        transition: opacity .2s;
+    }
+
+    h2:hover
+    {
+        a.hlink
+        {
+            opacity: 1;
+        }
     }
 
     .error

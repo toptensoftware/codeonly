@@ -40,6 +40,16 @@ Style.declare(`
 #secondary-nav
 {
     padding: 2.5rem 1rem 1rem 1rem;
+
+    ul
+    {
+        font-size: 0.8rem;
+        li
+        {
+            padding-top: 0.5rem;
+            line-height: 1.2rem;
+        }
+    }
 }
 
 `);
