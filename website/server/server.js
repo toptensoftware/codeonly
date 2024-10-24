@@ -5,6 +5,7 @@ import 'express-async-errors';
 import { bundleFree } from '@toptensoftware/bundle-free';
 import livereload from 'livereload';
 import logger from "morgan";
+import { convert_toc } from './convert_toc.js';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
@@ -16,6 +17,12 @@ app.use(logger('dev', { stream: { write: (m) => console.log(m.trimEnd()) } } ));
 
 // Serve static content files
 app.use("/content", express.static(path.join(__dirname, "../content")));
+
+// Table of contents
+app.get("/content/toc", async (req, res) => {
+    let toc = await convert_toc(path.join(__dirname, "../content/toc.txt"));
+    res.json(toc);
+});
 
 // Prod or Dev?
 if (process.env.NODE_ENV == "production")
@@ -50,8 +57,13 @@ else
     }));
 
     // Live reload
-    let lrs = livereload.createServer();
-    lrs.watch(path.join(__dirname, "../client"));
+    let lrs = livereload.createServer({
+        extraExts: "page",
+    });
+    lrs.watch([
+        path.join(__dirname, "../client"),
+        path.join(__dirname, "../content"),
+    ]);
 }
 
 // Not found
@@ -61,8 +73,6 @@ app.use((req, res, next) => {
     next(err);
 });
 
-
-    
 // Start server
 let server = app.listen(3000, null, function () {
     console.log(`Server running on [${server.address().address}]:${server.address().port} (${server.address().family})`);

@@ -18,7 +18,7 @@ export class SecondaryNavigation extends Component
         $: [
             {
                 if: () => appState.document?.headings?.length > 0,
-                $: "On This Page",
+                $: Html.h(6, "On This Page"),
             },
             {
                 type: "ul",
@@ -39,7 +39,7 @@ export class SecondaryNavigation extends Component
 Style.declare(`
 #secondary-nav
 {
-    padding: 2.5rem 1rem 1rem 1rem;
+    padding: 0rem 1rem 1rem 1rem;
 
     ul
     {

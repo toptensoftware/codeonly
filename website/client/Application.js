@@ -1,5 +1,8 @@
-import { Component, Style, Transition } from "@toptensoftware/codeonly";
+import { Component, Style, Transition, router } from "@toptensoftware/codeonly";
 import { Header } from "./Header.js";
+
+import "./ArticlePage.js";
+import "./NotFoundPage.js";
 
 // Main application
 class Application extends Component
@@ -29,4 +32,5 @@ Style.declare(`
 export function main()
 {
     new Application().mount("body");
+    router.start();
 }
