@@ -6,6 +6,15 @@ export class MainNavigation extends Component
     constructor()
     {
         super();
+    }
+
+    #tocPath;
+    set url(value)
+    {
+        let newTocPath = new URL("toc", value).pathname;
+        if (newTocPath == this.#tocPath)
+            return;
+        this.#tocPath = newTocPath;
         this.load();
     }
 
@@ -15,7 +24,7 @@ export class MainNavigation extends Component
             this.error = false;
             try 
             {
-                const response = await fetch("/content/toc");
+                const response = await fetch(`/content${this.#tocPath}`);
                 if (!response.ok)
                     throw new Error(`Response status: ${response.status} - ${response.statusText}`);
         

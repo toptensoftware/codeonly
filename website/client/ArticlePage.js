@@ -1,47 +1,16 @@
 import { Component, Style, Html, router } from "@toptensoftware/codeonly";
 import { Document } from "./Document.js";
 import { LayoutDocumentation } from "./LayoutDocumentation.js";
+import { LayoutBare } from "./LayoutBare.js";
+import { NotFoundPage } from "./NotFoundPage.js";
 
 // The main header
 export class ArticlePage extends Component
 {
-    constructor(url)
+    constructor(document)
     {
         super();
-        this.url = url;
-        this.load();
-    }
-
-    url;
-    document;
-    documentHtml;
-
-    update()
-    {
-        super.update();
-    }
-
-    load()
-    {
-        super.load(async () => {
-            this.error = false;
-
-            try 
-            {
-                const response = await fetch(this.url);
-                if (!response.ok)
-                    throw new Error(`Response status: ${response.status} - ${response.statusText}`);
-        
-                let markdown = await response.text();
-                this.document = new Document(markdown);
-                this.documentHtml = this.document.render();
-            } 
-            catch (error) 
-            {
-                this.error = true;
-                console.error(error.message);
-            }
-        });
+        this.document = document;
     }
 
     get inPageLinks()
@@ -49,11 +18,21 @@ export class ArticlePage extends Component
         return this.document.headings;
     }
 
-    
+    get layout()
+    {
+        switch (this.document?.frontmatter?.layout)
+        {
+            case "bare":
+                return LayoutBare;
+            default:
+                return LayoutDocumentation;
+        }
+    }
+
     static template = {
         type: "div",
         class: "article",
-        $: c => Html.raw(c.documentHtml)
+        $: c => Html.raw(c.document.html)
     }
 }
 
@@ -62,7 +41,7 @@ Style.declare(`
 {
     padding: 10px 50px;
     margin: 0;
-    margin-top: -1rem;
+    margin-top: var(--align-content);
 
     h1
     {
@@ -79,8 +58,8 @@ Style.declare(`
     {
         content: " ";
         display: block;
-        height: 4rem; 
-        margin-top: -4rem;
+        height: 5rem; 
+        margin-top: -5rem;
     }
 
     a.hlink
@@ -105,10 +84,25 @@ Style.declare(`
 
 
 router.register({
-    pattern: "/guide/:article*",
+    pattern: "/:pathname*",
     match: (route) => {
-        route.page = new ArticlePage(`/content/${route.match.groups.article}.page`);
-        route.layout = LayoutDocumentation;
+        route.document = new Document(route.match.groups.pathname);
+
+        Object.defineProperty(route, "page", {
+            get: function() {
+                if (!route._page)
+                {
+                    if (route.document.failed)
+                        route._page = new NotFoundPage();
+                    else
+                        route._page = new ArticlePage(route.document);
+                }
+                return route._page;
+            }
+          });
+
         return true;
-    }
+    },
+    order: 10,
 });
+

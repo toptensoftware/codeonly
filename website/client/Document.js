@@ -1,9 +1,61 @@
+import { env } from "@toptensoftware/codeonly";
+
 export class Document
 {
-    constructor(markdown)
+    constructor(pathname)
+    {
+        this.pathname = pathname;
+        this.load();
+    }
+    
+    load()
+    {
+        return env.load(async () => {
+
+            try
+            {
+                // Work out "index" filename
+                let pathname = this.pathname;
+                if (pathname == "" || pathname.endsWith("/"))
+                    pathname += "index";
+        
+                // Fetch the page
+                const response = await fetch(`/content/${pathname}.page`);
+                if (!response.ok)
+                    throw new Error(`Response status: ${response.status} - ${response.statusText}`);
+        
+                // Process markdown body
+                this.processMarkdown( await response.text());
+            }
+            catch (err)
+            {
+                this.failed = true;
+            }
+
+
+        });
+    }
+
+    processMarkdown(markdown)
     {
         // Store markdown (without frontmatter)
-        this.markdown = markdown.replace(/^---[\s\S]*?---\n/, "");;
+        this.frontmatter = {};
+        markdown = markdown.replace(/\r\n/g, "\n");
+        this.markdown = markdown.replace(/^---([\s\S]*?)---\n/, (m, m1) => {
+            
+            for (let line of m1.matchAll(/^([a-zA-Z0-9_]+):\s*(\"?.*\"?)\s*?$/gm))
+            {
+                try
+                {
+                    this.frontmatter[line[1]] = JSON.parse(line[2]);
+                }
+                catch
+                {
+                    this.frontmatter[line[1]] = line[2];
+                }
+            }
+            return "";
+        });
 
         // Parse it
         let parser = new commonmark.Parser();
@@ -72,10 +124,7 @@ export class Document
             cb.insertBefore(html_block);
             cb.unlink();
         }
-    }
 
-    render()
-    {
         let renderer = new commonmark.HtmlRenderer();
         let oldAttrs = renderer.attrs;
         renderer.attrs = (node) =>
@@ -91,7 +140,8 @@ export class Document
             }
             return att;
         }
-        return renderer.render(this.ast);
+
+        this.html = renderer.render(this.ast);
     }
 }
 

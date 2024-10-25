@@ -1,0 +1,10 @@
+services:
+  server:
+    build:
+      context: .
+    environment:
+      NODE_ENV: production
+    ports:
+      - 3104:3000
+    restart: unless-stopped
+    

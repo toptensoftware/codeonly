@@ -20,10 +20,17 @@ export class SecondaryNavigation extends Component
         this.#inPageLinks = value;
         this.invalidate();
     }
+    
+    hidePopupNav()
+    {
+        this.dispatchEvent(new Event("hidePopupNav"));
+    }
+
 
     static template = {
         type: "nav",
         id: "secondary-nav",
+        on_click: c => c.hidePopupNav(),
         $: [
             {
                 if: c => c.inPageLinks?.length > 0,

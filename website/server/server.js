@@ -15,13 +15,22 @@ let app = express();
 // Enable logging
 app.use(logger('dev', { stream: { write: (m) => console.log(m.trimEnd()) } } ));
 
+
 // Serve static content files
 app.use("/content", express.static(path.join(__dirname, "../content")));
 
-// Table of contents
-app.get("/content/toc", async (req, res) => {
-    let toc = await convert_toc(path.join(__dirname, "../content/toc.txt"));
+// Generate TOCs from .txt to .json
+app.get(/^\/content\/(?:(.*)\/)?toc$/, async (req, res) => {
+    let pathname = req.params[0] ? req.params[0] + "/" : "";
+    let toc = await convert_toc(path.join(__dirname, `../content/${pathname}toc.txt`));
     res.json(toc);
+});
+
+// 404 anything other /content requests
+app.use("/content/*", (req, res, next) => {
+    let err = new Error(`Not Found - ${req.url}`);
+    err.status = 404;
+    next(err);
 });
 
 // Prod or Dev?
@@ -47,7 +56,7 @@ else
         path: path.join(__dirname, "../client"),
         spa: true,
         modules: [ 
-            { module: "@toptensoftware/codeonly", url: "/codeonly/codeonly.js" },
+            "@toptensoftware/codeonly",
             '@toptensoftware/stylish',
         ],
         replace: [

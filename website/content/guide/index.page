@@ -1,7 +1,8 @@
 ---
-layout: "bare"
+title: "CodeOnly"
+subtitle: "A simple, lightweight, code-only front-end Web framework."
+projectTitle: CodeOnly
 ---
-
 # CodeOnly
 
 A simple, lightweight, code-only, tooling-free front-end Web framework.

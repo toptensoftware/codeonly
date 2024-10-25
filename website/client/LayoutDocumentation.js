@@ -16,13 +16,10 @@ export class LayoutDocumentation extends Component
 
     loadRoute(route)
     {
+        this.url = route.url;
         this.page = route.page;
         this.invalidate();
-    }
-
-    update()
-    {
-        super.update();
+        this.hidePanel();
     }
 
     showPanel()
@@ -45,7 +42,7 @@ export class LayoutDocumentation extends Component
 
     static template = {
         type: "div",
-        id: "documentationRoot",
+        id: "layoutDocumentation",
         $: [
             {
                 type: MobileBar,
@@ -64,7 +61,10 @@ export class LayoutDocumentation extends Component
                     {
                         type: "div",
                         id: "div-lhs",
-                        $: MainNavigation,
+                        $: {
+                            type: MainNavigation,
+                            url: c => c.url,
+                        }
                     },
                     {
                         type: "div",
@@ -80,6 +80,7 @@ export class LayoutDocumentation extends Component
                         $: {
                             type: SecondaryNavigation,
                             inPageLinks: c => c.page?.inPageLinks,
+                            on_hidePopupNav: c => c.hidePanel(),
                         }
                     }
 
@@ -98,6 +99,9 @@ Style.declare(`
     --side-panel-width: ${sidePanelWidth}px;
     --max-content-width: ${maxContentWidth}px;
     --main-indent: calc((100% - (var(--max-content-width) + var(--side-panel-width) * 2)) / 2);
+    --fixed-header-height: var(--header-height);
+    --align-content: -1.3rem;
+
 }
 
 #mobile-bar
@@ -176,6 +180,11 @@ Style.declare(`
 
 @media screen and (width < ${sidePanelWidth + maxContentWidth + 25}px) 
 {
+    :root
+    {
+        --fixed-header-height: 0;
+        --align-content: 0;
+    }
     main
     {
         padding: 10px 40px;
@@ -193,6 +202,13 @@ Style.declare(`
     #div-lhs
     {
          display: none;
+    }
+    #div-rhs
+    {
+        h6
+        {
+            margin-top: 0;
+        }
     }
     #div-center
     {
@@ -212,7 +228,7 @@ Style.declare(`
     {
     }
 
-    #documentationRoot.show-secondary-panel
+    #layoutDocumentation.show-secondary-panel
     {
         #div-rhs
         {
@@ -283,7 +299,7 @@ Style.declare(`
         }
     }
 
-    #documentationRoot.show-side-panel
+    #layoutDocumentation.show-side-panel
     {
         #div-lhs
         {

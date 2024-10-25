@@ -1,0 +1,25 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "cd client && vite build",
+    "dev": "node ./server/server.js",
+    "prod": "bash -c \"npm run build && NODE_ENV=production node ./server/server.js\""
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@toptensoftware/bundle-free": "^1.0.7",
+    "express": "^4.21.1",
+    "express-async-errors": "^3.1.1",
+    "livereload": "^0.9.3"
+  },
+  "devDependencies": {
+    "@toptensoftware/codeonly": "file:../src",
+    "@toptensoftware/stylish": "github:toptensoftware/stylish",
+    "morgan": "^1.10.0"
+  }
+}

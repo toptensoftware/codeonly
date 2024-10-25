@@ -16,17 +16,17 @@ class Application extends Component
             // Load navigated page into router slot
             if (ev.route.page)
             {
-                if (!ev.route.layout)
+                if (!ev.route.page.layout)
                 {
                     this.layoutSlot.content = ev.route.page;
                 }
                 else
                 {
                     // Different layout?
-                    if (ev.route.layout != this.#currentLayout?.constructor)
+                    if (ev.route.page.layout != this.#currentLayout?.constructor)
                     {
                         // Create new layout component
-                        this.#currentLayout = new ev.route.layout();
+                        this.#currentLayout = new ev.route.page.layout();
                         this.layoutSlot.content = this.#currentLayout;
                     }
 
@@ -58,7 +58,7 @@ class Application extends Component
 Style.declare(`
 #layoutRoot
 {
-    padding-top: var(--header-height);
+    padding-top: var(--fixed-header-height);
 }
 `);
 

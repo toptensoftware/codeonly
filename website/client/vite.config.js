@@ -1,12 +1,12 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: "./",
+  base: "/",
   build: {
     emptyOutDir: false,
+    outDir: './dist',
     rollupOptions: {
       external: [
-        "@toptensoftware/codeonly",
       ],
     },
   },
