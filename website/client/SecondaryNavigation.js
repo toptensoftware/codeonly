@@ -8,22 +8,31 @@ export class SecondaryNavigation extends Component
     constructor()
     {
         super();
-        appState.addEventListener("documentChanged", () => {
-            this.invalidate();
-        });
     }
+
+    #inPageLinks;
+    get inPageLinks()
+    {
+        return this.#inPageLinks;
+    }
+    set inPageLinks(value)
+    {
+        this.#inPageLinks = value;
+        this.invalidate();
+    }
+
     static template = {
         type: "nav",
         id: "secondary-nav",
         $: [
             {
-                if: () => appState.document?.headings?.length > 0,
+                if: c => c.inPageLinks?.length > 0,
                 $: Html.h(6, "On This Page"),
             },
             {
                 type: "ul",
                 $: {
-                    foreach: () => appState.document?.headings,
+                    foreach: c => c.inPageLinks,
                     type: "li",
                     $: {
                         type: "a",

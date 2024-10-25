@@ -1,6 +1,8 @@
 import { DocumentScrollPosition } from "./DocumentScrollPosition.js";
 import { urlPattern } from "./urlPattern.js";
 import { env } from "./Environment.js";
+import { nextFrame } from "./NextFrame.js";
+import { whenLoaded } from "./Utils.js";
 
 export class Router extends EventTarget
 {
@@ -15,8 +17,11 @@ export class Router extends EventTarget
             this.#viewStates = JSON.parse(savedViewStates);
         }
 
+        if (window.history.state?.sequence === 0)
+            delete this.#viewStates[0];
+
         // Do initial navigation
-        this.load(window.location.pathname, window.history.state ?? { sequence: 0 });
+        this.load(window.location, window.history.state ?? { sequence: 0 });
         window.history.replaceState(this.#current.state, null);
 
         // Listen for clicks on links
@@ -25,10 +30,22 @@ export class Router extends EventTarget
             if (a)
             {
                 let href = a.getAttribute("href");
-
-                if (this.navigate(href))
+                let url = new URL(href, window.location);
+                if (url.hostname == window.location.hostname && url.port == window.location.port)
                 {
-                    ev.preventDefault();
+                    // Just the hash changed
+                    if (url.pathname == this.#current.url.pathname)
+                    {
+                        if (this.#current?.onHashChanged?.(url.hash))
+                            ev.preventDefault = true;
+                        return;
+                    }
+
+                    if (this.navigate(url))
+                    {
+                        ev.preventDefault();
+                        return true;
+                    }
                 }
             }
         });
@@ -41,7 +58,7 @@ export class Router extends EventTarget
             this.saveViewStatesToLocalStorage();
 
             // Reload
-            this.load(document.location.pathname, event.state);
+            this.load(document.location, event.state ?? { sequence: this.#current.state.sequence + 1 });
         });
 
         window.addEventListener("beforeunload", (event) => {
@@ -91,12 +108,11 @@ export class Router extends EventTarget
 
     navigate(url)
     {
-        // Must be in-site link
-        if (!url.startsWith("/"))
-            return null;
+        if (typeof(url) === 'string')
+            url = new URL(url);
 
         // Must match prefix
-        if (this.prefix && url != this.prefix && !url.startsWith(this.prefix + "/"))
+        if (this.prefix && url.pathname != this.prefix && !url.pathname.startsWith(this.prefix + "/"))
             return null;
 
         // Store the current view state
@@ -124,11 +140,14 @@ export class Router extends EventTarget
 
     replace(url)
     {
-        this.#current.url = url;
+        if (typeof(url) === 'string')
+            url = new URL(url);
+        this.#current.pathname = url.pathname;
         if (this.prefix)
-            url = this.prefix + url;
+            url.pathname = this.prefix + url.pathname;
+        this.#current.url = url;
         this.#current.originalUrl = url;
-        this.#current.match = this.#current.handler.pattern?.match(this.#current.url);
+        this.#current.match = this.#current.handler.pattern?.match(this.#current.pathname);
         window.history.replaceState(this.#current.state, null, url);
     }
 
@@ -140,31 +159,45 @@ export class Router extends EventTarget
             return null;
 
         // Tell old route handler that it's leaving
-        this.#current?.handler.leave?.(this.#current);
+        if (this.#current)
+        {
+            this.#current.handler.leave?.(this.#current);
+            this.#current.current = false;
+        }
 
         // Switch route
         this.#current = route;
+        this.#current.current = true;
 
-        // Fire event
         let ev = new Event("navigate");
         ev.route = route;
         this.dispatchEvent(ev);
 
-        // Restore view state
-        if (env.loading)
-        {
-            env.addEventListener("loaded", () => {
-                if (this.#current == route)
-                {
-                    route.handler.restoreViewState?.(route.viewState);
-                }
-            }, { once :true });
-        }
-        else
-        {
-            route.handler.restoreViewState?.(route.viewState);
-        }
+        // Wait until environment loaded
+        whenLoaded(env, () => {
+            if (route.current)
+            {
+                let ev = new Event("navigateLoaded");
+                ev.route = route;
+                this.dispatchEvent(ev);
 
+                nextFrame(() => {
+                    if (route.current)
+                    {
+                        route.handler.restoreViewState?.(route.viewState);
+                        let elHash = document.getElementById(route.url.hash.substring(1));
+                        if (elHash)
+                            elHash.scrollIntoView();
+                    }
+                });
+            }
+            else
+            {
+                let ev = new Event("navigateCancelled");
+                ev.route = route;
+                this.dispatchEvent(ev);
+            }
+        });
 
         // Return the route
         return route;
@@ -182,6 +215,7 @@ export class Router extends EventTarget
         // Create route
         let route = { 
             url, 
+            pathname: url.pathname,
             state,
             viewState: this.#viewStates[state.sequence],
             originalUrl: url 
@@ -190,9 +224,9 @@ export class Router extends EventTarget
         // Check url starts with required prefix
         if (this.prefix)
         {
-            if (!url.startsWith(this.prefix))
+            if (!pathname.startsWith(this.prefix))
                 return null;
-            route.url = url.substring(this.prefix.length);
+            route.pathname = pathname.substring(this.prefix.length);
         }
 
         // Create the route instance
@@ -201,7 +235,7 @@ export class Router extends EventTarget
             // If the handler has a pattern, check it matches
             if (h.pattern)
             {
-                route.match = route.url.match(h.pattern);
+                route.match = route.pathname.match(h.pattern);
                 if (!route.match)
                     continue;
             }

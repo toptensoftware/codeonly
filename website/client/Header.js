@@ -25,12 +25,13 @@ export class Header extends Component
 Style.declare(`
 :root
 {
-    --header-height: 40px;
+    --header-height: 50px;
 }
 
 #header
 {
     position: fixed;
+    top: 0;
     width: 100%;
     height: var(--header-height);
 

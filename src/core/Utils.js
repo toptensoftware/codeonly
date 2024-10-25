@@ -222,3 +222,11 @@ export function member(name)
     else
         return `[${JSON.stringify(name)}]`;
 }
+
+export function whenLoaded(target, callback)
+{
+    if (target.loading)
+        target.addEventListener("loaded", callback, { once :true });
+    else
+        callback();
+}

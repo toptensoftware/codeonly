@@ -1,12 +1,10 @@
 import { Component, Style, Transition } from "@toptensoftware/codeonly";
-import { Header } from "./Header.js";
 import { MobileBar } from "./MobileBar.js";
-import { MainContent } from "./MainContent.js";
 import { MainNavigation } from "./MainNavigation.js";
 import { SecondaryNavigation } from "./SecondaryNavigation.js";
 
 // Main application
-class LayoutDocumentation extends Component
+export class LayoutDocumentation extends Component
 {
     constructor()
     {
@@ -14,6 +12,17 @@ class LayoutDocumentation extends Component
         this.init();
         this.showSidePanelTransition = new Transition(this.rootNode, "show-side-panel");
         this.showSecondaryPanelTransition = new Transition(this.rootNode, "show-secondary-panel");
+    }
+
+    loadRoute(route)
+    {
+        this.page = route.page;
+        this.invalidate();
+    }
+
+    update()
+    {
+        super.update();
     }
 
     showPanel()
@@ -38,7 +47,6 @@ class LayoutDocumentation extends Component
         type: "div",
         id: "documentationRoot",
         $: [
-            Header, 
             {
                 type: MobileBar,
                 on_showPanel: c => c.showPanel(),
@@ -61,12 +69,18 @@ class LayoutDocumentation extends Component
                     {
                         type: "div",
                         id: "div-center",
-                        $: MainContent,
+                        $: {
+                            type: "embed-slot",
+                            content: c => c.page,
+                        },
                     },
                     {
                         type: "div",
                         id: "div-rhs",
-                        $: SecondaryNavigation,
+                        $: {
+                            type: SecondaryNavigation,
+                            inPageLinks: c => c.page?.inPageLinks,
+                        }
                     }
 
                 ]
@@ -79,18 +93,11 @@ const maxContentWidth = 720;
 const sidePanelWidth = 250;
 
 Style.declare(`
-body
+:root
 {
     --side-panel-width: ${sidePanelWidth}px;
     --max-content-width: ${maxContentWidth}px;
     --main-indent: calc((100% - (var(--max-content-width) + var(--side-panel-width) * 2)) / 2);
-}
-
-#header
-{
-    position: fixed;
-    width: 100%;
-    height: var(--header-height);
 }
 
 #mobile-bar
@@ -335,9 +342,3 @@ body
 
 
 `);
-
-// Main entry point, create Application and mount
-export function main()
-{
-    new Application().mount("body");
-}

@@ -1,5 +1,6 @@
 import { Component, Style, Html, router } from "@toptensoftware/codeonly";
 import { Document } from "./Document.js";
+import { LayoutDocumentation } from "./LayoutDocumentation.js";
 
 // The main header
 export class ArticlePage extends Component
@@ -20,29 +21,32 @@ export class ArticlePage extends Component
         super.update();
     }
 
-    async load()
+    load()
     {
-        this.loading = true;
-        this.error = false;
+        super.load(async () => {
+            this.error = false;
 
-        try 
-        {
-            const response = await fetch(this.url);
-            if (!response.ok)
-                throw new Error(`Response status: ${response.status} - ${response.statusText}`);
-      
-            let markdown = await response.text();
-            this.document = new Document(markdown);
-            this.documentHtml = this.document.render();
-        } 
-        catch (error) 
-        {
-            this.document = null;
-            this.error = true;
-            console.error(error.message);
-        }
+            try 
+            {
+                const response = await fetch(this.url);
+                if (!response.ok)
+                    throw new Error(`Response status: ${response.status} - ${response.statusText}`);
+        
+                let markdown = await response.text();
+                this.document = new Document(markdown);
+                this.documentHtml = this.document.render();
+            } 
+            catch (error) 
+            {
+                this.error = true;
+                console.error(error.message);
+            }
+        });
+    }
 
-        this.loading = false;
+    get inPageLinks()
+    {
+        return this.document.headings;
     }
 
     
@@ -59,6 +63,11 @@ Style.declare(`
     padding: 10px 50px;
     margin: 0;
     margin-top: -1rem;
+
+    h1
+    {
+        margin-top: 0;
+    }
 
     .hljs 
     {
@@ -99,6 +108,7 @@ router.register({
     pattern: "/guide/:article*",
     match: (route) => {
         route.page = new ArticlePage(`/content/${route.match.groups.article}.page`);
+        route.layout = LayoutDocumentation;
         return true;
     }
 });

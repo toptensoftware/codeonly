@@ -9,25 +9,24 @@ export class MainNavigation extends Component
         this.load();
     }
 
-    async load()
+    load()
     {
-        this.loading = true;
-        this.error = false;
-        try 
-        {
-            const response = await fetch("/content/toc");
-            if (!response.ok)
-                throw new Error(`Response status: ${response.status} - ${response.statusText}`);
-      
-            this.toc = await response.json();
-        } 
-        catch (error) 
-        {
-            this.error = true;
-            console.error(error.message);
-        }
-
-        this.loading = false;
+        super.load(async () => {
+            this.error = false;
+            try 
+            {
+                const response = await fetch("/content/toc");
+                if (!response.ok)
+                    throw new Error(`Response status: ${response.status} - ${response.statusText}`);
+        
+                this.toc = await response.json();
+            } 
+            catch (error) 
+            {
+                this.error = true;
+                console.error(error.message);
+            }
+        });
     }
 
     static template = {
