@@ -19,6 +19,7 @@
     "livereload": "^0.9.3"
   },
   "devDependencies": {
+    "vite": "^5.4.9",
     "@toptensoftware/codeonly": "file:../src",
     "@toptensoftware/stylish": "github:toptensoftware/stylish"
   }
