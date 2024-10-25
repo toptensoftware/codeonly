@@ -17,9 +17,6 @@ export class Router extends EventTarget
             this.#viewStates = JSON.parse(savedViewStates);
         }
 
-        if (window.history.state?.sequence === 0)
-            delete this.#viewStates[0];
-
         // Do initial navigation
         this.load(window.location, window.history.state ?? { sequence: 0 });
         window.history.replaceState(this.#current.state, null);
