@@ -7,7 +7,7 @@ WORKDIR /usr/src/app/website
 COPY client/dist ./client/dist/
 COPY content ./content/
 COPY server ./server/
-COPY package* .
+COPY package* ./
 RUN npm install --omit=dev --loglevel verbose
 
 EXPOSE 3000
