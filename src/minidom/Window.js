@@ -1,4 +1,4 @@
-export class Window
+export class Window extends EventTarget
 {
     animationFrames = null;
 
