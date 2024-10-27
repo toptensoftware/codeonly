@@ -468,7 +468,7 @@ class ItemComponent extends Component
     static updateCount = 0;
 }
 
-test("ForEach Update Count Check", () => {
+test("ForEach Update Count Check", async () => {
 
     let items = [ 
         { name: "Apples" },
@@ -514,12 +514,14 @@ test("ForEach Update Count Check", () => {
     // we should get one update
     items[0] = { name: "Apples" };
     r.update();
+    await env.window.waitAnimationFrames();
     assert.equal(ItemComponent.updateCount, 1);
 
     // If we change one item with a new object instance with the different key,
     // we should get one update because the old delete item should be re-used
     items[0] = { name: "Watermelon" };
     r.update();
+    await env.window.waitAnimationFrames();
     assert.equal(ItemComponent.updateCount, 2);
 
 });

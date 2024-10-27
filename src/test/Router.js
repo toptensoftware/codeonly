@@ -23,7 +23,6 @@ let routes = [
         match: async (route) => {
             await asyncOp();
             route.page = "/async";
-            console.log("set route page");
             return true;
         },
     },
@@ -89,6 +88,22 @@ let routes = [
             events.push({ event: "cancelEnter", from, to});
         },
     },
+    {
+        pattern: "/busy",
+        match: async (route) => {
+            route.page = "/slow";
+            route.busy = new Promise((resolve) => {
+                route.resolve = resolve;
+            });
+            await route.busy;
+            return true;
+        },
+        mayEnter: async (from, to) => {
+        },
+        cancelEnter: (from, to) => {
+            events.push({ event: "cancelEnter", from, to});
+        },
+    },
 ]
 
 test("simple sync route", async () => {
@@ -96,7 +111,7 @@ test("simple sync route", async () => {
     let router = new Router(routes);
     let r = await router.load(new URL("http://co/sync"), null);
     assert.equal(r.page, "/sync");
-
+    assert.equal(router.current, r);
 });
 
 test("simple async route", async () => {
@@ -104,7 +119,7 @@ test("simple async route", async () => {
     let router = new Router(routes);
     let r = await router.load(new URL("http://co/async"), null);
     assert.equal(r.page, "/async");
-
+    assert.equal(router.current, r);
 });
 
 test("events", async () => {
@@ -234,4 +249,33 @@ test("cancel events", async () => {
     assert.deepEqual(events[1], { event: "cancelLeave", from, to: cancelled_route });
     assert.deepEqual(events[2], { event: "cancelEnter", from, to: cancelled_route });
     assert.deepEqual(events[3], { event: "cancel", from, to: cancelled_route });
+});
+
+test("concurrent navigation", async () => {
+
+    let router = new Router(routes);
+
+    let from = await router.load(new URL("http://co/from"), null);
+    assert.equal(from.page, "/from");
+
+    // Start first navigation
+    let busy_promise = router.load(new URL("http://co/busy"), null);
+    let busy = router.pending;
+    assert(busy != null);
+
+    // Before it finishes, start a second
+    let to = await router.load(new URL("http://co/to"), null);
+
+    // Now trigger the busy route to finish
+    events = [];
+    busy.resolve();
+    await busy_promise;
+
+    // Make sure the busy route got the cancel event
+    assert.equal(events.length, 1);
+    assert.deepEqual(events[0], { event: "cancelEnter", from, to: busy });
+
+    // Make sure the second navigation stuck
+    assert.equal(router.current, to);
+
 });

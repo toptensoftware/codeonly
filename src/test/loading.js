@@ -4,8 +4,6 @@ import "./mockdom.js";
 import { Component, env } from "../codeonly.js";
 
 
-env.window.blockAnimationFrames();
-
 test("loading", async () => {
 
     let comp = new Component();

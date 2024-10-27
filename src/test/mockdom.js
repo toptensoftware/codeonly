@@ -66,7 +66,7 @@ class History
             return;
 
         // Go() happens asynchronously
-        setTimeout(() => {
+        this.#window.requestAnimationFrame(() => {
 
             // Save current state before navigating away
             this.#stack[this.#position] = { 
@@ -79,10 +79,7 @@ class History
 
             // Check in range
             if (newPosition < 0 || newPosition >= this.#stack.length)
-            {
-                debugger;
                 throw new Error("Out of range history go()");
-            }
 
             // Load new state
             this.#position = newPosition;
@@ -131,6 +128,7 @@ class MockEnvironment extends EnvironmentBase
     {
         super();
         this.document = new Document(),
+        this.document.body = this.document.createElement("body");
         this.window = new Window(),
         this.window.history = new History(this.window),
         this.window.sessionStorage = new Storage();

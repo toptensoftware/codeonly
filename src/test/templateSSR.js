@@ -12,7 +12,6 @@ setEnvironment(new SSREnvironment());
 
 let w = new Window();
 env.requestAnimationFrame = w.requestAnimationFrame.bind(w);
-w.blockAnimationFrames();
 
 
 test("Element (bare)", () => {

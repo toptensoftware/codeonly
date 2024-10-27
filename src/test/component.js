@@ -63,19 +63,18 @@ test("Component as direct child node", () => {
     assert.equal(r.rootNodes[0].childNodes[0].innerText, "Hello World");
 });
 
-test("Invalidate Component", () => {
+test("Invalidate Component", async () => {
 
    let comp = new TestComponent();
    comp.init();
 
-   env.window.blockAnimationFrames(); 
    comp.invalidate();
    assert.equal(comp.updateCount, 0);
-   env.window.dispatchAnimationFrames();
+   await env.window.waitAnimationFrames();
    assert.equal(comp.updateCount, 1);
 });
 
-test("Invalidate during Update", () => {
+test("Invalidate during Update", async () => {
 
     let comp = new TestComponent();
     let comp2 = new TestComponent();
@@ -91,11 +90,11 @@ test("Invalidate during Update", () => {
         comp2.invalidate();
     }
  
-    env.window.blockAnimationFrames(); 
+    await env.window.waitAnimationFrames();
     comp.invalidate();
     assert.equal(comp.updateCount, 0);
     assert.equal(comp2.updateCount, 0);
-    env.window.dispatchAnimationFrames();
+    await env.window.waitAnimationFrames();
     assert.equal(comp.updateCount, 1);
     assert.equal(comp2.updateCount, 1);
  });

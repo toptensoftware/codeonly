@@ -1,194 +1,5 @@
 import { DocumentScrollPosition } from "./DocumentScrollPosition.js";
 import { urlPattern } from "./urlPattern.js";
-import { env } from "./Environment.js";
-import { nextFrame } from "./NextFrame.js";
-import { whenLoaded } from "./Utils.js";
-
-export class WebHistoryRouterDriver
-{
-    start(router)
-    {
-        this.#router = router;
-    }
-
-    #router;
-    #viewStates = {};
-    get current() { return this.#router.current }
-
-    async load(url, state)
-    {
-        state.view = this.#viewStates[state.sequence];
-        let route = await this.#router.load(url, state);
-
-        // Load view state
-        whenLoaded(env, () => {
-            nextFrame(() => {
-                if (route.current)
-                {
-                    // Call restore view state handler
-                    route.handler.restoreViewState?.(route.viewState);
-
-                    // Jump to hash
-                    if (env.browser)
-                    {
-                        let elHash = document.getElementById(route.url.hash.substring(1));
-                        if (elHash)
-                            elHash.scrollIntoView();
-                    }
-                }
-            });
-        });
-    }
-
-    start()
-    {
-        // Reload saved view states from session storage
-        let savedViewStates = window.sessionStorage.getItem("codeonly-view-states");
-        if (savedViewStates)
-        {
-            this.#viewStates = JSON.parse(savedViewStates);
-        }
-
-        // Do initial navigation
-        this.load(window.location, window.history.state ?? { sequence: 0 });
-        window.history.replaceState(this.current.state, null);
-
-        // Listen for clicks on links
-        document.body.addEventListener("click", (ev) => {
-            let a = ev.target.closest("a");
-            if (a)
-            {
-                let href = a.getAttribute("href");
-                let url = new URL(href, window.location);
-                if (url.hostname == window.location.hostname && url.port == window.location.port)
-                {
-                    // Just the hash changed
-                    if (url.pathname == this.current.url.pathname)
-                    {
-                        if (this.current?.onHashChanged?.(url.hash))
-                            ev.preventDefault = true;
-                        return;
-                    }
-
-                    if (this.navigate(url))
-                    {
-                        ev.preventDefault();
-                        return true;
-                    }
-                }
-            }
-        });
-
-        // Listen for pop state
-        window.addEventListener("popstate", (event) => {
-
-            // Store the current view state
-            this.captureCurrentViewState();
-            this.saveViewStatesToLocalStorage();
-
-            // Reload
-            this.load(window.location, event.state ?? { sequence: this.current.state.sequence + 1 });
-        });
-
-        window.addEventListener("beforeunload", (event) => {
-
-            // Store the current view state
-            this.captureCurrentViewState();
-            this.saveViewStatesToLocalStorage();
-            
-        });
-
-        // Disable browser scroll restoration
-        if (window.history.scrollRestoration) {
-           window.history.scrollRestoration = "manual";
-        }
-    }
-
-    back()
-    {
-        if (this.current.state.sequence == 0)
-        {
-            let p = (this?.prefix ?? "") + "/";
-            this.load(p, { sequence: 0 });
-            window.history.replaceState(this.current.state, null, p);
-        }
-        else
-        {
-            window.history.back();
-        }
-    }
-
-    replace(url)
-    {
-        if (typeof(url) === 'string')
-            url = new URL(url);
-        this.current.pathname = url.pathname;
-        if (this.prefix)
-            url.pathname = this.prefix + url.pathname;
-        this.current.url = url;
-        this.current.originalUrl = url;
-        this.current.match = this.current.handler.pattern?.match(this.current.pathname);
-        window.history.replaceState(this.current.state, null, url);
-    }
-
-    saveViewStatesToLocalStorage()
-    {
-        window.sessionStorage.setItem("codeonly-view-states", JSON.stringify(this.#viewStates));
-    }
-
-    captureCurrentViewState()
-    {
-        if (this.current)
-        {
-            this.#viewStates[this.current.state.sequence] = this.current.handler.captureViewState();
-        }
-    }
-
-    // Prefix for all url matching
-    #prefix;
-    get prefix()
-    {
-        return this.#prefix;
-    }
-    set prefix(value)
-    {
-        this.#prefix = value;
-    }
-
-    navigate(url)
-    {
-        if (typeof(url) === 'string')
-            url = new URL(url);
-
-        // Must match prefix
-        if (this.prefix && url.pathname != this.prefix && !url.pathname.startsWith(this.prefix + "/"))
-            return null;
-
-        // Store the current view state
-        this.captureCurrentViewState();
-
-        // Clear and saved view states that can never be revisited
-        for (let k of Object.keys(this.#viewStates))
-        {
-            if (parseInt(k) > this.current.state.sequence)
-            {
-                delete this.#viewStates[k];
-            }
-        }
-        this.saveViewStatesToLocalStorage();
-
-        // Load the route
-        let route = this.load(url, { sequence: this.current.state.sequence + 1 });
-        if (!route)
-            return null;
-
-        // Update history
-        window.history.pushState(route.state, null, url);
-        return true;
-    }
-
-
-}
 
 export class Router
 {   
@@ -204,10 +15,13 @@ export class Router
         this.navigate = driver.navigate.bind(driver);
         this.replace = driver.navigate.bind(driver);
         this.back = driver.back.bind(driver);
-        driver.start(this);
+        return driver.start(this);
     }
 
     #driver;
+
+    internalize = x => x;
+    externalize = x => x;
 
     // The current route
     #current = null;
@@ -215,6 +29,14 @@ export class Router
     {
         return this.#current;
     }
+
+    // The route currently being switched to
+    #pending = null;
+    get pending()
+    {
+        return this.#pending;
+    }
+
 
     #listeners = [];
     addEventListener(event, handler)
@@ -241,18 +63,24 @@ export class Router
         return true;
     }
 
-    #pending;
-
     // Load a URL with state
-    async load(url, state)
+    async load(url, state, route)
     {
+        let from = this.#current;
+
+        // Create route
+        this.#pending = route = Object.assign({ 
+            current: false,
+            url, 
+            pathname: url.pathname,
+            state,
+            originalUrl: url 
+        }, route);
+
         // Match url
-        let route = await this.matchUrl(url, state);
+        route = await this.matchUrl(url, state, route);
         if (!route)
             return null;
-
-        // Store the pending route
-        this.#pending = route;
 
         // Try to load
         try
@@ -264,14 +92,14 @@ export class Router
         }
         catch (err)
         {
-            this.dispatchCancelEvents(route);
+            this.dispatchCancelEvents(from, route);
             throw err;
         }
 
         // Cancelled?
         if (this.#pending != route)
         {
-            this.dispatchCancelEvents(route);
+            this.dispatchCancelEvents(from, route);
             return null;
         }
 
@@ -280,11 +108,11 @@ export class Router
 
     }
 
-    dispatchCancelEvents(route)
+    dispatchCancelEvents(from, route)
     {
-        this.#current?.handler.cancelLeave?.(this.#current, route);
-        route.handler.cancelEnter?.(this.#current, route);
-        this.dispatchEvent("cancel", false, this.#current, route);
+        this.#current?.handler.cancelLeave?.(from, route);
+        route.handler.cancelEnter?.(from, route);
+        this.dispatchEvent("cancel", false, from, route);
     }
 
     // Fires the sequence of events associated with loading a route
@@ -359,22 +187,13 @@ export class Router
         return true;
     }
 
-    async matchUrl(url, state)
+    async matchUrl(url, state, route)
     {
         // Sort handlers
         if (this.#needSort)
         {
             this.#handlers.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
             this.#needSort = false;
-        }
-
-        // Create route
-        let route = { 
-            current: false,
-            url, 
-            pathname: url.pathname,
-            state,
-            originalUrl: url 
         }
 
         // Create the route instance

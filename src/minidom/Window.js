@@ -1,14 +1,19 @@
 export class Window extends EventTarget
 {
-    animationFrames = null;
-
     requestAnimationFrame(callback) 
     { 
-        if (this.animationFrames == null)
-            callback() 
-        else
-            this.animationFrames.push(callback);
+        setImmediate(callback);
     }
+
+    waitAnimationFrames()
+    {
+        return new Promise((resolve) => {
+            setImmediate(() => setImmediate(resolve));
+        });
+    }
+
+/*
+    animationFrames = null;
 
     blockAnimationFrames()
     {
@@ -25,5 +30,6 @@ export class Window extends EventTarget
             temp.forEach(x => x());
         }
     }
+*/
 }
 

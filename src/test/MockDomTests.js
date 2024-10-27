@@ -4,11 +4,6 @@ import { strict as assert } from "node:assert";
 import "./mockdom.js";
 import { env } from "../core/Environment.js";
 
-function wait()
-{
-    return new Promise((resolve) => setTimeout(resolve, 10));
-}
-
 test("sessionStorage", () => {
 
     env.reset();
@@ -83,7 +78,7 @@ test("popstate", async () => {
 
     // Go back once
     env.window.history.go(-1);
-    await wait();
+    await env.window.waitAnimationFrames();
     assert.equal(env.window.location.href, "http://toptensoftware.com/url1");
     assert.deepEqual(env.window.history.state, state1);
     assert.equal(pops.length, 1);
@@ -92,7 +87,7 @@ test("popstate", async () => {
 
     // Go back a second time
     env.window.history.go(-1);
-    await wait();
+    await env.window.waitAnimationFrames();
     assert.equal(pops.length, 2);
     assert.equal(env.window.location.href, "http://toptensoftware.com/");
     assert.deepEqual(env.window.history.state, null);
@@ -101,7 +96,7 @@ test("popstate", async () => {
 
     // Go forward once
     env.window.history.go(1);
-    await wait();
+    await env.window.waitAnimationFrames();
     assert.equal(pops.length, 3);
     assert.equal(env.window.location.href, "http://toptensoftware.com/url1");
     assert.deepEqual(env.window.history.state, state1);
@@ -110,7 +105,7 @@ test("popstate", async () => {
 
     // Go forward again
     env.window.history.go(1);
-    await wait();
+    await env.window.waitAnimationFrames();
     assert.equal(pops.length, 4);
     assert.equal(env.window.location.href, "http://toptensoftware.com/url2");
     assert.deepEqual(env.window.history.state, state2);
@@ -119,7 +114,7 @@ test("popstate", async () => {
 
     // Go back twice
     env.window.history.go(-2);
-    await wait();
+    await env.window.waitAnimationFrames();
     assert.equal(env.window.location.href, "http://toptensoftware.com/");
     assert.deepEqual(env.window.history.state, null);
     assert.equal(pops.length, 5);
