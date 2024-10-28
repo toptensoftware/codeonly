@@ -3,6 +3,7 @@ import { Header } from "./Header.js";
 import { router } from "./router.js";
 
 import "./ArticlePage.js";
+import "./sandbox/SandboxPage.js";
 import "./NotFoundPage.js";
 
 // Main application
@@ -20,6 +21,7 @@ class Application extends Component
                 if (!to.page.layout)
                 {
                     this.layoutSlot.content = to.page;
+                    this.#currentLayout = null;
                 }
                 else
                 {

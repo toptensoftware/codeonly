@@ -2,19 +2,141 @@
 layout: "bare"
 ---
 
-# CodeOnly!!
+<div class="home">
 
-A simple, lightweight, code-only, tooling-free front-end Web framework.
+![CodeOnly Logo](/content/codeonly-logo.svg)
 
-Unlike other front-end frameworks, CodeOnly is not reactive so there are
-no wrapper or proxy classes around your objects and everything is kept 
-as close to pure JavaScript as possible.
+# CodeOnly
 
-CodeOnly is also tool-free: no cross compiling, transpiling, packaging, 
-bundling.  No waiting for tooling and you can debug your code in the 
-browser exactly as you wrote it.
+The front-end Web framework for lovers of JavaScript.
 
-Of course, CodeOnly is compatible with bundling for production distribution 
-so you get the best of both worlds.
+<div class="row"> 
 
-[Read the Guides](/guide/).
+<div href="/guide" class="box">
+
+### Tool Free
+
+No transpiling, packaging or bundling to slow things down. Debug your 
+code in the browser *exactly* as you wrote it.
+
+</div>
+
+
+<div href="/guide" class="box">
+
+### Non-Reactive
+
+CodeOnly is not reactive (we have reasons :).  No wrapper or 
+proxy classes. Everything is kept as close to pure JavaScript as 
+possible.
+
+</div>
+
+<div href="/guide" class="box">
+
+### Fast and Small
+
+DOM templates are JIT compiled, minimal DOM updates and we've designed and tuned it to run *fast!* 
+
+</div>
+
+</div>
+
+### Logic, Templates and Styles all in one file
+
+```js
+import { Component, Style } 
+    from "@toptensoftware/codeonly";
+
+class MyComponent extends Component
+{
+    // Logic
+    message = "Hello World from CodeOnly!";
+
+    // Template
+    static template = { 
+        type: "div",
+        class: "my-div",
+        text: c => c.message;
+    }
+}
+
+// Styles
+Style.declare(`
+.my-div
+{
+    text-align: center;
+}
+`);
+```
+
+
+[Read the Guide](/guide/)
+
+</div>
+
+</div>
+
+
+<style>
+.home
+{
+    text-align: center;
+
+    code
+    {
+        text-align: left;
+        max-width: 550px;
+        margin: 0 auto;
+    }
+
+    .row
+    {
+        display: flex;
+        gap: 10px;
+
+        .box
+        {
+            cursor: default;
+            border: 1px solid var(--gridline-color);
+            border-radius: 7px;
+            width: 33%;
+            font-size: 10pt;
+            padding: 10px;
+            color: var(--body-fore-color);
+            transition: background-color 0.2s;
+            margin: 5px 0;
+
+            &:hover
+            {
+                background-color: rgb(from var(--accent-color) r g b / 10%);
+            }
+
+            h3
+            {
+                margin-top: 10px;
+                font-size: 1rem;
+                color: var(--accent-color);
+            }
+        }
+    }
+}
+
+@media screen and (width < 550px) 
+{
+    .home
+    {
+        .row
+        {
+            display: block;
+            .box
+            {
+                width: 90%;
+                display: block;
+                margin: 10px auto;
+            }
+        }
+    }
+}
+
+</style>

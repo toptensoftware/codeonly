@@ -1,1 +1,1 @@
-../../dist/codeonly.js
+../../../dist/codeonly.js

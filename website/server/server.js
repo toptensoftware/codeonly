@@ -16,6 +16,8 @@ let app = express();
 app.use(logger('dev', { stream: { write: (m) => console.log(m.trimEnd()) } } ));
 
 
+app.use("/", express.static(path.join(__dirname, "public")));
+
 // Serve static content files
 app.use("/content", express.static(path.join(__dirname, "../content")));
 
@@ -57,7 +59,7 @@ else
         spa: true,
         modules: [ 
             "@toptensoftware/codeonly",
-            '@toptensoftware/stylish',
+            "@toptensoftware/stylish",
         ],
         replace: [
             { from: "./Application.js", to: "/Application.js" },

@@ -15,12 +15,12 @@
     "@toptensoftware/bundle-free": "^1.0.7",
     "express": "^4.21.1",
     "express-async-errors": "^3.1.1",
-    "morgan": "^1.10.0",
-    "livereload": "^0.9.3"
+    "livereload": "^0.9.3",
+    "morgan": "^1.10.0"
   },
   "devDependencies": {
-    "vite": "^5.4.9",
     "@toptensoftware/codeonly": "file:../src",
-    "@toptensoftware/stylish": "github:toptensoftware/stylish"
+    "@toptensoftware/stylish": "github:toptensoftware/stylish",
+    "vite": "^5.4.9"
   }
 }

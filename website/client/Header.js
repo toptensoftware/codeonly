@@ -8,14 +8,33 @@ export class Header extends Component
         id: "header",
         $: [
             {
-                _: "div",
+                _: "a",
                 class: "title",
-                text: "CodeOnly",
+                attr_href: "/",
+                $: [
+                    { 
+                        type: "img", 
+                        attr_src: "/content/codeonly-logo.svg",
+                    },
+                    "CodeOnly",
+                ]
             },
             {
                 _: "div",
                 class: "buttons",
                 $: [
+                    {
+                        type: "a",
+                        class: "subtle button",
+                        attr_href: "/sandbox",
+                        text: "Sandbox",
+                    },
+                    {
+                        type: "a",
+                        class: "subtle button",
+                        attr_href: "/guide/",
+                        text: "Guide",
+                    }
                 ]
             }
         ]
@@ -47,6 +66,21 @@ Style.declare(`
     .title 
     {
         flex-grow: 1;
+        display: flex;
+        align-items: center;
+        color: var(--body-fore-color);
+        transition: opacity 0.2s;
+
+        &:hover
+        {
+            opacity: 75%;
+        }
+
+        img
+        {
+            height: calc(var(--header-height) - 25px);
+            padding-right: 10px
+        }
     }
 
 
