@@ -1,6 +1,7 @@
 import { env } from "./Environment.js";
 import { whenLoaded } from "./Utils.js";
-import { nextFrame } from "./NextFrame.js";
+import { nextFrame } from "./nextFrame.js";
+import { DocumentScrollPosition } from "./DocumentScrollPosition.js";
 
 export class ViewStateRestoration
 {
@@ -36,12 +37,12 @@ export class ViewStateRestoration
                 // Clear any saved view states that can never be revisited
                 for (let k of Object.keys(this.#viewStates))
                 {
-                    if (parseInt(k) > this.current.state.sequence)
+                    if (parseInt(k) > to.state.sequence)
                     {
                         delete this.#viewStates[k];
                     }
                 }
-                this.saveViewStatesToLocalStorage();
+                this.saveViewStates();
             };
 
             // Load view state
@@ -51,13 +52,15 @@ export class ViewStateRestoration
                     // Restore view state
                     if (to.handler.restoreViewState)
                         to.handler.restoreViewState(to.viewState, to);
-                    else
+                    else if (this.#router.restoreViewState)
                         this.#router.restoreViewState?.(to.viewState, to);
+                    else
+                        DocumentScrollPosition.set(to.viewState);
 
                     // Jump to hash
                     if (env.browser)
                     {
-                        let elHash = document.getElementById(route.url.hash.substring(1));
+                        let elHash = document.getElementById(to.url.hash.substring(1));
                         elHash?.scrollIntoView();
                     }
                 });
@@ -65,7 +68,7 @@ export class ViewStateRestoration
         });
 
         env.window.addEventListener("beforeunload", (event) => {
-            this.captureCurrentViewState();
+            this.captureViewState();
         });
 
     }
@@ -80,8 +83,10 @@ export class ViewStateRestoration
         {
             if (route.handler.captureViewState)
                 this.#viewStates[route.state.sequence] = route.handler.captureViewState(route);
-            else
+            else if (this.#router.captureViewState)
                 this.#viewStates[route.state.sequence] = this.#router.captureViewState?.(route);
+            else
+                this.#viewStates[route.state.sequence] = DocumentScrollPosition.get();
         }
         this.saveViewStates();
     }

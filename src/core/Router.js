@@ -1,27 +1,31 @@
-import { DocumentScrollPosition } from "./DocumentScrollPosition.js";
+import { env } from "./Environment.js";
 import { urlPattern } from "./urlPattern.js";
 
 export class Router
 {   
-    constructor(handlers)
+    constructor(driver, handlers)
     {
+        this.#driver = driver;
+        if (driver)
+        {
+            this.navigate = driver.navigate.bind(driver);
+            this.replace = driver.navigate.bind(driver);
+            this.back = driver.back.bind(driver);
+        }
         if (handlers)
             this.register(handlers);
     }
 
-    start(driver)
+    start()
     {
-        this.#driver = driver;
-        this.navigate = driver.navigate.bind(driver);
-        this.replace = driver.navigate.bind(driver);
-        this.back = driver.back.bind(driver);
-        return driver.start(this);
+        return this.#driver.start(this);
     }
 
     #driver;
 
-    internalize = x => x;
-    externalize = x => x;
+    urlMapper;
+    internalize(url) { return this.urlMapper?.internalize(url) ?? new URL(url); }
+    externalize(url) { return this.urlMapper?.externalize(url) ?? new URL(url); }
 
     // The current route
     #current = null;
@@ -68,19 +72,32 @@ export class Router
     {
         let from = this.#current;
 
-        // Create route
-        this.#pending = route = Object.assign({ 
+        // In page navigation?
+        if (this.#current?.url.pathname == url.pathname && this.#current.url.search == url.search)
+        {
+            let dup = this.#current.handler.hashChange?.(this.#current, route);
+            if (dup !== undefined)
+                route = dup;
+            else
+                route = Object.assign({}, this.#current, route);
+        }
+
+        route = Object.assign(route, { 
             current: false,
             url, 
             pathname: url.pathname,
             state,
-            originalUrl: url 
-        }, route);
+        });
+
+        this.#pending = route;
 
         // Match url
-        route = await this.matchUrl(url, state, route);
-        if (!route)
-            return null;
+        if (!route.match)
+        {
+            route = await this.matchUrl(url, state, route);
+            if (!route)
+                return null;
+        }
 
         // Try to load
         try
@@ -241,15 +258,6 @@ export class Router
                 handler.pattern = new RegExp(urlPattern(handler.pattern));
             }
 
-            // If handler doesn't declare view state handlers
-            // the use the document scroll position
-            if (handler.captureViewState === undefined &&
-                handler.restoreViewState === undefined)
-            {
-                handler.captureViewState = DocumentScrollPosition.get;
-                handler.restoreViewState = DocumentScrollPosition.set;
-            }
-
             this.#handlers.push(handler);
         }
 
@@ -257,4 +265,3 @@ export class Router
     }
 }
 
-export let router = new Router();

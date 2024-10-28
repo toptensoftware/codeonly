@@ -108,7 +108,7 @@ let routes = [
 
 test("simple sync route", async () => {
 
-    let router = new Router(routes);
+    let router = new Router(null, routes);
     let r = await router.load(new URL("http://co/sync"), null);
     assert.equal(r.page, "/sync");
     assert.equal(router.current, r);
@@ -116,7 +116,7 @@ test("simple sync route", async () => {
 
 test("simple async route", async () => {
 
-    let router = new Router(routes);
+    let router = new Router(null, routes);
     let r = await router.load(new URL("http://co/async"), null);
     assert.equal(r.page, "/async");
     assert.equal(router.current, r);
@@ -126,7 +126,7 @@ test("events", async () => {
 
     events = [];
 
-    let router = new Router(routes);
+    let router = new Router(null, routes);
 
     router.addEventListener("mayLeave", async (from, to) => {
         await asyncOp();
@@ -173,7 +173,7 @@ test("events", async () => {
 
 test("cancel by mayLeave event", async () => {
 
-    let router = new Router(routes);
+    let router = new Router(null, routes);
 
     router.addEventListener("mayLeave", async (from, to) => {
         await asyncOp();
@@ -189,7 +189,7 @@ test("cancel by mayLeave event", async () => {
 
 test("cancel by mayEnter event", async () => {
 
-    let router = new Router(routes);
+    let router = new Router(null, routes);
 
     let from = await router.load(new URL("http://co/from"), null);
     assert.equal(from.page, "/from");
@@ -206,7 +206,7 @@ test("cancel by mayEnter event", async () => {
 
 test("cancel by handler mayLeave", async () => {
 
-    let router = new Router(routes);
+    let router = new Router(null, routes);
 
     let from = await router.load(new URL("http://co/cancel_leave"), null);
     assert.equal(from.page, "/cancel_leave");
@@ -218,7 +218,7 @@ test("cancel by handler mayLeave", async () => {
 
 test("cancel by handler mayLnter", async () => {
 
-    let router = new Router(routes);
+    let router = new Router(null, routes);
 
     let from = await router.load(new URL("http://co/from"), null);
     assert.equal(from.page, "/from");
@@ -231,7 +231,7 @@ test("cancel by handler mayLnter", async () => {
 
 test("cancel events", async () => {
 
-    let router = new Router(routes);
+    let router = new Router(null, routes);
 
     let from = await router.load(new URL("http://co/from"), null);
     assert.equal(from.page, "/from");
@@ -253,7 +253,7 @@ test("cancel events", async () => {
 
 test("concurrent navigation", async () => {
 
-    let router = new Router(routes);
+    let router = new Router(null, routes);
 
     let from = await router.load(new URL("http://co/from"), null);
     assert.equal(from.page, "/from");

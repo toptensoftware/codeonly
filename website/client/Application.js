@@ -1,5 +1,6 @@
-import { Component, Style, Transition, router } from "@toptensoftware/codeonly";
+import { Component, Style } from "@toptensoftware/codeonly";
 import { Header } from "./Header.js";
+import { router } from "./router.js";
 
 import "./ArticlePage.js";
 import "./NotFoundPage.js";
@@ -11,32 +12,28 @@ class Application extends Component
     {
         super();
 
-        router.addEventListener("navigateLoaded", (ev) => {
+        router.addEventListener("didEnter", (from, to) => {
 
             // Load navigated page into router slot
-            if (ev.route.page)
+            if (to.page)
             {
-                if (!ev.route.page.layout)
+                if (!to.page.layout)
                 {
-                    this.layoutSlot.content = ev.route.page;
+                    this.layoutSlot.content = to.page;
                 }
                 else
                 {
                     // Different layout?
-                    if (ev.route.page.layout != this.#currentLayout?.constructor)
+                    if (to.page.layout != this.#currentLayout?.constructor)
                     {
                         // Create new layout component
-                        this.#currentLayout = new ev.route.page.layout();
+                        this.#currentLayout = new to.page.layout();
                         this.layoutSlot.content = this.#currentLayout;
                     }
 
-                    this.#currentLayout.loadRoute(ev.route);
+                    this.#currentLayout.loadRoute(to);
                 }
             }
-        });
-
-        router.addEventListener("navigateCancelled", (ev) => {
-            ev.route.page?.destroy();
         });
     }
 

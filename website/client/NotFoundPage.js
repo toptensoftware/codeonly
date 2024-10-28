@@ -1,4 +1,5 @@
-import { Component, router } from "@toptensoftware/codeonly";
+import { Component } from "@toptensoftware/codeonly";
+import { router } from "./router.js";
 
 export class NotFoundPage extends Component
 {

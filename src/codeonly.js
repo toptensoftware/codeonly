@@ -12,8 +12,16 @@ export * from "./core/ObservableArray.js";
 export * from "./core/urlPattern.js";
 export * from "./core/nextFrame.js";
 export * from "./core/htmlEncode.js";
-export * from "./core/DocumentScrollPosition.js";
-export * from "./core/Router.js";
 export * from "./core/Utils.js";
 export * from "./core/Transition.js";
+
+export * from "./core/DocumentScrollPosition.js";
+export * from "./core/Router.js";
 export * from "./core/WebHistoryRouterDriver.js";
+export * from "./core/UrlMapper.js";
+export * from "./core/ViewStateRestoration.js";
+
+/*
+export * from "./core/TemplateCompilerSSR.js";
+export * from "./core/SSREnvironment.js";
+*/

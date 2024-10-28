@@ -2,6 +2,7 @@ import { Component, Style, Transition } from "@toptensoftware/codeonly";
 import { MobileBar } from "./MobileBar.js";
 import { MainNavigation } from "./MainNavigation.js";
 import { SecondaryNavigation } from "./SecondaryNavigation.js";
+import { router } from "./router.js";
 
 // Main application
 export class LayoutDocumentation extends Component
@@ -12,6 +13,8 @@ export class LayoutDocumentation extends Component
         this.init();
         this.showSidePanelTransition = new Transition(this.rootNode, "show-side-panel");
         this.showSecondaryPanelTransition = new Transition(this.rootNode, "show-secondary-panel");
+
+        router.addEventListener("mayLeave", () => this.hidePanel());
     }
 
     loadRoute(route)
@@ -19,7 +22,6 @@ export class LayoutDocumentation extends Component
         this.url = route.url;
         this.page = route.page;
         this.invalidate();
-        this.hidePanel();
     }
 
     showPanel()

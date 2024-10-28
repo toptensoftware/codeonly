@@ -5,33 +5,24 @@ export class Document
     constructor(pathname)
     {
         this.pathname = pathname;
-        this.load();
     }
     
     load()
     {
         return env.load(async () => {
 
-            try
-            {
-                // Work out "index" filename
-                let pathname = this.pathname;
-                if (pathname == "" || pathname.endsWith("/"))
-                    pathname += "index";
-        
-                // Fetch the page
-                const response = await fetch(`/content/${pathname}.page`);
-                if (!response.ok)
-                    throw new Error(`Response status: ${response.status} - ${response.statusText}`);
-        
-                // Process markdown body
-                this.processMarkdown( await response.text());
-            }
-            catch (err)
-            {
-                this.failed = true;
-            }
-
+            // Work out "index" filename
+            let pathname = this.pathname;
+            if (pathname == "" || pathname.endsWith("/"))
+                pathname += "index";
+    
+            // Fetch the page
+            const response = await fetch(`/content/${pathname}.page`);
+            if (!response.ok)
+                throw new Error(`Response status: ${response.status} - ${response.statusText}`);
+    
+            // Process markdown body
+            this.processMarkdown( await response.text());
 
         });
     }

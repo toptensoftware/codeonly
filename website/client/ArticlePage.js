@@ -1,4 +1,5 @@
-import { Component, Style, Html, router } from "@toptensoftware/codeonly";
+import { Component, Style, Html } from "@toptensoftware/codeonly";
+import { router } from "./router.js";
 import { Document } from "./Document.js";
 import { LayoutDocumentation } from "./LayoutDocumentation.js";
 import { LayoutBare } from "./LayoutBare.js";
@@ -85,22 +86,18 @@ Style.declare(`
 
 router.register({
     pattern: "/:pathname*",
-    match: (route) => {
-        route.document = new Document(route.match.groups.pathname);
-
-        Object.defineProperty(route, "page", {
-            get: function() {
-                if (!route._page)
-                {
-                    if (route.document.failed)
-                        route._page = new NotFoundPage();
-                    else
-                        route._page = new ArticlePage(route.document);
-                }
-                return route._page;
-            }
-          });
-
+    match: async (to) => {
+        try
+        {
+            to.document = new Document(to.match.groups.pathname);
+            await to.document.load();
+            to.page = new ArticlePage(to.document);
+            return true;
+        }
+        catch
+        {
+            to.page = new NotFoundPage();
+        }
         return true;
     },
     order: 10,
