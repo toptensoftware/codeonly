@@ -2,6 +2,7 @@ import { Component, Style, Html } from "@toptensoftware/codeonly";
 import { router } from "../router.js";
 import { CodeEditor } from "./CodeEditor.js";
 import { Preview } from "./Preview.js";
+import { compress, decompress, bufferToBase64, base64ToBuffer } from "./Utils.js";
 
 let hello_world = `class Main extends Component
 {
@@ -13,11 +14,11 @@ let hello_world = `class Main extends Component
 
 class SandboxPage extends Component
 {
-    constructor()
+    constructor(initData)
     {
         super();
         this.init();
-        this.editor.value = hello_world;
+        this.editor.value = initData?.code ?? hello_world;
         this.preview.script = this.editor.value;
 
         // Display errors from iFrame preview
@@ -75,6 +76,19 @@ class SandboxPage extends Component
         }, 500);
     }
 
+    async onCopyLink()
+    {
+        if (navigator.clipboard) {
+            let url = new URL(window.location);
+            let data = JSON.stringify({
+                code: this.editor.value
+            });
+            url.hash = await bufferToBase64(await compress(data));
+            navigator.clipboard.writeText(url.href);
+            alert("Link copied to clipboard");
+        }
+    }
+
     
     static template = {
         type: "div",
@@ -82,7 +96,7 @@ class SandboxPage extends Component
         $:[
             {
                 type: "div",
-                style: "width: 50%; height: 100%; position: relative",
+                class: "editor-container",
                 $: [
                     {
                         type: CodeEditor,
@@ -98,8 +112,46 @@ class SandboxPage extends Component
                 ]
             },
             {
-                type: Preview,
-                bind: "preview",
+                type: "div",
+                class: "preview-container",
+                $: [
+                    {
+                        type: Preview,
+                        bind: "preview",
+                    },
+                    {
+                        type: "footer",
+                        $: [
+                        /*
+                            {
+                                type: "label",
+                                $: [
+                                    {
+                                        type: "input",
+                                        attr_type: "checkbox",
+                                        attr_checked: "checked",
+                                        class: "switch",
+                                    },
+                                    "Show Errors",
+                                ]
+                            },
+                        */
+                            { 
+                                type: "button",
+                                class: "subtle",
+                                text: "Copy Link",
+                                on_click: c => c.onCopyLink(),
+                            },
+                            /*
+                            { 
+                                type: "button",
+                                class: "subtle",
+                                text: "Download",
+                            },
+                            */
+                        ]
+                    }
+                ]
             }
         ]
     };
@@ -111,6 +163,35 @@ Style.declare(`
     display: flex;
     align-items: stretch;
     height: calc(100% - var(--header-height));
+
+    .editor-container
+    {
+        width: 50%; 
+        height: 100%; 
+        position: relative;
+        border-right: 1px solid var(--gridline-color);
+        padding-right: 1px;
+    }
+
+
+    .preview-container
+    {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    footer
+    {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+        padding: 10px;
+        justify-content: center;
+        align-items: center;
+        border-top: 1px solid var(--gridline-color);
+    }
 
     .error
     {
@@ -130,8 +211,17 @@ Style.declare(`
 
 router.register({
     pattern: "/sandbox",
-    match: (to) => {
-        to.page = new SandboxPage()
+    match: async (to) => {
+        let initData = null;
+        if (to.url.hash.length > 1)
+        {
+            initData = JSON.parse(
+                await decompress(
+                    await base64ToBuffer(to.url.hash.substring(1))
+                )
+            );
+        }
+        to.page = new SandboxPage(initData);
         return true;
     }
 });
