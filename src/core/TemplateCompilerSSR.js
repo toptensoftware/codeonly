@@ -79,12 +79,6 @@ export function compileTemplateCode(rootTemplate, compilerOptions)
 
         flushTlb();
 
-        // Render destroy code
-        for (let ln of ni.enumLocalNodes())
-        {
-            renderDestroy(ln);
-        }
-
         // Root context?
         let otherExports = [];
         if (isRootTemplate)
@@ -214,10 +208,9 @@ export function compileTemplateCode(rootTemplate, compilerOptions)
                 refs.push(ni.integrated.data);
             }
 
-            if (ni.integrated.wantsUpdate)
-            {
-                closure.update.append(`${ni.name}.update()`);
-            }
+            closure.update.append(`${ni.name}.update()`);
+            closure.destroy.append(`${ni.name}?.destroy();`);
+            closure.destroy.append(`${ni.name} = null;`);
 
             // Create integrated component
             addNodeLocal(ni);
@@ -253,6 +246,9 @@ export function compileTemplateCode(rootTemplate, compilerOptions)
             addNodeLocal(ni);
             closure.create.append(`${ni.name} = new refs[${refs.length}]();`);
             refs.push(ni.template.type);
+
+            closure.destroy.append(`${ni.name}?.destroy();`);
+            closure.destroy.append(`${ni.name} = null;`);
 
             let slotNames = new Set(ni.template.type.slots ?? []);
 
@@ -663,15 +659,6 @@ export function compileTemplateCode(rootTemplate, compilerOptions)
             {
                 tlb.text(value);
             }
-        }
-
-        function renderDestroy(ni)
-        {
-            if (ni.isComponent || ni.isIntegrated)
-            {
-                closure.destroy.append(`${ni.name}.destroy();`);
-                closure.destroy.append(`${ni.name} = null;`);
-            }            
         }
     }
 }

@@ -11,6 +11,7 @@ export function Placeholder(comment)
             get rootNode() { return node; },
             get rootNodes() { return [ node ]; },
             get isSingleRoot() { return true; },
+            setMounted(m) { },
             destroy() {},
             update() {},
             render(w) { w.write(`<!--${htmlEncode(comment)}-->`) },

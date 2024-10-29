@@ -30,7 +30,6 @@ export class ForEachBlock
 
         return {
             isSingleRoot: false,
-            wantsUpdate: true,
             data: data,
             nodes: nodes
         }
@@ -109,11 +108,10 @@ export class ForEachBlock
         this.itemDoms = [];
 
         // Sentinal nodes
-        this.headSentinal = env.document?.createComment(" enter foreach block ");
-        this.tailSentinal = env.document?.createComment(" leave foreach block ");
+        this.#headSentinal = env.document?.createComment(" enter foreach block ");
+        this.#tailSentinal = env.document?.createComment(" leave foreach block ");
 
         // Single vs multi-root op helpers
-        let insert, insert_dom, remove_dom;
         if (this.itemConstructor.isSingleRoot)
         {
             this.#insert = this.#single_root_insert;
@@ -184,20 +182,32 @@ export class ForEachBlock
 
         if (!this.itemConstructor.isSingleRoot)
         {
-            let r = [ this.headSentinal ];
+            let r = [ this.#headSentinal ];
             for (let i=0; i<this.itemDoms.length; i++)
             {
                 r.push(...this.itemDoms[i].rootNodes);
             }
             r.push(...emptyNodes);
-            r.push(this.tailSentinal);
+            r.push(this.#tailSentinal);
             return r;
         }
         else
         {
-            return [this.headSentinal, ...this.itemDoms.map(x => x.rootNode), ...emptyNodes, this.tailSentinal];
+            return [this.#headSentinal, ...this.itemDoms.map(x => x.rootNode), ...emptyNodes, this.#tailSentinal];
         }
     }
+
+    #headSentinal;
+    #tailSentinal;
+
+    #mounted = false;
+    setMounted(mounted)
+    {
+        this.#mounted = mounted;
+        setItemsMounted(this.itemDoms, mounted);
+    }
+
+    
 
     update()
     {
@@ -371,10 +381,9 @@ export class ForEachBlock
             this.#patch_existing(newItems, newKeys, range_start + pos, pos, newItems.length - pos);
 
         // Destroy remaining spare items
-        for (let i=spare.length-1; i>=0; i--)
-        {
-            spare[i].destroy();
-        }
+        if (this.#mounted)
+            setItemsMounted(spare, false);
+        destroyItems(spare);
 
         // Update empty list indicator
         this.#updateEmpty();
@@ -432,10 +441,7 @@ export class ForEachBlock
             this.observableItems = null;
         }
 
-        for (let i=0; i<this.itemDoms.length; i++)
-        {
-            this.itemDoms[i].destroy();
-        }
+        destroyItems(this.itemDoms);
 
         this.itemDoms = null;
     }
@@ -447,8 +453,10 @@ export class ForEachBlock
             if (!this.emptyDom && this.emptyConstructor)
             {
                 this.emptyDom = this.emptyConstructor();
-                if (this.isAttached)
-                    this.tailSentinal.before(...this.emptyDom.rootNodes);
+                if (this.#attached)
+                    this.#tailSentinal.before(...this.emptyDom.rootNodes);
+                if (this.#mounted)
+                    this.emptyDom.setMounted(true);
             }
             if (this.emptyDom)
             {
@@ -459,13 +467,13 @@ export class ForEachBlock
         {
             if (this.emptyDom)
             {
-                if (this.isAttached)
+                if (this.#attached)
                 {
                     for (var n of this.emptyDom.rootNodes)
-                    {
                         n.remove();
-                    }
                 }
+                if (this.#mounted)
+                    this.emptyDome.setMounted(false);
                 this.emptyDom.destroy();
                 this.emptyDom = null;
             }
@@ -477,9 +485,9 @@ export class ForEachBlock
     #delete;
     #remove_dom;
 
-    get isAttached()
+    get #attached()
     {
-        return this.tailSentinal?.parentNode != null;
+        return this.#tailSentinal?.parentNode != null;
     }
 
     #multi_root_insert(newItems, newKeys, index, src_index, count)
@@ -500,6 +508,9 @@ export class ForEachBlock
         }
 
         this.#multi_root_insert_dom(index, itemDoms);
+
+        if (this.#mounted)
+            setItemsMounted(itemDoms, true);
     }
 
     #multi_root_insert_dom(index, itemDoms)
@@ -508,7 +519,7 @@ export class ForEachBlock
         this.itemDoms.splice(index, 0, ...itemDoms);
 
         // Insert the nodes
-        if (this.isAttached)
+        if (this.#attached)
         {
             let newNodes = [];
             itemDoms.forEach(x => newNodes.push(...x.rootNodes));
@@ -520,7 +531,7 @@ export class ForEachBlock
             }
             else
             {
-                insertBefore = this.tailSentinal;
+                insertBefore = this.#tailSentinal;
             }
             insertBefore.before(...newNodes);
         }
@@ -529,20 +540,17 @@ export class ForEachBlock
     #multi_root_delete(index, count)
     {
         let itemDoms = this.#multi_root_remove_dom(index, count);
-        for (let i = itemDoms.length-1; i>=0; i--)
-        {
-            itemDoms[i].destroy();
-        }
+        if (this.#mounted)
+            setItemsMounted(itemDoms, false);
+        destroyItems(itemDoms);
     }
 
     #multi_root_remove_dom(index, count)
     {
-        // Destroy the items
-        let isAttached = this.isAttached;
-        for (let i=0; i<count; i++)
+        // Remove the items
+        if (this.#attached)
         {
-            // Remove child nodes
-            if (isAttached)
+            for (let i=0; i<count; i++)
             {
                 let children = this.itemDoms[index + i].rootNodes;
                 for (let j = 0; j<children.length; j++)
@@ -574,6 +582,8 @@ export class ForEachBlock
         }
 
         this.#single_root_insert_dom(index, itemDoms);
+        if (this.#mounted)
+            setItemsMounted(itemDoms, true);
     }
 
     #single_root_insert_dom(index, itemDoms)
@@ -582,7 +592,7 @@ export class ForEachBlock
         this.itemDoms.splice(index, 0, ...itemDoms);
 
         // Insert the nodes
-        if (this.isAttached)
+        if (this.#attached)
         {
             let newNodes = itemDoms.map(x => x.rootNode);
 
@@ -593,7 +603,7 @@ export class ForEachBlock
             }
             else
             {
-                insertBefore = this.tailSentinal;
+                insertBefore = this.#tailSentinal;
             }
             insertBefore.before(...newNodes);
         }
@@ -602,20 +612,17 @@ export class ForEachBlock
     #single_root_delete(index, count)
     {
         let itemDoms = this.#single_root_remove_dom(index, count);
-        for (let i = itemDoms.length - 1; i>=0; i--)
-        {
-            itemDoms[i].destroy();
-        }
+        if (this.#mounted)
+            setItemsMounted(itemDoms, false);
+        destroyItems(itemDoms);
     }
 
     #single_root_remove_dom(index, count)
     {
         // Remove
-        let isAttached = this.isAttached;
-        for (let i=0; i<count; i++)
+        if (this.#attached)
         {
-            // Remove child nodes
-            if (isAttached)
+            for (let i=0; i<count; i++)
             {
                 this.itemDoms[index + i].rootNode.remove();
             }
@@ -639,3 +646,20 @@ export class ForEachBlock
         }
     }
 }
+
+function destroyItems(items)
+{
+    for (let i=items.length - 1; i>=0; i--)
+    {
+        items[i].destroy()
+    }
+}
+
+function setItemsMounted(items, mounted)
+{
+    for (let i=items.length - 1; i>=0; i--)
+    {
+        items[i].setMounted(mounted);
+    }
+}
+

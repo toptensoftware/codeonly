@@ -61,7 +61,6 @@ export class IfBlock
 
         return {
             isSingleRoot,
-            wantsUpdate: true,
             nodes,
             data: branches,
         };
@@ -212,6 +211,11 @@ export class IfBlock
             this.activeBranchIndex = newActiveBranchIndex;
             this.activeBranch = this.branch_constructors[newActiveBranchIndex]();
             TemplateHelpers.replaceMany(oldActiveBranch.rootNodes, this.activeBranch.rootNodes);
+            if (this.#mounted)
+            {
+                oldActiveBranch.setMounted(false);
+                this.activeBranch.setMounted(true);
+            }
             oldActiveBranch.destroy();
         }
     }
@@ -224,6 +228,13 @@ export class IfBlock
                 return i;
         }
         throw new Error("internal error, IfBlock didn't resolve to a branch");
+    }
+
+    #mounted = false;
+    setMounted(mounted)
+    {
+        this.#mounted = mounted;
+        this.activeBranch.setMounted(mounted);
     }
 
     get rootNodes()

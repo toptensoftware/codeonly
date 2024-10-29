@@ -379,7 +379,7 @@ test("ForEach Content (nested)", () => {
 });
 
 
-test("ForEach Conent (with else block)", () => {
+test("ForEach Content (with else block)", () => {
 
     let items = [];
 

@@ -15,7 +15,6 @@ export class EmbedSlot
         }
         let retv = {
             isSingleRoot: false,
-            wantsUpdate: true,
             data: { 
                 ownsContent: template.ownsContent ?? true,
                 content: template.content,
@@ -165,7 +164,19 @@ export class EmbedSlot
             this.#resolvedContent?.unbind?.()
     }
 
-    get isAttached() { return this.#headSentinal?.parentNode != null; }
+    get isAttached() {  }
+
+    get #attached()
+    {
+        return this.#headSentinal?.parentNode != null;
+    }
+
+    #mounted
+    setMounted(mounted)
+    {
+        this.#mounted = mounted;
+        this.#resolvedContent?.setMounted?.(mounted);
+    }
 
     replaceContent(value)
     {
@@ -174,7 +185,7 @@ export class EmbedSlot
             return;
 
         // Remove old content
-        if (this.isAttached)
+        if (this.#attached)
         {
             let n = this.#headSentinal.nextSibling;
             while (n != this.#tailSentinal)
@@ -184,6 +195,10 @@ export class EmbedSlot
                 n = t;
             }
         }
+
+        if (this.#mounted)
+            this.#resolvedContent?.setMounted?.(false);
+
         this.#nodes = [];
         if (this.#ownsContent)
             this.#resolvedContent?.destroy?.();
@@ -236,9 +251,10 @@ export class EmbedSlot
             throw new Error("Embed slot requires component, array of HTML nodes or a single HTML node");
         }
 
-        if (this.isAttached)
+        if (this.#attached)
             this.#tailSentinal.before(...this.#nodes);
-
+        if (this.#mounted)
+            this.#resolvedContent?.setMounted?.(true);
     }
 
     destroy()

@@ -170,6 +170,25 @@ export class Component extends EventTarget
         }
     }
 
+    onMount()
+    {
+    }
+
+    onUnmount()
+    {
+    }
+
+    #mounted = false;
+    setMounted(mounted)
+    {
+        this.#dom?.setMounted(mounted);
+        this.#mounted = mounted;
+        if (mounted)
+            this.onMount();
+        else
+            this.onUnmount();
+    }
+
     mount(el)
     {
         if (typeof(el) === 'string')

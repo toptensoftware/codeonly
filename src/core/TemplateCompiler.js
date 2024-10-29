@@ -85,12 +85,6 @@ export function compileTemplateCode(rootTemplate, compilerOptions)
         // Render code
         emit_node(ni);
 
-        // Render destroy code
-        for (let ln of ni.enumLocalNodes())
-        {
-            renderDestroy(ln);
-        }
-
         // Bind/unbind
         if (!closure.bind.closure.isEmpty)
         {
@@ -292,10 +286,7 @@ export function compileTemplateCode(rootTemplate, compilerOptions)
                 }
             }
 
-            if (ni.integrated.wantsUpdate)
-            {
-                closure.update.append(`${ni.name}.update()`);
-            }
+            closure.update.append(`${ni.name}.update()`);
 
             if (has_bindings)
             {
@@ -323,6 +314,10 @@ export function compileTemplateCode(rootTemplate, compilerOptions)
 
             // setMounted support
             closure.setMounted.append(`${ni.name}.setMounted(mounted);`);
+
+            // destroy support
+            closure.destroy.append(`${ni.name}?.destroy();`);
+            closure.destroy.append(`${ni.name} = null;`);
 
             // Process common properties
             for (let key of Object.keys(ni.template))
@@ -352,6 +347,10 @@ export function compileTemplateCode(rootTemplate, compilerOptions)
 
             // setMounted support
             closure.setMounted.append(`${ni.name}.setMounted(mounted);`);
+            
+            // destroy support
+            closure.destroy.append(`${ni.name}?.destroy();`);
+            closure.destroy.append(`${ni.name} = null;`);
 
             // Process all keys
             for (let key of Object.keys(ni.template))
@@ -491,7 +490,8 @@ export function compileTemplateCode(rootTemplate, compilerOptions)
                 closure.create.append(`${ni.name} = document.createElementNS(${JSON.stringify(xmlns)}, ${JSON.stringify(ni.template.type)});`);
             }
 
-            //closure.create.append(`${ni.name}.dataset.coId = context.$instanceId + "-${ni.name}";`)
+            // destroy support
+            closure.destroy.append(`${ni.name} = null;`);
 
             for (let key of Object.keys(ni.template))
             {
@@ -656,6 +656,10 @@ export function compileTemplateCode(rootTemplate, compilerOptions)
                 // Add listener
                 closure.create.append(`${listener_name} = helpers.addEventListener(() => model, ${ni.name}, ${JSON.stringify(eventName)}, refs[${refs.length}]);`);
                 refs.push(ni.template[key]);
+
+                closure.destroy.append(`${listener_name}?.();`);
+                closure.destroy.append(`${listener_name} = null;`);
+
                 return true;
             }
 
@@ -725,28 +729,6 @@ export function compileTemplateCode(rootTemplate, compilerOptions)
                 closure.create.append(formatter(JSON.stringify(value)));
             }
         }
-
-        function renderDestroy(ni)
-        {
-            if (ni.isComponent || ni.isIntegrated)
-            {
-                closure.destroy.append(`${ni.name}.destroy();`);
-            }            
-
-            if (ni.listenerCount)
-            {
-                for (let i=0; i<ni.listenerCount; i++)
-                {
-                    closure.destroy.append(`${ni.name}_ev${i+1}?.();`);
-                    closure.destroy.append(`${ni.name}_ev${i+1} = null;`);
-                }
-            }
-
-            if (ni.kind == 'html' && ni.nodes.length == 0)
-                return;
-
-            closure.destroy.append(`${ni.name} = null;`);
-        }
     }
 }
 
@@ -760,7 +742,7 @@ export function compileTemplate(rootTemplate, compilerOptions)
 
     // Compile code
     let code = compileTemplateCode(rootTemplate, compilerOptions);
-    //console.log(code.code);
+    console.log(code.code);
 
     // Put it in a function
     let templateFunction = new Function("env", "refs", "helpers", "context", code.code);

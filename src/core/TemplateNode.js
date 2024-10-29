@@ -26,7 +26,21 @@ export class TemplateNode
         }
 
         // Apply automatic transforms
+        /*
+        let saved = {};
+        if (template.export !== undefined)
+        {
+            saved.export = template.export;
+            delete template.export;
+        }
+        if (template.bind !== undefined)
+        {
+            saved.bind = template.bind;
+            delete template.bind;
+        }
+        */
         template = Plugins.transform(template);
+        //template = Object.assign(template, saved);
         if (is_constructor(template))
         {
             template = { type: template }
