@@ -97,6 +97,11 @@ Style.declare(`
         display: flex;
         gap: 10px;
         align-items: center;
+
+        .theme-switch
+        {
+            transform: translateY(-1.5px);
+        }
     }
 }
 `);
