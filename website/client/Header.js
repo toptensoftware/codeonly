@@ -14,7 +14,7 @@ export class Header extends Component
                 $: [
                     { 
                         type: "img", 
-                        attr_src: "/content/codeonly-logo.svg",
+                        attr_src: "/codeonly-logo.svg",
                     },
                     "CodeOnly",
                 ]

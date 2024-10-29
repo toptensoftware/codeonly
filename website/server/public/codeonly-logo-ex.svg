@@ -2,13 +2,13 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="33.866665mm"
+   width="100mm"
    height="33.866665mm"
-   viewBox="0 0 33.866665 33.866665"
+   viewBox="0 0 100 33.866665"
    version="1.1"
    id="svg949"
    inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
-   sodipodi:docname="codeonly-logo.svg"
+   sodipodi:docname="codeonly-logo-ex.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -27,14 +27,14 @@
      fit-margin-left="0"
      fit-margin-right="0"
      fit-margin-bottom="0"
-     inkscape:zoom="0.66368547"
-     inkscape:cx="227.51741"
-     inkscape:cy="528.86498"
-     inkscape:window-width="1920"
-     inkscape:window-height="1018"
-     inkscape:window-x="-6"
-     inkscape:window-y="-6"
-     inkscape:window-maximized="1"
+     inkscape:zoom="1.3273709"
+     inkscape:cx="-24.48449"
+     inkscape:cy="1.1300534"
+     inkscape:window-width="1907"
+     inkscape:window-height="1005"
+     inkscape:window-x="10"
+     inkscape:window-y="38"
+     inkscape:window-maximized="0"
      inkscape:current-layer="layer1" />
   <defs
      id="defs946" />
@@ -45,7 +45,7 @@
      transform="translate(-8.0330986,-8.4317667)">
     <g
        id="g81232"
-       transform="matrix(0.38767622,0,0,0.38767622,33.649036,30.690662)">
+       transform="matrix(0.38767622,0,0,0.38767622,66.715703,30.690662)">
       <g
          id="g8334"
          transform="matrix(1.0919797,0,0,1.0919797,-193.75832,-212.15128)">
@@ -61,5 +61,16 @@
            transform="scale(0.26458333)" />
       </g>
     </g>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:18.3915px;line-height:1.25;font-family:'courier new';-inkscape-font-specification:'courier new';text-align:center;letter-spacing:-3.175px;word-spacing:0px;text-anchor:middle;fill:#2b2b2b;stroke-width:0.459788;fill-opacity:1"
+       x="69.67453"
+       y="30.501787"
+       id="text2871"><tspan
+         sodipodi:role="line"
+         id="tspan2869"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Verdana;-inkscape-font-specification:Verdana;fill:#2b2b2b;stroke-width:0.459788;fill-opacity:1"
+         x="69.732407"
+         y="30.501787">(            )=&gt; </tspan></text>
   </g>
 </svg>
