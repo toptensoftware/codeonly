@@ -62,6 +62,7 @@ export function compileTemplateCode(rootTemplate, compilerOptions)
         closure.bind = closure.addFunction("bind").code;
         closure.update = closure.addFunction("update").code;
         closure.unbind = closure.addFunction("unbind").code;
+        closure.setMounted = closure.addFunction("setMounted", ["mounted"]).code;
         closure.destroy = closure.addFunction("destroy").code;
         let rebind;
         if (isRootTemplate)
@@ -141,6 +142,7 @@ export function compileTemplateCode(rootTemplate, compilerOptions)
             `return { `,
             `  update,`,
             `  destroy,`,
+            `  setMounted,`,
             `  get rootNodes() { return [ ${ni.spreadDomNodes()} ]; },`,
             `  isSingleRoot: ${ni.isSingleRoot},`,
             ...otherExports,
@@ -319,6 +321,9 @@ export function compileTemplateCode(rootTemplate, compilerOptions)
             );
             refs.push(ni.template.type);
 
+            // setMounted support
+            closure.setMounted.append(`${ni.name}.setMounted(mounted);`);
+
             // Process common properties
             for (let key of Object.keys(ni.template))
             {
@@ -344,6 +349,9 @@ export function compileTemplateCode(rootTemplate, compilerOptions)
 
             let auto_update = ni.template.update === "auto";
             let auto_modified_name = false;
+
+            // setMounted support
+            closure.setMounted.append(`${ni.name}.setMounted(mounted);`);
 
             // Process all keys
             for (let key of Object.keys(ni.template))

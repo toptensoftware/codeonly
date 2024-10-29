@@ -70,6 +70,8 @@ export class Router
     // Load a URL with state
     async load(url, state, route)
     {
+        route = route ?? {};
+        
         let from = this.#current;
 
         // In page navigation?

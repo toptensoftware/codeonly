@@ -26,6 +26,9 @@ class MockRouter extends EventTarget
     internalize = x => x;
     externalize = x => x;
 
+    captureViewState() { return {} }
+    restoreViewState() {}
+
     current;
     driver;
     cancel_mode = false;
