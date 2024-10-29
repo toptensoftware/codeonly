@@ -52,6 +52,11 @@ var ti=Object.defineProperty;var vt=r=>{throw TypeError(r)};var ii=(r,e,t)=>e in
         display: flex;
         gap: 10px;
         align-items: center;
+
+        .theme-switch
+        {
+            transform: translateY(-1.5px);
+        }
     }
 }
 `);let ge=new mi(new gi);new yi(ge);class vi{constructor(e){this.pathname=e}load(){return x.load(async()=>{let e=this.pathname;(e==""||e.endsWith("/"))&&(e+="index");const t=await fetch(`/content/${e}.page`);if(!t.ok)throw new Error(`Response status: ${t.status} - ${t.statusText}`);this.processMarkdown(await t.text())})}processMarkdown(e){this.frontmatter={},e=e.replace(/\r\n/g,`
