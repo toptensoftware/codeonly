@@ -1,6 +1,5 @@
-# CodeOnly
+# Introduction
 index
-installation
 
 # Components
 component

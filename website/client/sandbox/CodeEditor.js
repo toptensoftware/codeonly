@@ -7,6 +7,11 @@ export class CodeEditor extends Component
         super();
         this.init();
 
+        window.stylish.addEventListener("darkModeChanged", (ev) => {
+            if (this.#editor)
+                this.#editor._themeService.setTheme(ev.darkMode ? 'vs-dark' : "vs-light");
+        });
+
         // Load Monaco
         require(['vs/editor/editor.main'], () => {
 
@@ -14,9 +19,10 @@ export class CodeEditor extends Component
             this.#editor = monaco.editor.create(this.editorContainer, {
                 value: this.#pendingValue,
                 language: 'javascript',
-                theme: 'vs-dark'
+                theme: window.stylish.darkMode ? 'vs-dark' : "vs-light"
             });
             this.#pendingValue = null;
+
 
             // Watch for script changes
             this.#editor.getModel().onDidChangeContent((event) => {

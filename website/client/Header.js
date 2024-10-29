@@ -34,7 +34,14 @@ export class Header extends Component
                         class: "subtle button",
                         attr_href: "/guide/",
                         text: "Guide",
-                    }
+                    },
+                    {
+                        type: "input",
+                        attr_type: "checkbox",
+                        attr_checked: window.stylish.darkMode,
+                        class: "theme-switch",
+                        on_click: () => window.stylish.toggleTheme(),
+                    },
                 ]
             }
         ]
@@ -89,6 +96,7 @@ Style.declare(`
         font-size: 12pt;
         display: flex;
         gap: 10px;
+        align-items: center;
     }
 }
 `);
