@@ -38,7 +38,7 @@ export class Header extends Component
                     {
                         type: "input",
                         attr_type: "checkbox",
-                        attr_checked: window.stylish.darkMode,
+                        attr_checked: window.stylish.darkMode ? "checked" : undefined,
                         class: "theme-switch",
                         on_click: () => window.stylish.toggleTheme(),
                     },

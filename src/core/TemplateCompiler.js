@@ -559,7 +559,7 @@ export function compileTemplateCode(rootTemplate, compilerOptions)
                     if (!closure.current_xmlns)
                         attrName = camel_to_dash(attrName);
 
-                    format_dynamic(ni.template[key], (valueExpr) => `${ni.name}.setAttribute(${JSON.stringify(attrName)}, ${valueExpr})`);
+                    format_dynamic(ni.template[key], (valueExpr) => `helpers.setElementAttribute(${ni.name}, ${JSON.stringify(attrName)}, ${valueExpr})`);
                     continue;
                 }
 

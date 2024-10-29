@@ -73,6 +73,14 @@ export class TemplateHelpers
         }
     }
 
+    static setElementAttribute(node, attr, value)
+    {
+        if (value === undefined)
+            node.removeAttribute(attr);
+        else
+            node.setAttribute(attr, value);
+    }
+
     // Set either the inner text of an element to a string
     // or the inner html to a HtmlString
     static setElementText(node, text)
