@@ -3,6 +3,7 @@ import { router } from "../router.js";
 import { CodeEditor } from "./CodeEditor.js";
 import { Preview } from "./Preview.js";
 import { compress, decompress, bufferToBase64, base64ToBuffer } from "./Utils.js";
+import { downloadScript } from "./downloadScript.js";
 
 let hello_world = `class Main extends Component
 {
@@ -89,6 +90,19 @@ class SandboxPage extends Component
         }
     }
 
+    showErrors = true;
+
+    onShowErrorsChanged(ev)
+    {
+        this.showErrors = ev.target.checked;
+        this.invalidate();
+    }
+
+    onDownload()
+    {
+        downloadScript(this.editor.value);
+    }
+
     
     static template = {
         type: "div",
@@ -106,7 +120,7 @@ class SandboxPage extends Component
                     {
                         _: "div",
                         class: "error",
-                        display: c => !!c.error,
+                        display: c => !!c.error && c.showErrors,
                         text: c => c.error,
                     },
                 ]
@@ -122,7 +136,6 @@ class SandboxPage extends Component
                     {
                         type: "footer",
                         $: [
-                        /*
                             {
                                 type: "label",
                                 $: [
@@ -131,24 +144,23 @@ class SandboxPage extends Component
                                         attr_type: "checkbox",
                                         attr_checked: "checked",
                                         class: "switch",
+                                        on_click: (c, ev) => c.onShowErrorsChanged(ev),
                                     },
                                     "Show Errors",
                                 ]
                             },
-                        */
                             { 
                                 type: "button",
                                 class: "subtle",
                                 text: "Copy Link",
                                 on_click: c => c.onCopyLink(),
                             },
-                            /*
                             { 
                                 type: "button",
                                 class: "subtle",
                                 text: "Download",
+                                on_click: c => c.onDownload(),
                             },
-                            */
                         ]
                     }
                 ]

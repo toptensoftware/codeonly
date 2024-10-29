@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "build": "cp ../dist/codeonly.js ./server/public/ && cd client && vite build",
+    "build": "bash -c \"./copyfiles.sh\" && cd client && vite build",
     "dev": "node ./server/server.js",
     "prod": "bash -c \"npm run build && NODE_ENV=production node ./server/server.js\""
   },
@@ -24,3 +24,4 @@
     "vite": "^5.4.9"
   }
 }
+

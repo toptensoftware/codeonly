@@ -1,0 +1,2 @@
+cp ../dist/codeonly.js ./server/public
+cp node_modules/@toptensoftware/stylish/stylish.css ./server/public

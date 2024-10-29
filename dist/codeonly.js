@@ -1253,9 +1253,7 @@ function Rt(r, e) {
 let It = 1;
 function yt(r, e) {
   e = e ?? {}, e.compileTemplate = yt;
-  let t = Rt(r, e);
-  console.log(t.code);
-  let i = new Function("env", "refs", "helpers", "context", t.code), n = function(a) {
+  let t = Rt(r, e), i = new Function("env", "refs", "helpers", "context", t.code), n = function(a) {
     return a || (a = {}), a.$instanceId = It++, i(w, t.refs, ut, a ?? {});
   };
   return n.isSingleRoot = t.isSingleRoot, n;

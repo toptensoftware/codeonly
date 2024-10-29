@@ -15,6 +15,12 @@ let app = express();
 // Enable logging
 app.use(logger('dev', { stream: { write: (m) => console.log(m.trimEnd()) } } ));
 
+// Allow codeonly.js cross origin
+app.get('/codeonly.js', function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "X-Requested-With");
+    next();
+});
 
 app.use("/", express.static(path.join(__dirname, "public")));
 
