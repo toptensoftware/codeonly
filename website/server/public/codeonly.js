@@ -1408,10 +1408,10 @@ const H = class H extends EventTarget {
     (i = o(this, D)) == null || i.setMounted(t), p(this, ke, t), t ? this.onMount() : this.onUnmount();
   }
   mount(t) {
-    return typeof t == "string" && (t = document.querySelector(t)), t.append(...this.rootNodes), this;
+    return typeof t == "string" && (t = document.querySelector(t)), t.append(...this.rootNodes), this.setMounted(this), this;
   }
   unmount() {
-    o(this, D) && this.rootNodes.forEach((t) => t.remove());
+    o(this, D) && (this.rootNodes.forEach((t) => t.remove()), this.setMounted(!1));
   }
 };
 D = new WeakMap(), Q = new WeakMap(), ke = new WeakMap(), ie(H, "_compiledTemplate"), ie(H, "nextFrameOrder", -100), ie(H, "_invalidComponents", []), ie(H, "template", {});
