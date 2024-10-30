@@ -31,12 +31,20 @@ export class Document
 
     mountDemos()
     {
+        let styles = "";
+        let fakeStyle = {
+            declare(style)
+            {
+                styles += "\n" + style;
+            }
+        }
+
         for (let d of this.demos)
         {
             // Create a closure for the demo
             let code = `${d.code}\n\nreturn new Main();`;
             let closure = new Function("Component", "Style", code);
-            d.main = closure(Component, Style);
+            d.main = closure(Component, fakeStyle);
             d.main.mount(document.getElementById(d.id));
 
             document.getElementById(`edit-${d.id}`).addEventListener("click", (ev) => {
@@ -44,6 +52,19 @@ export class Document
                 ev.preventDefault();
             });
         }
+
+        this.elStyles = document.createElement("style");
+        this.elStyles.innerHTML = styles;
+        document.head.appendChild(this.elStyles);
+    }
+
+    unmountDemos()
+    {
+        for (let d of this.demos)
+        {
+            d.main.unmount();
+        }
+        this.elStyles.remove();
     }
 
     processMarkdown(markdown)
@@ -132,10 +153,13 @@ export class Document
                 language: cb.info, 
                 ignoreIllegals: true
             });
+            html.value = html.value.replace(/<span class="hljs-comment">\/\*([\s\S]*?)\*\/<\/span>/g, `<span class="note"><span class="inner">$1</span></span>`);
             let wrapper_html = `<pre><code class="hljs language-${html.language}">${html.value}</code></pre>\n`;
 
             if (isDemo)
             {
+                code = code.replace(/\s\/\*.*\*\//g, "");
+
                 let id = `demo-${this.demos.length}`
                 this.demos.push({ id, code });
                 wrapper_html += `

@@ -1,49 +1,86 @@
 ---
-title: "Welcome to CodeOnly"
+title: "Introduction"
 subtitle: "A simple, lightweight, code-only front-end Web framework."
 projectTitle: CodeOnly
 ---
-# Welcome to CodeOnly
+# Introduction
 
 CodeOnly is a simple, lightweight, easy-to-learn framework for
 front-end web development, designed for coders.
 
 
-Use the menu at the left (or top-left on mobile) to learn more.
+## Basic Example
+
+Before getting into the details of how to setup a CodeOnly project
+let's have a look at a simple example that will give you an idea of 
+what working with CodeOnly is like.
+
+This simple component consists of a `div` containing a `button` and 
+a text `span` that shows how many times the button has been clicked.
+
+<div class="tip">
+
+Hovering over the info icons in sample code shows further explanatory notes.
+
+</div>
 
 ```js
 // demo
-// Components extend the `Component` class
-class Main extends Component
+class Main extends Component /* Components extend the `Component` class */
 {
-    // Public variable are available in the template
-    count = 0;
+  count = 0; /* Class fields and functions are available to the template */
 
-    // As are event handlers
-    onClick() 
-    { 
-        // Increment counter
-        this.count++; 
+  onClick() /* Button click event handler */
+  { 
+    this.count++; 
+    this.invalidate(); /* Marks the component as needing DOM update */
+  }
 
-        // Mark DOM as needing to be updated
-        this.invalidate(); 
-    }
-
-    // This is the component's template
-    static template = {
-
-        // The element type
+  static template = { /* This is the component's DOM template */
+    type: "div", /* Root element type */
+    class: "counter", /* Scoping CSS class */
+    $: [ /* Child nodes array */
+      {
         type: "button",
-
-        // The element's text content.
-        // By declaring this as a callback function we
-        // can dynamically update it by "invalidating"
-        // the component
-        text: c => `Click Me: ${c.count}`,
-
-        // Click handler
-        on_click: c => c.onClick(),
-
-    }
+        text: `Click Me`,
+        on_click: c => c.onClick(), /* `c` is the component instance */
+      },
+      {
+        type: "span",
+        text: c => `Count: ${c.count}`, /* Callback for dynamic content */
+      }
+    ]
+  }
 }
+
+Style.declare( /* CSS styles (with `.counter` as scoping class) */
+`
+.counter
+{
+  button
+  {
+    margin-right: 10px
+  }
+}
+`); 
 ```
+
+<div class="tip">
+
+Above is an embedded, running version of this component - try clicking the "Click Me" 
+button.  You can also click the "Edit in Sandbox" link to experiment with the code.
+
+</div>
+
+
+
+It's very simple but it shows the important parts of a typical component:
+
+* The entire component (including logic, HTML template and styles) is
+  defined in a single .js file.
+* Everything is plain JavaScript - there are no watchers, observable property 
+  declarations and definitely no Proxy wrappers.
+* The template is just a plain old JavaScript object - but with callbacks
+  for dynamic values.
+* The component has a CSS class and the style declarations are scoped
+  to that class in the `Style.declare()` block.

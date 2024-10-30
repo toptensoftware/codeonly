@@ -35,6 +35,11 @@ export class ArticlePage extends Component
         this.document.mountDemos();
     }
 
+    onUnmount()
+    {
+        this.document.unmountDemos();
+    }
+
     static template = {
         type: "div",
         class: "article",
@@ -48,6 +53,40 @@ Style.declare(`
     padding: 10px 20px;
     margin: 0;
     margin-top: var(--align-content);
+
+    span.note
+    {
+        color: var(--info-color);
+        font-family: var(--font-family);
+        font-size: 0.8rem;
+
+        &:before
+        {
+            content: " ⓘ ";
+            font-size: 1rem;
+        }
+
+        .inner
+        {
+            opacity: 0;
+            background-color: #80808040;
+            border-radius: 5px;
+            padding: 2px 2px;
+            color: var(--body-fore-color);
+            transition: opacity 0.2s linear;
+        }
+
+        &:hover
+        {
+            .inner
+            {
+                visibility: visible;
+                opacity: 1;
+            }
+        }
+
+    }
+
 
     h1
     {
@@ -94,6 +133,35 @@ Style.declare(`
     {
         background-color: rgb(from var(--fore-color) r g b / 2%);
         padding: 10px;
+    }
+
+    div.tip
+    {
+        margin: 30px 10px;
+        font-size: 0.9rem;
+        border: 1px solid var(--info-color);
+        border-radius: 10px;
+        padding: 10px 10px 0px 40px;
+
+        &:before
+        {
+            content: " ⓘ ";
+            float: left;
+            margin-left: -25px;
+            color: var(--info-color);
+        }
+
+        h3
+        {
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        p
+        {
+            margin: 0;
+            margin-bottom: 10px;
+        }
     }
 }
 

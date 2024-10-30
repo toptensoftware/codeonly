@@ -8,6 +8,8 @@ export class WebHistoryRouterDriver
 
         // Listen for clicks on links
         env.document.body.addEventListener("click", (ev) => {
+            if (ev.defaultPrevented)
+                return;
             let a = ev.target.closest("a");
             if (a)
             {
