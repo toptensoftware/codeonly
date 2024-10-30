@@ -1,5 +1,7 @@
 # Introduction
 index
+usage
+start
 
 # Components
 component

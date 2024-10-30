@@ -14,7 +14,7 @@ let hello_world = `class Main extends Component
     }
 }`;
 
-class SandboxPage extends Component
+class LabPage extends Component
 {
     constructor(initData)
     {
@@ -106,7 +106,7 @@ class SandboxPage extends Component
 
     static template = {
         type: "div",
-        class: "sandbox",
+        class: "lab",
         $:[
             {
                 type: "div",
@@ -158,7 +158,8 @@ class SandboxPage extends Component
                             { 
                                 type: "button",
                                 class: "subtle",
-                                text: "Download",
+                                text: ".html",
+                                attr_title: "Download this experiment as a .html file",
                                 on_click: c => c.onDownload(),
                             },
                         ]
@@ -170,7 +171,7 @@ class SandboxPage extends Component
 }
 
 Style.declare(`
-.sandbox
+.lab
 {
     display: flex;
     align-items: stretch;
@@ -222,7 +223,7 @@ Style.declare(`
 
 
 router.register({
-    pattern: "/sandbox",
+    pattern: "/lab",
     match: async (to) => {
         let initData = null;
         if (to.url.hash.length > 1)
@@ -233,17 +234,17 @@ router.register({
                 )
             );
         }
-        to.page = new SandboxPage(initData);
+        to.page = new LabPage(initData);
         return true;
     }
 });
 
 
-export async function openSandboxWithCode(code)
+export async function openLabWithCode(code)
 {
     let data = JSON.stringify({ code });
     let hash = await bufferToBase64(await compress(data));
-    router.navigate(`/sandbox#${hash}`);
+    router.navigate(`/lab#${hash}`);
 }
 
 

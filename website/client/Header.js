@@ -1,4 +1,5 @@
 import { Component, Style } from "@toptensoftware/codeonly";
+import { makeIcon } from "./Icon.js";
 
 // The main header
 export class Header extends Component
@@ -26,14 +27,17 @@ export class Header extends Component
                     {
                         type: "a",
                         class: "subtle button",
-                        attr_href: "/sandbox",
-                        text: "Sandbox",
+                        attr_href: "/guide/",
+                        text: "Docs",
                     },
                     {
                         type: "a",
-                        class: "subtle button",
-                        attr_href: "/guide/",
-                        text: "Guide",
+                        class: "subtle button labLink vcenter",
+                        attr_href: "/lab",
+                        $: [
+                            makeIcon("science", 19),
+                            " The Lab",
+                        ]
                     },
                     {
                         type: "input",
@@ -102,6 +106,15 @@ Style.declare(`
         {
             transform: translateY(-1.5px);
         }
+    }
+
+    .lablink
+    {
+        svg 
+        { 
+            transform: translateY(-1px) scale(1.1);
+            margin-right: 2px;
+        };
     }
 }
 `);

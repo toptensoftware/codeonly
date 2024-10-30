@@ -4,7 +4,7 @@ export function downloadScript(script)
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CodeOnly Sandbox</title>
+<title>CodeOnly Lab</title>
 <link href="${window.location.origin}/stylish.css" type="text/css" rel="stylesheet">
 <script type="importmap">
 {

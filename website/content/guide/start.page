@@ -1,0 +1,41 @@
+---
+title: "Getting Started"
+subtitle: "A simple, lightweight, code-only front-end Web framework."
+projectTitle: CodeOnly
+---
+# Getting Started
+
+There's a variety of ways you can use CodeOnly, so the best way to
+get started will depend on what you're trying to achieve.
+
+## CodeOnly Lab
+
+If you just want to experiment with and learn about CodeOnly, the 
+<a href="/lab">CodeOnly Lab</a> is the perfect way to get started. 
+You can write simple components and experiment with them right in 
+your browser.
+
+* The Lab expects a component class called "Main" as the entry point
+  to your experiment.
+
+* Save your experiments by clicking the Copy Link button - that'll 
+  copy a link to your clipboard that you can use to share your 
+  experiments and to reload them later.
+
+* Clicking the "Copy Link" button also places the link in the browser 
+  address bar so you can refresh to get back to a previous save point
+  or use browser bookmarks to save your experiments.
+
+* The ".html" button will download a .html file containing your 
+  experiment.  You'll still need a web connection to run it because it
+  gets JavaScript and CSS files from the CodeOnly site, but it's an
+  easy way to make a simple web app.
+
+* The Lab only supports a single source code file but you can still 
+  create multiple component classes - just put them one after the 
+  other. 
+
+## Local Files
+
+
+

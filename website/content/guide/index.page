@@ -83,7 +83,7 @@ Style.declare( /* CSS styles (with `.counter` as scoping class) */
 <div class="tip">
 
 Above is an embedded, running version of this component - try clicking the "Click Me" 
-button.  You can also click the "Edit in Sandbox" link to experiment with the code.
+button.  You can also click the "Edit in The Lab" link to experiment with the code.
 
 </div>
 
@@ -112,11 +112,11 @@ is by wrapping objects in JavaScript proxies.
 
 Unfortunately, proxies have problems:
 
-* Proxies are slow - property access can be 85x slower when an object is 
+* Proxies are slow - property access can be x80 slower when an object is 
   wrapped in a Proxy, even if the proxy does nothing.
-* Proxies are incompaible with private class fields - if an object with 
+* Proxies are incompatible with private class fields - if an object with 
   private fields is proxied, the object itself can no longer access its own
-  private fields.
+  private fields. ([See for yourself](/lab#H4sIAAAAAAAACmVQwWrDMAz9lYd3aWHU3XWlp8LOPRR28cW11cYjkYPsNRsh/z6cmLJ1Oj30np70NCoXPalXpTUOrU0JQ8gNegk3mwmXQK037GbmRCnPGsOjYQB4qrq3IsMeL9vtbmGulI+/uNV6ade5UkL5Uxi5CWnzx6c6TIYnw4a1xrvYHiEjMCx6iV/fhm9WFog9mAYcC14VdD/zGSOm9a6alDaWIM4yOKKNfCWBdY5SQsgJceDH6FrDqINljhlC1t/5jrozycMLLhI7WEY8f5DLmMeHJiaqm33wKE6eXGuFELJRhuccm38vmy9X0w9JSCRhowEAAA==))
 
 The other way to provide reactivity is to declare all reactive properties
 using library functions or wrapper objects etc...  To us, this just 
@@ -142,7 +142,7 @@ approach is.
 
 * There's no special syntax or markup to learn.
 * Templates can be included directly in the component class without
-  special tooling, preprocessing or build steps.
+  special tooling, pre-processing or build steps.
 * You can compose and generate templates by calling functions to "create"
   the template.
 
@@ -152,7 +152,7 @@ approach is.
 In the above example, notice how we've included the CSS declarations
 for the component using the `Style.declare()` method.
 
-This approach is completely option, but it lets us declare everything 
+This approach is completely optional, but it lets us declare everything 
 about a component in the one file.
 
 Also, notice how we've use a class to scope the CSS declarations

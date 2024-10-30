@@ -244,13 +244,17 @@ input, button
     font-size: 1rem;
 }
 
+.button
+{
+    display:inline-block;
+}
+
 button, 
-a.button,
+.button,
 input[type=button],
 input[type="file"]::file-selector-button
 {
     cursor: pointer;
-    display:inline-block;
     text-decoration: none;
     background-color: var(--class-back-color);
     color: var(--class-fore-color);
@@ -266,6 +270,7 @@ input[type="file"]::file-selector-button
     &:hover:not(:disabled)
     {
         background-color: rgb(from var(--class-back-color) r g b / 80%);
+        color: var(--class-fore-color);
     }
 
     &:active:not(:disabled)

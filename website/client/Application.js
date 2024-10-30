@@ -3,7 +3,7 @@ import { Header } from "./Header.js";
 import { router } from "./router.js";
 
 import "./ArticlePage.js";
-import "./sandbox/SandboxPage.js";
+import "./lab/LabPage.js";
 import "./NotFoundPage.js";
 
 // Main application
@@ -59,6 +59,13 @@ Style.declare(`
 {
     padding-top: var(--fixed-header-height);
 }
+
+.vcenter
+{
+    display: flex;
+    align-items: center;
+}
+
 `);
 
 // Main entry point, create Application and mount

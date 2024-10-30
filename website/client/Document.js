@@ -1,6 +1,7 @@
 import { Component, Style, Transition } from "@toptensoftware/codeonly";
 import { env } from "@toptensoftware/codeonly";
-import { openSandboxWithCode } from "./sandbox/SandboxPage.js";
+import { openLabWithCode } from "./lab/LabPage.js";
+import { htmlIcon } from "./Icon.js";
 
 export class Document
 {
@@ -48,7 +49,7 @@ export class Document
             d.main.mount(document.getElementById(d.id));
 
             document.getElementById(`edit-${d.id}`).addEventListener("click", (ev) => {
-                openSandboxWithCode(d.code);
+                openLabWithCode(d.code);
                 ev.preventDefault();
             });
         }
@@ -145,6 +146,9 @@ export class Document
         this.demos = [];
         for (let cb of codeBlocks)
         {
+            // Only javascript blocks
+            if (cb.info != 'js' && cb.info != 'html')
+                continue;
             let code = cb.literal;
             let isDemo = code.startsWith("// demo");
             if (isDemo)
@@ -165,7 +169,7 @@ export class Document
                 wrapper_html += `
 <div class="demo-header">
     <span>Result:</span>
-    <a id="edit-${id}" class="edit-demo-link" href="#">Edit in Sandbox</a>
+    <a id="edit-${id}" class="edit-demo-link vcenter" href="#">${htmlIcon("science", 22)}<span> Edit in The Lab</span></a>
 </div>
 <div id="${id}" class="demo">
 </div>
