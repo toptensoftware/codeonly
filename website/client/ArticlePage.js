@@ -92,7 +92,7 @@ Style.declare(`
 
     div.demo
     {
-        background-color: #282828;
+        background-color: rgb(from var(--fore-color) r g b / 2%);
         padding: 10px;
     }
 }
