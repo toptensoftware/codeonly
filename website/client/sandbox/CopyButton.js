@@ -2,29 +2,35 @@ import { Component  } from "@toptensoftware/codeonly";
 
 export class CopyButton extends Component
 {
-    text;
-    class;
-
+    text = "";
+    class = "";
+    style = "";
     #checked = false;
+
     onClick(ev)
     {
+        // Don't re-enter while showing checkmark
         if (this.#checked)
             return;
+
         try
         {
+            // Dispatch it
             this.dispatchEvent(new Event("click"));
 
-            let saveStyle = this.button.getAttribute("style");
-            let saveText = this.button.textContent;
-            let width = this.button.offsetWidth;
-
-            this.button.style.width = `${width}px`;
-            this.button.textContent = "✓";
+            // Temporarily switch text while maintaining the displayed width
+            let saveStyle = this.style;
+            let saveText = this.text;
+            this.style += `; width: ${this.rootNode.offsetWidth}px`;
+            this.text = "✓";
             this.#checked = true;
+            this.invalidate();
+
             setTimeout(() => {
-                this.button.setAttribute("style", saveStyle);
-                this.button.textContent = saveText;
+                this.style = saveStyle;
+                this.text = saveText;
                 this.#checked = false;
+                this.invalidate();
             }, 1000);
 
         }
@@ -38,7 +44,7 @@ export class CopyButton extends Component
         type: "button",
         text: c => c.text,
         class: c => c.class,
-        bind: "button",
+        style: c => c.style,
         on_click: (c,ev) => c.onClick(ev)
     }
 }
