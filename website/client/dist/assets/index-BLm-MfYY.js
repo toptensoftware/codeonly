@@ -531,7 +531,7 @@ return new Main();`,a=new Function("Component","Style",n);i.main=a(L,t),i.main.m
 `);class mt extends L{constructor(e){super(),this.url=e}}_(mt,"template",{type:"div",class:"center",$:[{type:"h1",class:"danger",text:"Page not found! 😟"},{type:"p",text:e=>`The page ${e.url} doesn't exist!`},{type:"p",$:{type:"a",attr_href:"/",text:"Return Home"}}]});oe.register({match:s=>(s.page=new mt(s.url),!0),order:1e3});class Zt extends L{constructor(e){super(),this.document=e}get inPageLinks(){return this.document.headings}get layout(){var e,t;switch((t=(e=this.document)==null?void 0:e.frontmatter)==null?void 0:t.layout){case"bare":return Wt;default:return Jt}}onMount(){this.document.mountDemos()}onUnmount(){this.document.unmountDemos()}}_(Zt,"template",{type:"div",class:"article",$:e=>Pt.raw(e.document.html)});W.declare(`
 .article
 {
-    padding: 10px 20px;
+    padding: 10px 30px;
     margin: 0;
     margin-top: var(--align-content);
 

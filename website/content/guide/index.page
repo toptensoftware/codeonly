@@ -6,7 +6,22 @@ projectTitle: CodeOnly
 # Introduction
 
 CodeOnly is a simple, lightweight, easy-to-learn framework for
-front-end web development, designed for coders.
+front-end web development. 
+
+It's designed for coders, it's fast and small and uses modern 
+JavaScript.  It's tool-free during development so there's
+no bundling or build steps but can, and should be bundled for
+production.
+
+Perhaps controversially, it's non-reactive. But, this also means 
+it's non-invasive - your objects are untouched. There's no 
+observables or watchers and definitely no monkey-patching or 
+`Proxy` wrappers.
+
+CodeOnly provides an amazing development experience because there
+is no build step. Code changes apply instantly and you debug your code 
+exactly as you wrote it - no transpiling and no surprising wrappers
+or proxies to debug through.
 
 
 ## Basic Example
@@ -72,15 +87,76 @@ button.  You can also click the "Edit in Sandbox" link to experiment with the co
 
 </div>
 
+Let's take a closer look some of the features of developing components this way.
 
 
-It's very simple but it shows the important parts of a typical component:
+## Single File Components
 
-* The entire component (including logic, HTML template and styles) is
-  defined in a single .js file.
-* Everything is plain JavaScript - there are no watchers, observable property 
-  declarations and definitely no Proxy wrappers.
-* The template is just a plain old JavaScript object - but with callbacks
-  for dynamic values.
-* The component has a CSS class and the style declarations are scoped
-  to that class in the `Style.declare()` block.
+One of the nicest things about developing CodeOnly components is that everything
+about a component can be contained in one regular `.js` file.
+
+Notice in the above example how the logic, DOM template and CSS styles are all
+declared together in the one place.
+
+Also, because it's straight JavaScript there's no need for tooling, a build
+step or special editor support.
+
+
+## Non-Reactive
+
+Unlike most other front-end frameworks, we've decided against any form of
+automatic reactivity in CodeOnly.
+
+The main reason for this is that the cleanest way to implement reactivity 
+is by wrapping objects in JavaScript proxies. 
+
+Unfortunately, proxies have problems:
+
+* Proxies are slow - property access can be 85x slower when an object is 
+  wrapped in a Proxy, even if the proxy does nothing.
+* Proxies are incompaible with private class fields - if an object with 
+  private fields is proxied, the object itself can no longer access its own
+  private fields.
+
+The other way to provide reactivity is to declare all reactive properties
+using library functions or wrapper objects etc...  To us, this just 
+seems messy and we like our JavaScript objects clean.
+
+Of course this means you need to do a little extra work to keep the DOM
+up to date, but it's usually not that hard and we think the trade off 
+is worth it.
+
+In the above example, all we need do is call the component's `invalidate()` 
+method when its DOM needs to be updated.
+
+
+## JavaScript DOM Templates
+
+CodeOnly doesn't try to cram the declaration of dynamic values into an
+existing markup language.  Instead, DOM templates are declared using
+plain JavaScript objects that use fat arrow `=>` callbacks to provide 
+dynamic values.
+
+Yes, it's a little more verbose but it's surprising how flexible this
+approach is.
+
+* There's no special syntax or markup to learn.
+* Templates can be included directly in the component class without
+  special tooling, preprocessing or build steps.
+* You can compose and generate templates by calling functions to "create"
+  the template.
+
+
+## Styles
+
+In the above example, notice how we've included the CSS declarations
+for the component using the `Style.declare()` method.
+
+This approach is completely option, but it lets us declare everything 
+about a component in the one file.
+
+Also, notice how we've use a class to scope the CSS declarations
+for this component to a CSS class applied at the root of the component's
+DOM template.  This helps avoid CSS clashes between components.
+
+
