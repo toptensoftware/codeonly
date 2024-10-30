@@ -8,8 +8,9 @@
     /* dark colors */
     --dark-fore-color: white;
     --dark-back-color: black;
+    --dark-link-color: #c193ff;
     --dark-button-color: #444;
-    --dark-accent-color: #7160E8;
+    --dark-accent-color: #ae60e8;
     --dark-success-color: #00bc8c;
     --dark-info-color: #3498db;
     --dark-warning-color: #f39c12;
@@ -20,8 +21,9 @@
     /* light colors */
     --light-fore-color: black;
     --light-back-color: white;
+    --light-link-color: #8f00c9;
     --light-button-color: #444;
-    --light-accent-color: #7160E8;
+    --light-accent-color: #8f00c9;
     --light-success-color: #18bc9c;
     --light-info-color: #3498db;
     --light-warning-color: #f39c12;
@@ -43,20 +45,7 @@
     --class-back-color: var(--button-color); 
     --class-fore-color: var(--contrast-color); 
     --class-accent-color: var(--accent-color);
-    --link-color: var(--accent-color);
     --focus-color: rgb(from var(--fore-color) r g b / 30%);
-    /* Use this to blend accent color into focus color
-        --focus-color: color-mix(in hsl, 
-                hsl(from var(--accent-color) h s l), 
-                hsl(from var(--accent-color) h s var(--fore-color-l)) 100%
-            );
-    */
-    /*
-    --code-color: color-mix(in hsl, 
-            hsl(from var(--accent-color) h s l), 
-            hsl(from var(--accent-color) h s var(--fore-color-l)) 30%
-        );
-        */
     --code-color: rgb(from var(--body-fore-color) r g b / 70%);
     --gridline-color: rgb(from var(--body-fore-color) r g b / 20%);
     --disabled-color: color-mix(in srgb, #808080, var(--back-color) 30%);
@@ -78,6 +67,7 @@
     --back-color-l: 0;
     --fore-color: var(--dark-fore-color);
     --back-color: var(--dark-back-color);
+    --link-color: var(--dark-link-color);
     --button-color: var(--dark-button-color);
     --accent-color: var(--dark-accent-color);
     --info-color: var(--dark-info-color);
@@ -94,6 +84,7 @@
     --back-color-l: 100;
     --fore-color: var(--light-fore-color);
     --back-color: var(--light-back-color);
+    --link-color: var(--light-link-color);
     --button-color: var(--light-button-color);
     --accent-color: var(--light-accent-color);
     --info-color: var(--light-info-color);
@@ -114,6 +105,7 @@
         --back-color-l: 0;
         --fore-color: var(--dark-fore-color);
         --back-color: var(--dark-back-color);
+        --link-color: var(--dark-link-color);
         --button-color: var(--dark-button-color);
         --accent-color: var(--dark-accent-color);
         --info-color: var(--dark-info-color);
@@ -133,6 +125,7 @@
         --back-color-l: 100;
         --fore-color: var(--light-fore-color);
         --back-color: var(--light-back-color);
+        --link-color: var(--light-link-color);
         --button-color: var(--light-button-color);
         --accent-color: var(--light-accent-color);
         --info-color: var(--dark-info-color);
@@ -219,13 +212,13 @@ h6 { font-size: 1rem;    margin-bottom: 1rem; margin-top: 2.5rem; }
 a
 {
     --link-class-text-color: var(--class-text-color, var(--link-color));
-    color: rgb(from var(--link-class-text-color) r g b / 70%);
+    color: var(--link-class-text-color);
     text-decoration: none;
     transition: color 0.2s;
 
     &:hover
     {
-        color: var(--link-class-text-color);
+        color: rgb(from var(--link-class-text-color) r g b / 70%);
     }
 }
 

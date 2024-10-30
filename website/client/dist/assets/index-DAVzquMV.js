@@ -577,7 +577,7 @@ return new Main();`,i=new Function("Component","Style",t);e.main=i(D,V),e.main.m
 
     div.demo
     {
-        background-color: #282828;
+        background-color: rgb(from var(--fore-color) r g b / 2%);
         padding: 10px;
     }
 }
