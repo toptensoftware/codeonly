@@ -196,14 +196,15 @@ export class Component extends EventTarget
             el = document.querySelector(el);
         }
         el.append(...this.rootNodes);
+        this.setMounted(true);
         return this;
     }
 
     unmount()
     {
-        if (!this.#dom)
-            return;
-        this.rootNodes.forEach(x => x. remove());
+        if (this.#dom)
+            this.rootNodes.forEach(x => x. remove());
+        this.setMounted(false);
     }
 
     static template = {};

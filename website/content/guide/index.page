@@ -10,3 +10,40 @@ front-end web development, designed for coders.
 
 
 Use the menu at the left (or top-left on mobile) to learn more.
+
+```js
+// demo
+// Components extend the `Component` class
+class Main extends Component
+{
+    // Public variable are available in the template
+    count = 0;
+
+    // As are event handlers
+    onClick() 
+    { 
+        // Increment counter
+        this.count++; 
+
+        // Mark DOM as needing to be updated
+        this.invalidate(); 
+    }
+
+    // This is the component's template
+    static template = {
+
+        // The element type
+        type: "button",
+
+        // The element's text content.
+        // By declaring this as a callback function we
+        // can dynamically update it by "invalidating"
+        // the component
+        text: c => `Click Me: ${c.count}`,
+
+        // Click handler
+        on_click: c => c.onClick(),
+
+    }
+}
+```

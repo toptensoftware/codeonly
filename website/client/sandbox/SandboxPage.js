@@ -103,7 +103,6 @@ class SandboxPage extends Component
         downloadScript(this.editor.value);
     }
 
-    
     static template = {
         type: "div",
         class: "sandbox",
@@ -237,4 +236,13 @@ router.register({
         return true;
     }
 });
+
+
+export async function openSandboxWithCode(code)
+{
+    let data = JSON.stringify({ code });
+    let hash = await bufferToBase64(await compress(data));
+    router.navigate(`/sandbox#${hash}`);
+}
+
 

@@ -7,10 +7,7 @@ export class CodeEditor extends Component
         super();
         this.init();
 
-        window.stylish.addEventListener("darkModeChanged", (ev) => {
-            if (this.#editor)
-                this.#editor._themeService.setTheme(ev.darkMode ? 'vs-dark' : "vs-light");
-        });
+        this.updateTheme = this.updateTheme.bind(this);
 
         // Load Monaco
         require(['vs/editor/editor.main'], () => {
@@ -38,7 +35,22 @@ export class CodeEditor extends Component
             this.resizeEditor();
         });
         ro.observe(this.editorContainer);
+    }
 
+    updateTheme()
+    {
+        if (this.#editor)
+            this.#editor._themeService.setTheme(stylish.darkMode ? 'vs-dark' : "vs-light");
+    }
+
+    onMount()
+    {
+        window.stylish.addEventListener("darkModeChanged", this.updateTheme);
+    }
+
+    onUnmount()
+    {
+        window.stylish.removeEventListener("darkModeChanged", this.updateTheme);
     }
 
     // Helper to resize the monaco editor

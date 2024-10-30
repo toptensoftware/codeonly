@@ -30,6 +30,11 @@ export class ArticlePage extends Component
         }
     }
 
+    onMount()
+    {
+        this.document.mountDemos();
+    }
+
     static template = {
         type: "div",
         class: "article",
@@ -51,7 +56,7 @@ Style.declare(`
 
     .hljs 
     {
-        background-color: #282828;
+        background-color: rgb(from var(--fore-color) r g b / 2%);
         font-size: 0.9rem;
     }
 
@@ -77,6 +82,18 @@ Style.declare(`
         {
             opacity: 1;
         }
+    }
+
+    div.demo-header
+    {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    div.demo
+    {
+        background-color: #282828;
+        padding: 10px;
     }
 }
 

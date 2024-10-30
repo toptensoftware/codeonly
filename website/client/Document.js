@@ -1,4 +1,6 @@
+import { Component, Style, Transition } from "@toptensoftware/codeonly";
 import { env } from "@toptensoftware/codeonly";
+import { openSandboxWithCode } from "./sandbox/SandboxPage.js";
 
 export class Document
 {
@@ -25,6 +27,23 @@ export class Document
             this.processMarkdown( await response.text());
 
         });
+    }
+
+    mountDemos()
+    {
+        for (let d of this.demos)
+        {
+            // Create a closure for the demo
+            let code = `${d.code}\n\nreturn new Main();`;
+            let closure = new Function("Component", "Style", code);
+            d.main = closure(Component, Style);
+            d.main.mount(document.getElementById(d.id));
+
+            document.getElementById(`edit-${d.id}`).addEventListener("click", (ev) => {
+                openSandboxWithCode(d.code);
+                ev.preventDefault();
+            });
+        }
     }
 
     processMarkdown(markdown)
@@ -102,13 +121,32 @@ export class Document
         }
 
         // Highlight code blocks
+        this.demos = [];
         for (let cb of codeBlocks)
         {
-            let html = hljs.highlight(cb.literal, { 
+            let code = cb.literal;
+            let isDemo = code.startsWith("// demo");
+            if (isDemo)
+                code = code.substring(7).trimStart();
+            let html = hljs.highlight(code, { 
                 language: cb.info, 
                 ignoreIllegals: true
             });
-            let wrapper_html = `<pre><code class="hljs language-${html.language}">${html.value}</code></pre>`;
+            let wrapper_html = `<pre><code class="hljs language-${html.language}">${html.value}</code></pre>\n`;
+
+            if (isDemo)
+            {
+                let id = `demo-${this.demos.length}`
+                this.demos.push({ id, code });
+                wrapper_html += `
+<div class="demo-header">
+    <span>Result:</span>
+    <a id="edit-${id}" class="edit-demo-link" href="#">Edit in Sandbox</a>
+</div>
+<div id="${id}" class="demo">
+</div>
+`;
+            }
 
             let html_block = new commonmark.Node("html_block", cb.sourcepos);
             html_block.literal = wrapper_html;
