@@ -4,6 +4,7 @@ import { CodeEditor } from "./CodeEditor.js";
 import { Preview } from "./Preview.js";
 import { compress, decompress, bufferToBase64, base64ToBuffer } from "./Utils.js";
 import { downloadScript } from "./downloadScript.js";
+import { CopyButton } from "./CopyButton.js";
 
 let hello_world = `class Main extends Component
 {
@@ -86,7 +87,7 @@ class SandboxPage extends Component
             });
             url.hash = await bufferToBase64(await compress(data));
             navigator.clipboard.writeText(url.href);
-            alert("Link copied to clipboard");
+            window.location.hash = url.hash;
         }
     }
 
@@ -149,7 +150,7 @@ class SandboxPage extends Component
                                 ]
                             },
                             { 
-                                type: "button",
+                                type: CopyButton,
                                 class: "subtle",
                                 text: "Copy Link",
                                 on_click: c => c.onCopyLink(),
