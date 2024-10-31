@@ -1,6 +1,5 @@
 # Introduction
 index
-usage
 start
 
 # Components

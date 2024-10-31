@@ -35,7 +35,93 @@ your browser.
   create multiple component classes - just put them one after the 
   other. 
 
-## Local Files
+## ES6 Web Package
+
+Currently CodeOnly isn't available via a CDN, but in the meantime, 
+you can reference the package from here:
+
+* ES6 - <https://codeonly.toptensoftware.com/codeonly.js>
+
+We recommend this package be used with an import map:
+
+```html
+<script type="importmap">
+{
+    "imports": {
+        "@toptensoftware/codeonly": "https://codeonly.toptensoftware.com/codeonly.js"
+    }
+}
+</script>
+```
+
+You can then import like so:
+
+```html
+<script type="module">
+import { Component, Style } from "@toptensoftware/codeonly";
+// etc...
+</script>
+```
+
+## CommonJS/UMD Web Package
+
+We don't really recommend using the CommonJS/UMD web package, but it's available 
+here if you really want it:
+
+* UMD/CommonJS - <https://codeonly.toptensoftware.com/codeonly.umd.cjs>
+
+To reference the package, use a script tag like so:
+
+```html
+<script src="https://codeonly.toptensoftware.com/codeonly.umd.cjs"></script>
+```
+
+You then need to qualify any imports with the `codeonly.` module prefix:
+
+eg:
+
+```html
+<script>
+class Main extends codeonly.Component /* Note the "codeonly." module reference */
+{
+    /// etc...
+}
+
+codeonly.Style.declare(``); /* Here too! */
+</script>
+```
+
+## NPM Package
+
+An NPM package is available from github:
+
+```
+npm install --save github:toptensoftware/codeonly
+```
+
+The NPM package can be used for client side development when using bundling
+tools like [Rollup](https://rollupjs.org/) and [Browserify](https://browserify.org/) 
+or build servers like [Vite](https://vite.dev/) and [Snowpack](https://www.snowpack.dev/).
 
 
+## NodeJS, ExpressJS and Bundle-free
 
+An alternative (and our preferred) way of using the NPM package is with a 
+NodeJS/ExpressJS server configured to serve NPM packages using our related
+product [Bundle-free](https://www.npmjs.com/package/@toptensoftware/bundle-free).
+
+Bundle-free is a small ExpressJS middleware that serve NPM packages to client
+side apps.
+
+This approach works especially well if you're already building an ExpressJS 
+back-end server for your client front end:
+
+* No need for a second build server (eg: Vite/Snowpack) during development - just
+  run your ExpressJS server and you get both client and server sides served up.
+* Since there's just one server there's no need for request proxying from the front
+  end build server through to the back-end server.
+* Supports [Live Reload](https://www.npmjs.com/package/livereload) for fast development
+* Handles fallback requests for single page apps using non-hash router URLs.
+* Compatible with production bundling.
+
+To setup a project this way, run the CLI tool:
