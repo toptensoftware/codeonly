@@ -1,0 +1,24 @@
+---
+out: {{model.name}}.js
+---
+import { Component, Style } from "@toptensoftware/codeonly";
+
+export class {{model.name}} extends Component
+{
+    constructor()
+    {
+        super();
+    }
+
+    static template = {
+        type: "div",
+        class: {{helpers.dasherize(helpers.underscore(model.name))}},
+        text: "My Component",
+    }
+}
+
+Style.declare(`
+.{{helpers.dasherize(helpers.underscore(model.name))}}
+{
+}
+`);

@@ -1,0 +1,30 @@
+---
+base: ./{{model.name}}/
+---
+{
+  "name": "{{model.name}}",
+  "version": "0.0.1",
+  "description": "{{model.name}}",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "cd client && vite build",
+    "dev": "node ./server/server.js",
+    "prod": "bash -c \"npm run build && NODE_ENV=production node ./server/server.js\""
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@toptensoftware/bundle-free": "^1.0.7",
+    "express": "^4.21.1",
+    "express-async-errors": "^3.1.1",
+    "livereload": "^0.9.3",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "@toptensoftware/codeonly": "github:toptensoftware/codeonly",
+    "@toptensoftware/stylish": "github:toptensoftware/stylish",
+    "vite": "^5.4.9"
+  }
+}
+

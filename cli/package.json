@@ -1,0 +1,17 @@
+{
+  "name": "shownotes",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@toptensoftware/moe-js": "^0.4.0",
+    "inflection": "^3.0.0",
+    "yaml": "^2.6.0"
+  }
+}
